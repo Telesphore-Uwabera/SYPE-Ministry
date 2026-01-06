@@ -266,7 +266,11 @@ export default function Home() {
             viewport={{ once: true }}
           >
             {/* Stat Card */}
-            <motion.div className="text-center" variants={cardVariants} whileHover="hover">
+            <motion.div
+              className="text-center"
+              variants={cardVariants}
+              whileHover="hover"
+            >
               <div className="flex justify-center mb-4">
                 <motion.div
                   className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center"
@@ -282,7 +286,11 @@ export default function Home() {
             </motion.div>
 
             {/* Stat Card */}
-            <motion.div className="text-center" variants={cardVariants} whileHover="hover">
+            <motion.div
+              className="text-center"
+              variants={cardVariants}
+              whileHover="hover"
+            >
               <div className="flex justify-center mb-4">
                 <motion.div
                   className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center"
@@ -300,7 +308,11 @@ export default function Home() {
             </motion.div>
 
             {/* Stat Card */}
-            <motion.div className="text-center" variants={cardVariants} whileHover="hover">
+            <motion.div
+              className="text-center"
+              variants={cardVariants}
+              whileHover="hover"
+            >
               <div className="flex justify-center mb-4">
                 <motion.div
                   className="w-12 h-12 bg-accent/30 rounded-lg flex items-center justify-center"
@@ -316,7 +328,11 @@ export default function Home() {
             </motion.div>
 
             {/* Stat Card */}
-            <motion.div className="text-center" variants={cardVariants} whileHover="hover">
+            <motion.div
+              className="text-center"
+              variants={cardVariants}
+              whileHover="hover"
+            >
               <div className="flex justify-center mb-4">
                 <motion.div
                   className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center"
@@ -445,8 +461,8 @@ export default function Home() {
                 📖 Ellen G. White Study
               </h3>
               <p className="text-foreground/70 text-sm">
-                Explore insights from "Evangelism (Ivugabutumwa)" and apply
-                them to modern ministry
+                Explore insights from "Evangelism (Ivugabutumwa)" and apply them
+                to modern ministry
               </p>
             </div>
 

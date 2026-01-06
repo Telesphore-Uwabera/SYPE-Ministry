@@ -118,10 +118,10 @@ export default function Departments() {
             effectively.
           </p>
           <p className="text-foreground/70 text-lg leading-relaxed">
-            Our organizational approach follows Ellen G. White's principle: "Everything
-            must be done according to a well-matured plan, and with system. God
-            has entrusted His sacred work to men, and He asks that they shall do
-            it carefully."
+            Our organizational approach follows Ellen G. White's principle:
+            "Everything must be done according to a well-matured plan, and with
+            system. God has entrusted His sacred work to men, and He asks that
+            they shall do it carefully."
           </p>
         </div>
       </section>
@@ -191,9 +191,9 @@ export default function Departments() {
                 🤝 Cross-Departmental Collaboration
               </h3>
               <p className="text-foreground/70">
-                Our departments don't work in isolation. They collaborate closely
-                to ensure projects succeed, communication is clear, and members
-                are engaged and supported.
+                Our departments don't work in isolation. They collaborate
+                closely to ensure projects succeed, communication is clear, and
+                members are engaged and supported.
               </p>
             </div>
 
@@ -224,9 +224,10 @@ export default function Departments() {
               Support Our Departments
             </h3>
             <p className="text-foreground/70 mb-4 leading-relaxed">
-              If you're interested in serving in any of these departments or have
-              skills that could benefit SYPE Ministry, we'd love to hear from you.
-              Join our ministry and contribute your talents to spreading the Gospel.
+              If you're interested in serving in any of these departments or
+              have skills that could benefit SYPE Ministry, we'd love to hear
+              from you. Join our ministry and contribute your talents to
+              spreading the Gospel.
             </p>
             <a
               href="#contact"

@@ -188,8 +188,9 @@ export default function About() {
           <div className="max-w-4xl mx-auto">
             <p className="text-foreground/70 text-lg mb-8 leading-relaxed">
               SYPE is led by a dedicated transitional committee with clear roles
-              and responsibilities. Each department works together to fulfill our
-              mission of equipping young professionals for effective evangelism.
+              and responsibilities. Each department works together to fulfill
+              our mission of equipping young professionals for effective
+              evangelism.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">

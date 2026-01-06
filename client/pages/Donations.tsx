@@ -1,13 +1,6 @@
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import {
-  Heart,
-  Globe,
-  DollarSign,
-  Target,
-  Users,
-  Zap,
-} from "lucide-react";
+import { Heart, Globe, DollarSign, Target, Users, Zap } from "lucide-react";
 
 export default function Donations() {
   const donationOptions = [
@@ -42,7 +35,8 @@ export default function Donations() {
     },
     {
       amount: "20000 RWF",
-      description: "Supports a complete evangelistic materials production cycle",
+      description:
+        "Supports a complete evangelistic materials production cycle",
     },
     {
       amount: "100000+ RWF",
@@ -60,8 +54,8 @@ export default function Donations() {
             Support the Mission
           </h1>
           <p className="text-lg opacity-90 max-w-2xl mx-auto">
-            Your financial partnership enables SYPE Ministry to produce impactful
-            evangelical content and reach thousands with the Gospel
+            Your financial partnership enables SYPE Ministry to produce
+            impactful evangelical content and reach thousands with the Gospel
           </p>
         </div>
       </section>
@@ -75,8 +69,8 @@ export default function Donations() {
 
           <div className="space-y-6">
             <p className="text-foreground/80 text-lg leading-relaxed">
-              Evangelism requires resources. Every documentary, poster, video, and
-              article produced by SYPE Ministry represents an investment in
+              Evangelism requires resources. Every documentary, poster, video,
+              and article produced by SYPE Ministry represents an investment in
               spreading the Gospel. Your contribution directly enables us to:
             </p>
 
@@ -88,7 +82,8 @@ export default function Donations() {
                     Reach More People
                   </h3>
                   <p className="text-foreground/70">
-                    Produce quality content for digital and traditional platforms
+                    Produce quality content for digital and traditional
+                    platforms
                   </p>
                 </div>
               </div>
@@ -193,9 +188,9 @@ export default function Donations() {
           <div className="bg-white rounded-lg p-8 border-2 border-primary">
             <blockquote className="mb-6">
               <p className="font-serif italic text-xl text-primary mb-4">
-                "Though we never imagined managing large-scale projects, today we
-                handle initiatives worth over 200,000 RWF—and we are preparing for
-                projects worth millions."
+                "Though we never imagined managing large-scale projects, today
+                we handle initiatives worth over 200,000 RWF—and we are
+                preparing for projects worth millions."
               </p>
               <footer className="text-foreground/70">
                 — Elder Ndacyayishima Justin, President

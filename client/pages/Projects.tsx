@@ -30,7 +30,8 @@ export default function Projects() {
       topic: "Evangelism",
       description:
         "Sharing highlights from bible verses and quotes covering the full biblical narrative from creation to redemption.",
-      distribution: "Share on WhatsApp statuses and groups, Facebook, and elsewhere",
+      distribution:
+        "Share on WhatsApp statuses and groups, Facebook, and elsewhere",
       type: "ongoing",
       year: "2020",
     },
@@ -162,7 +163,7 @@ export default function Projects() {
                   </div>
                   <Badge
                     className={`${getBadgeColor(
-                      project.topic
+                      project.topic,
                     )} whitespace-nowrap`}
                   >
                     {project.topic}
@@ -281,10 +282,10 @@ export default function Projects() {
             Making an Impact
           </h2>
           <p className="text-foreground/70 text-lg leading-relaxed mb-8">
-            Through diverse projects in documentaries, posters, and articles, SYPE
-            Ministry is reaching thousands with the Gospel message. Each project
-            is designed with careful planning, professional execution, and
-            strategic distribution to maximize impact across digital and
+            Through diverse projects in documentaries, posters, and articles,
+            SYPE Ministry is reaching thousands with the Gospel message. Each
+            project is designed with careful planning, professional execution,
+            and strategic distribution to maximize impact across digital and
             traditional platforms.
           </p>
           <p className="text-foreground/70 text-lg leading-relaxed">

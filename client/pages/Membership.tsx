@@ -15,7 +15,8 @@ export default function Membership() {
     {
       icon: BookOpen,
       title: "Evangelism Training",
-      description: "Structured training in evangelism methods and biblical principles",
+      description:
+        "Structured training in evangelism methods and biblical principles",
     },
     {
       icon: Network,
@@ -25,7 +26,8 @@ export default function Membership() {
     {
       icon: Users,
       title: "Project Participation",
-      description: "Participate in impactful evangelical projects and initiatives",
+      description:
+        "Participate in impactful evangelical projects and initiatives",
     },
     {
       icon: Trophy,

@@ -53,7 +53,9 @@ export default function Devotions() {
                   <BookOpen className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                   <div>
                     <p className="font-semibold text-primary">Duration</p>
-                    <p className="text-foreground/70">1 hour of focused prayer</p>
+                    <p className="text-foreground/70">
+                      1 hour of focused prayer
+                    </p>
                   </div>
                 </div>
 
@@ -99,7 +101,8 @@ export default function Devotions() {
                     3. Ellen G. White Insight
                   </h3>
                   <p className="text-foreground/70 text-sm">
-                    Discuss quotes and teachings from "Evangelism (Ivugabutumwa)"
+                    Discuss quotes and teachings from "Evangelism
+                    (Ivugabutumwa)"
                   </p>
                 </div>
 

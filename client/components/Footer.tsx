@@ -8,7 +8,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* About Section */}
           <div>
-            <h3 className="font-heading font-bold text-lg mb-4">SYPE Ministry</h3>
+            <h3 className="font-heading font-bold text-lg mb-4">
+              SYPE Ministry
+            </h3>
             <p className="text-sm leading-relaxed opacity-90">
               Equipping young SDA professionals for evangelism through talents,
               professions, and service.
@@ -22,22 +24,34 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/about" className="hover:underline opacity-90 hover:opacity-100">
+                <Link
+                  to="/about"
+                  className="hover:underline opacity-90 hover:opacity-100"
+                >
                   About Us
                 </Link>
               </li>
               <li>
-                <Link to="/membership" className="hover:underline opacity-90 hover:opacity-100">
+                <Link
+                  to="/membership"
+                  className="hover:underline opacity-90 hover:opacity-100"
+                >
                   Membership
                 </Link>
               </li>
               <li>
-                <Link to="/donations" className="hover:underline opacity-90 hover:opacity-100">
+                <Link
+                  to="/donations"
+                  className="hover:underline opacity-90 hover:opacity-100"
+                >
                   Support Us
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="hover:underline opacity-90 hover:opacity-100">
+                <Link
+                  to="/contact"
+                  className="hover:underline opacity-90 hover:opacity-100"
+                >
                   Contact
                 </Link>
               </li>
@@ -51,22 +65,34 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/library" className="hover:underline opacity-90 hover:opacity-100">
+                <Link
+                  to="/library"
+                  className="hover:underline opacity-90 hover:opacity-100"
+                >
                   Library
                 </Link>
               </li>
               <li>
-                <Link to="/devotions" className="hover:underline opacity-90 hover:opacity-100">
+                <Link
+                  to="/devotions"
+                  className="hover:underline opacity-90 hover:opacity-100"
+                >
                   Devotions
                 </Link>
               </li>
               <li>
-                <Link to="/news" className="hover:underline opacity-90 hover:opacity-100">
+                <Link
+                  to="/news"
+                  className="hover:underline opacity-90 hover:opacity-100"
+                >
                   News
                 </Link>
               </li>
               <li>
-                <Link to="/videos" className="hover:underline opacity-90 hover:opacity-100">
+                <Link
+                  to="/videos"
+                  className="hover:underline opacity-90 hover:opacity-100"
+                >
                   Videos
                 </Link>
               </li>
@@ -75,17 +101,25 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 className="font-heading font-semibold text-base mb-4">Contact</h4>
+            <h4 className="font-heading font-semibold text-base mb-4">
+              Contact
+            </h4>
             <ul className="space-y-3 text-sm">
               <li className="flex items-center gap-2">
                 <Mail size={16} />
-                <a href="mailto:sype@example.com" className="hover:underline opacity-90 hover:opacity-100">
+                <a
+                  href="mailto:sype@example.com"
+                  className="hover:underline opacity-90 hover:opacity-100"
+                >
                   sype@example.com
                 </a>
               </li>
               <li className="flex items-center gap-2">
                 <Phone size={16} />
-                <a href="tel:+250700000000" className="hover:underline opacity-90 hover:opacity-100">
+                <a
+                  href="tel:+250700000000"
+                  className="hover:underline opacity-90 hover:opacity-100"
+                >
                   +250 700 000 000
                 </a>
               </li>
@@ -99,7 +133,9 @@ export default function Footer() {
 
         {/* Social Links */}
         <div className="border-t border-primary-foreground/20 pt-8 mb-8">
-          <h4 className="font-heading font-semibold text-base mb-4">Follow Us</h4>
+          <h4 className="font-heading font-semibold text-base mb-4">
+            Follow Us
+          </h4>
           <div className="flex gap-4">
             <a
               href="#"

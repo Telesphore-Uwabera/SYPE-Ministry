@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { History, Users, Zap } from "lucide-react";
 
 export default function About() {
@@ -247,6 +249,131 @@ export default function About() {
                   Follow-up on implementation and assessment of results
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQs Section */}
+      <section className="py-16 md:py-24 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary text-center mb-12">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-foreground/70 text-lg text-center max-w-2xl mx-auto mb-12">
+            Find answers to common questions about SYPE Ministry, membership, activities, and more.
+          </p>
+
+          <div className="max-w-4xl mx-auto space-y-6">
+            {[
+              {
+                category: "General Information",
+                questions: [
+                  {
+                    q: "What is SYPE Ministry?",
+                    a: "SYPE (Seventh-day Adventist Young Professionals in Evangelism) is a ministry uniting alumni and students from Adventist Associations in public universities in Kigali and beyond, dedicated to structured, consistent, and impactful evangelism."
+                  },
+                  {
+                    q: "When was SYPE Ministry established?",
+                    a: "SYPE Ministry was officially established on September 14, 2019, with official activities launching in April 2020."
+                  },
+                  {
+                    q: "What is the mission of SYPE Ministry?",
+                    a: "Our mission is to equip young SDA professionals for active evangelism through their talents, professions, and service, enabling them to serve through evangelical projects and outreach."
+                  },
+                  {
+                    q: "Where is SYPE Ministry located?",
+                    a: "SYPE Ministry is based in Kigali, Rwanda, and serves young professionals from Adventist Student Associations in public universities in Kigali and beyond."
+                  }
+                ]
+              },
+              {
+                category: "Membership",
+                questions: [
+                  {
+                    q: "Who can become a member of SYPE Ministry?",
+                    a: "Any active Seventh-day Adventist member from Adventist Student Associations (ASSAs) who is willing to support and participate in SYPE's evangelical mission can become a member."
+                  },
+                  {
+                    q: "How do I join SYPE Ministry?",
+                    a: "Membership is invitation-based. You can be invited by an existing SYPE member, or you can contact us directly through our contact page to express your interest in joining."
+                  },
+                  {
+                    q: "What are the benefits of membership?",
+                    a: "Members receive evangelism training, mentorship opportunities, project participation, leadership development, community support, and access to exclusive evangelism materials and resources."
+                  },
+                  {
+                    q: "Is there a membership fee?",
+                    a: "SYPE Ministry does not charge membership fees. However, members are encouraged to support evangelism projects through voluntary contributions and donations."
+                  }
+                ]
+              },
+              {
+                category: "Activities & Programs",
+                questions: [
+                  {
+                    q: "What activities does SYPE Ministry organize?",
+                    a: "SYPE organizes various activities including weekly prayer and devotion programs, evangelism projects, mission camps, media content creation (videos, posters, written content), and digital outreach initiatives."
+                  },
+                  {
+                    q: "When are the weekly devotion programs?",
+                    a: "Our weekly prayer and devotion program takes place every Sunday from 6:00 PM to 7:00 PM via WhatsApp. The program focuses on Jesus' methods and Ellen G. White's teachings on evangelism."
+                  },
+                  {
+                    q: "How can I participate in evangelism projects?",
+                    a: "Members are invited to participate in various evangelical projects. Those interested can volunteer for projects that match their talents and professions. Contact us or check with project coordinators for current opportunities."
+                  }
+                ]
+              },
+              {
+                category: "Contact & Communication",
+                questions: [
+                  {
+                    q: "How can I contact SYPE Ministry?",
+                    a: "You can contact us via email at sypeministry@gmail.com, phone at +250 780 430 990 or +250 785 073 847, or through our contact page on the website."
+                  },
+                  {
+                    q: "Do you have a WhatsApp group?",
+                    a: "Yes, SYPE has a WhatsApp community group for members. The group is used for communication, coordination, and sharing approved evangelism materials."
+                  }
+                ]
+              }
+            ].map((category, categoryIndex) => (
+              <Card key={categoryIndex}>
+                <CardHeader>
+                  <CardTitle className="text-xl">{category.category}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Accordion type="single" collapsible className="w-full">
+                    {category.questions.map((faq, faqIndex) => (
+                      <AccordionItem
+                        key={faqIndex}
+                        value={`item-${categoryIndex}-${faqIndex}`}
+                      >
+                        <AccordionTrigger className="text-left font-semibold">
+                          {faq.q}
+                        </AccordionTrigger>
+                        <AccordionContent className="text-foreground/80 leading-relaxed">
+                          {faq.a}
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                </CardContent>
+              </Card>
+            ))}
+
+            <div className="text-center pt-6">
+              <p className="text-foreground/70 mb-4">
+                Still have questions? We're here to help!
+              </p>
+              <Button
+                asChild
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              >
+                <Link to="/faqs">View All FAQs</Link>
+              </Button>
             </div>
           </div>
         </div>

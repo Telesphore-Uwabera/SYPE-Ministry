@@ -8,6 +8,8 @@ import {
   Trophy,
   CheckCircle2,
   Heart,
+  MessageCircle,
+  Target,
 } from "lucide-react";
 
 export default function Membership() {
@@ -170,9 +172,12 @@ export default function Membership() {
 
           <div className="space-y-6">
             <div>
-              <h3 className="font-heading font-bold text-xl text-primary mb-3">
-                📱 WhatsApp Community
-              </h3>
+              <div className="flex items-center gap-2 mb-3">
+                <MessageCircle className="w-5 h-5 text-primary" />
+                <h3 className="font-heading font-bold text-xl text-primary">
+                  WhatsApp Community
+                </h3>
+              </div>
               <p className="text-foreground/70 mb-3 leading-relaxed">
                 Our WhatsApp group is the hub of member communication and
                 coordination, sharing only approved evangelism materials to keep
@@ -181,9 +186,12 @@ export default function Membership() {
             </div>
 
             <div className="bg-accent/10 rounded-lg p-6 border-l-4 border-accent">
-              <h3 className="font-heading font-bold text-lg text-primary mb-3">
-                🙏 Weekly Prayer & Devotion Program
-              </h3>
+              <div className="flex items-center gap-2 mb-3">
+                <Heart className="w-5 h-5 text-primary" />
+                <h3 className="font-heading font-bold text-lg text-primary">
+                  Weekly Prayer & Devotion Program
+                </h3>
+              </div>
               <p className="text-foreground/70 mb-2">
                 <strong>Time:</strong> Every Sunday, 6:00 PM – 7:00 PM
               </p>
@@ -197,9 +205,12 @@ export default function Membership() {
             </div>
 
             <div>
-              <h3 className="font-heading font-bold text-xl text-primary mb-3">
-                🎯 Project Participation
-              </h3>
+              <div className="flex items-center gap-2 mb-3">
+                <Target className="w-5 h-5 text-primary" />
+                <h3 className="font-heading font-bold text-xl text-primary">
+                  Project Participation
+                </h3>
+              </div>
               <p className="text-foreground/70 mb-3 leading-relaxed">
                 Members are invited to participate in various evangelical
                 projects. Those interested volunteer for projects that match

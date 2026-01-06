@@ -135,7 +135,7 @@ export default function FAQs() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-muted/50 to-background py-12 md:py-20">
+      <div id="faqs" className="min-h-screen bg-gradient-to-br from-muted/50 to-background py-12 md:py-20 scroll-mt-20">
         <div className="container mx-auto px-4">
           {/* Header */}
           <motion.div

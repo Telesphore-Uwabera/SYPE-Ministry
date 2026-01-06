@@ -255,7 +255,7 @@ export default function About() {
       </section>
 
       {/* FAQs Section */}
-      <section className="py-16 md:py-24 bg-white">
+      <section id="faqs" className="py-16 md:py-24 bg-white scroll-mt-20">
         <div className="container mx-auto px-4">
           <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary text-center mb-12">
             Frequently Asked Questions
@@ -372,7 +372,7 @@ export default function About() {
                 variant="outline"
                 className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
               >
-                <Link to="/faqs">View All FAQs</Link>
+                <Link to="/faqs#faqs">View All FAQs</Link>
               </Button>
             </div>
           </div>

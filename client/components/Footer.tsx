@@ -253,6 +253,17 @@ export default function Footer() {
               Cookies Policy
             </Link>
           </div>
+          <p className="mb-2">
+            Feel free to{" "}
+            <a
+              href="https://uwaberatelesphore.netlify.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold hover:underline opacity-90 hover:opacity-100 transition-opacity"
+            >
+              contact the developer
+            </a>
+          </p>
           <p>
             © 2024 SYPE Ministry. All rights reserved. | Seventh-day Adventist
             Young Professionals in Evangelism

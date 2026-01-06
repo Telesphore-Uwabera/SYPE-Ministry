@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import {
   Users,
@@ -6,6 +7,9 @@ import {
   CheckCircle2,
   FileText,
   BookOpen,
+  Handshake,
+  BarChart3,
+  Sparkles,
 } from "lucide-react";
 
 export default function Departments() {
@@ -187,9 +191,12 @@ export default function Departments() {
 
           <div className="space-y-6 mb-8">
             <div className="bg-accent/10 rounded-lg p-6 border-l-4 border-accent">
-              <h3 className="font-heading font-bold text-lg text-primary mb-2">
-                🤝 Cross-Departmental Collaboration
-              </h3>
+              <div className="flex items-center gap-2 mb-2">
+                <Handshake className="w-5 h-5 text-primary" />
+                <h3 className="font-heading font-bold text-lg text-primary">
+                  Cross-Departmental Collaboration
+                </h3>
+              </div>
               <p className="text-foreground/70">
                 Our departments don't work in isolation. They collaborate
                 closely to ensure projects succeed, communication is clear, and
@@ -198,9 +205,12 @@ export default function Departments() {
             </div>
 
             <div className="bg-primary/10 rounded-lg p-6 border-l-4 border-primary">
-              <h3 className="font-heading font-bold text-lg text-primary mb-2">
-                📊 Unified Vision
-              </h3>
+              <div className="flex items-center gap-2 mb-2">
+                <BarChart3 className="w-5 h-5 text-primary" />
+                <h3 className="font-heading font-bold text-lg text-primary">
+                  Unified Vision
+                </h3>
+              </div>
               <p className="text-foreground/70">
                 Every department contributes to our shared mission: equipping
                 young SDA professionals to spread the Gospel through their
@@ -209,9 +219,12 @@ export default function Departments() {
             </div>
 
             <div className="bg-secondary/10 rounded-lg p-6 border-l-4 border-secondary">
-              <h3 className="font-heading font-bold text-lg text-primary mb-2">
-                ✨ Specialized Excellence
-              </h3>
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <h3 className="font-heading font-bold text-lg text-primary">
+                  Specialized Excellence
+                </h3>
+              </div>
               <p className="text-foreground/70">
                 Each department brings specialized expertise, ensuring our work
                 maintains the highest standards and reaches the widest audience.
@@ -229,12 +242,12 @@ export default function Departments() {
               from you. Join our ministry and contribute your talents to
               spreading the Gospel.
             </p>
-            <a
-              href="#contact"
+            <Link
+              to="/contact"
               className="inline-flex items-center text-primary font-semibold hover:text-primary/80 transition-colors"
             >
               Get Involved <span className="ml-2">→</span>
-            </a>
+            </Link>
           </div>
         </div>
       </section>

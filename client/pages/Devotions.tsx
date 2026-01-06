@@ -1,6 +1,7 @@
+import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Clock, Users, BookOpen, Heart } from "lucide-react";
+import { Clock, Users, BookOpen, Heart, Calendar } from "lucide-react";
 
 export default function Devotions() {
   return (
@@ -24,9 +25,12 @@ export default function Devotions() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-4xl mx-auto items-start">
             {/* Schedule Card */}
             <div className="bg-gradient-to-br from-accent/20 to-accent/10 rounded-lg p-8 border border-accent/30">
-              <h2 className="font-heading font-bold text-2xl text-primary mb-6">
-                📅 Program Schedule
-              </h2>
+              <div className="flex items-center gap-2 mb-6">
+                <Calendar className="w-6 h-6 text-primary" />
+                <h2 className="font-heading font-bold text-2xl text-primary">
+                  Program Schedule
+                </h2>
+              </div>
 
               <div className="space-y-4">
                 <div className="flex items-start gap-4">
@@ -73,9 +77,12 @@ export default function Devotions() {
 
             {/* Program Format Card */}
             <div className="bg-white rounded-lg p-8 border border-border shadow-sm">
-              <h2 className="font-heading font-bold text-2xl text-primary mb-6">
-                🙏 Program Format
-              </h2>
+              <div className="flex items-center gap-2 mb-6">
+                <Heart className="w-6 h-6 text-primary" />
+                <h2 className="font-heading font-bold text-2xl text-primary">
+                  Program Format
+                </h2>
+              </div>
 
               <div className="space-y-4">
                 <div>
@@ -206,7 +213,7 @@ export default function Devotions() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 md:py-24 bg-primary text-primary-foreground">
+      <section id="join" className="py-16 md:py-24 bg-primary text-primary-foreground scroll-mt-20">
         <div className="container mx-auto px-4 text-center">
           <h2 className="font-heading font-bold text-3xl md:text-4xl mb-6">
             Join Us This Sunday
@@ -220,14 +227,14 @@ export default function Devotions() {
               asChild
               className="bg-accent text-accent-foreground hover:bg-accent/90 px-8 py-6 text-base font-semibold rounded-lg"
             >
-              <a href="#join">Join WhatsApp Group</a>
+              <Link to="/contact#join">Join WhatsApp Group</Link>
             </Button>
             <Button
               asChild
               variant="outline"
               className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10 px-8 py-6 text-base font-semibold rounded-lg"
             >
-              <a href="#contact">Contact Us</a>
+              <Link to="/contact">Contact Us</Link>
             </Button>
           </div>
         </div>

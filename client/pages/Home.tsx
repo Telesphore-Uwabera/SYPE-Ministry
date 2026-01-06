@@ -9,6 +9,8 @@ import {
   BookOpen,
   Play,
   Newspaper,
+  Heart,
+  MessageCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -89,8 +91,7 @@ export default function Home() {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button
                 asChild
-                variant="outline"
-                className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10 px-8 py-6 text-base font-semibold rounded-lg transition-all"
+                className="bg-black text-white hover:bg-black/90 px-8 py-6 text-base font-semibold rounded-lg transition-all"
               >
                 <Link to="/donations">Support Evangelism</Link>
               </Button>
@@ -447,9 +448,12 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div className="bg-accent/10 rounded-lg p-6 border border-accent/30">
-              <h3 className="font-heading font-bold text-lg text-primary mb-3">
-                🙏 Prayer & Reflection
-              </h3>
+              <div className="flex items-center gap-2 mb-3">
+                <Heart className="w-5 h-5 text-primary" />
+                <h3 className="font-heading font-bold text-lg text-primary">
+                  Prayer & Reflection
+                </h3>
+              </div>
               <p className="text-foreground/70 text-sm">
                 Focused discussion about Jesus' evangelism methods and biblical
                 principles for sharing faith
@@ -457,9 +461,12 @@ export default function Home() {
             </div>
 
             <div className="bg-accent/10 rounded-lg p-6 border border-accent/30">
-              <h3 className="font-heading font-bold text-lg text-primary mb-3">
-                📖 Ellen G. White Study
-              </h3>
+              <div className="flex items-center gap-2 mb-3">
+                <BookOpen className="w-5 h-5 text-primary" />
+                <h3 className="font-heading font-bold text-lg text-primary">
+                  Ellen G. White Study
+                </h3>
+              </div>
               <p className="text-foreground/70 text-sm">
                 Explore insights from "Evangelism (Ivugabutumwa)" and apply them
                 to modern ministry
@@ -467,9 +474,12 @@ export default function Home() {
             </div>
 
             <div className="bg-accent/10 rounded-lg p-6 border border-accent/30">
-              <h3 className="font-heading font-bold text-lg text-primary mb-3">
-                💬 Community Sharing
-              </h3>
+              <div className="flex items-center gap-2 mb-3">
+                <MessageCircle className="w-5 h-5 text-primary" />
+                <h3 className="font-heading font-bold text-lg text-primary">
+                  Community Sharing
+                </h3>
+              </div>
               <p className="text-foreground/70 text-sm">
                 Connect with other young professionals and share prayer requests
                 together

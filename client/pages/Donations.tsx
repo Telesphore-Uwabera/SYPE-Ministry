@@ -48,7 +48,7 @@ export default function Donations() {
   return (
     <Layout>
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary via-secondary to-primary py-16 md:py-20 text-primary-foreground">
+      <section id="donate" className="bg-gradient-to-r from-primary via-secondary to-primary py-16 md:py-20 text-primary-foreground scroll-mt-20">
         <div className="container mx-auto px-4 text-center">
           <h1 className="font-heading font-bold text-4xl md:text-5xl mb-4">
             Support the Mission
@@ -222,14 +222,14 @@ export default function Donations() {
               asChild
               className="bg-accent text-accent-foreground hover:bg-accent/90 px-8 py-6 text-base font-semibold rounded-lg"
             >
-              <a href="#donate">Make a Donation</a>
+              <Link to="/donations#donate">Make a Donation</Link>
             </Button>
             <Button
               asChild
               variant="outline"
               className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10 px-8 py-6 text-base font-semibold rounded-lg"
             >
-              <a href="#contact">Contact for Details</a>
+              <Link to="/contact">Contact for Details</Link>
             </Button>
           </div>
         </div>

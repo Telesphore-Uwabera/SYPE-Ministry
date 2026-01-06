@@ -100,27 +100,47 @@ export default function Home() {
       </section>
 
       {/* About Snapshot Section */}
-      <section className="py-16 md:py-24 bg-white">
+      <motion.section
+        className="py-16 md:py-24 bg-white"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+      >
         <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary mb-6">
+          <motion.div
+            className="max-w-3xl mx-auto"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            <motion.h2
+              className="font-heading font-bold text-3xl md:text-4xl text-primary mb-6"
+              variants={itemVariants}
+            >
               Who We Are
-            </h2>
-            <p className="text-foreground/80 text-lg leading-relaxed mb-8">
+            </motion.h2>
+            <motion.p
+              className="text-foreground/80 text-lg leading-relaxed mb-8"
+              variants={itemVariants}
+            >
               SYPE (Seventh-day Adventist Young Professionals in Evangelism) is
               a ministry uniting alumni and students from Adventist Associations
               in public universities in Kigali and beyond, dedicated to
               structured, consistent, and impactful evangelism.
-            </p>
-            <Button
-              asChild
-              className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 rounded-lg"
-            >
-              <Link to="/about">Learn More</Link>
-            </Button>
-          </div>
+            </motion.p>
+            <motion.div variants={itemVariants} whileHover={{ scale: 1.05 }}>
+              <Button
+                asChild
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 rounded-lg transition-all"
+              >
+                <Link to="/about">Learn More</Link>
+              </Button>
+            </motion.div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Mission & Purpose Cards Section */}
       <section className="py-16 md:py-24 bg-muted/30">

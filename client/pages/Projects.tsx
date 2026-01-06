@@ -1,8 +1,12 @@
 import Layout from "@/components/Layout";
 import { Badge } from "@/components/ui/badge";
-import { Play, FileText, Image, Video } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Play, FileText, Image as ImageIcon, Video, CheckCircle2, Clock, TrendingUp, Award } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function Projects() {
+
   const projects = [
     {
       category: "Documentary",
@@ -13,6 +17,7 @@ export default function Projects() {
       distribution: "Upload on YouTube, Facebook, and share on WhatsApp groups",
       type: "ongoing",
       year: "2020",
+      featured: true,
     },
     {
       category: "Documentary",
@@ -23,6 +28,7 @@ export default function Projects() {
       distribution: "Multiple digital platforms",
       type: "ongoing",
       year: "2020",
+      featured: false,
     },
     {
       category: "Posters",
@@ -32,8 +38,9 @@ export default function Projects() {
         "Sharing highlights from bible verses and quotes covering the full biblical narrative from creation to redemption.",
       distribution:
         "Share on WhatsApp statuses and groups, Facebook, and elsewhere",
-      type: "ongoing",
-      year: "2020",
+      type: "completed",
+      year: "2021",
+      featured: true,
     },
     {
       category: "Posters",
@@ -42,8 +49,9 @@ export default function Projects() {
       description:
         "Happy Sabbath wishes and Bible truth about Sabbath with prophecy information.",
       distribution: "Share on WhatsApp statuses, Facebook, and other channels",
-      type: "ongoing",
-      year: "2020",
+      type: "completed",
+      year: "2021",
+      featured: false,
     },
     {
       category: "Posters",
@@ -53,7 +61,8 @@ export default function Projects() {
         "Sharing highlights articles from the book 'Councils on Nutrition and Foods' for health education and temperance promotion.",
       distribution: "Social media platforms and church groups",
       type: "ongoing",
-      year: "2020",
+      year: "2022",
+      featured: false,
     },
     {
       category: "Articles",
@@ -62,8 +71,9 @@ export default function Projects() {
       description:
         "Comprehensive tract describing the essential topics of Bible prophecy focusing on Sabbath and Sunday worship.",
       distribution: "Social media and door-to-door distribution",
-      type: "ongoing",
-      year: "2020",
+      type: "completed",
+      year: "2021",
+      featured: false,
     },
     {
       category: "Articles",
@@ -72,8 +82,9 @@ export default function Projects() {
       description:
         "Educational tract showing that health is the right hand of Jesus Christ through the 3rd angel's message.",
       distribution: "Print and digital sharing",
-      type: "ongoing",
-      year: "2020",
+      type: "completed",
+      year: "2022",
+      featured: true,
     },
     {
       category: "Articles",
@@ -83,110 +94,450 @@ export default function Projects() {
         "Tract describing sanctuary images as the steps to the Gospel message.",
       distribution: "Various media and door-to-door outreach",
       type: "ongoing",
-      year: "2020",
+      year: "2023",
+      featured: false,
     },
   ];
 
   const getIcon = (category: string) => {
     switch (category) {
       case "Documentary":
-        return <Video className="w-5 h-5" />;
+        return <Video className="w-6 h-6" />;
       case "Posters":
-        return <Image className="w-5 h-5" />;
+        return <ImageIcon className="w-6 h-6" />;
       case "Articles":
-        return <FileText className="w-5 h-5" />;
+        return <FileText className="w-6 h-6" />;
       default:
-        return <Play className="w-5 h-5" />;
+        return <Play className="w-6 h-6" />;
     }
   };
 
   const getBadgeColor = (topic: string) => {
     switch (topic) {
       case "Prophecy":
-        return "bg-primary/20 text-primary";
+        return "bg-primary/20 text-primary border-primary/30";
       case "Gospel & Prophecy":
-        return "bg-secondary/20 text-secondary";
+        return "bg-secondary/20 text-secondary border-secondary/30";
       case "Health":
-        return "bg-accent/30 text-accent-foreground";
+        return "bg-accent/30 text-accent-foreground border-accent/40";
+      case "Gospel":
+        return "bg-primary/20 text-primary border-primary/30";
+      case "Evangelism":
+        return "bg-secondary/20 text-secondary border-secondary/30";
       default:
-        return "bg-muted text-foreground";
+        return "bg-muted text-foreground border-border";
     }
   };
+
+  const getStatusBadge = (type: string) => {
+    if (type === "completed") {
+      return (
+        <Badge className="bg-green-100 text-green-800 border-green-300">
+          <CheckCircle2 className="w-3 h-3 mr-1" />
+          Completed
+        </Badge>
+      );
+    }
+    return (
+      <Badge className="bg-blue-100 text-blue-800 border-blue-300">
+        <Clock className="w-3 h-3 mr-1" />
+        Ongoing
+      </Badge>
+    );
+  };
+
+  const featuredProjects = projects.filter(p => p.featured);
+  const ongoingProjects = projects.filter(p => p.type === "ongoing");
+  const completedProjects = projects.filter(p => p.type === "completed");
+
+  const stats = [
+    { label: "Total Projects", value: projects.length, icon: Award, color: "text-primary" },
+    { label: "Ongoing", value: ongoingProjects.length, icon: Clock, color: "text-blue-600" },
+    { label: "Completed", value: completedProjects.length, icon: CheckCircle2, color: "text-green-600" },
+    { label: "Categories", value: 3, icon: TrendingUp, color: "text-secondary" },
+  ];
 
   return (
     <Layout>
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary via-secondary to-primary py-16 md:py-20 text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="font-heading font-bold text-4xl md:text-5xl mb-4">
+          <motion.h1 
+            className="font-heading font-bold text-4xl md:text-5xl mb-4"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
             Evangelical Projects
-          </h1>
-          <p className="text-lg opacity-90 max-w-2xl mx-auto">
+          </motion.h1>
+          <motion.p 
+            className="text-lg opacity-90 max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
             Discover our diverse evangelical initiatives producing impactful
             content to spread the Gospel
-          </p>
+          </motion.p>
         </div>
       </section>
 
-      {/* Projects Grid */}
+      {/* Statistics Section */}
+      <section className="py-12 bg-white border-b border-border">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {stats.map((stat, idx) => {
+              const IconComponent = stat.icon;
+              return (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                >
+                  <Card className="text-center border-2 hover:border-primary/50 transition-colors">
+                    <CardContent className="pt-6">
+                      <div className="flex justify-center mb-3">
+                        <div className={`p-3 bg-primary/10 rounded-lg ${stat.color}`}>
+                          <IconComponent className="w-6 h-6" />
+                        </div>
+                      </div>
+                      <div className="text-3xl font-heading font-bold text-primary mb-1">
+                        {stat.value}
+                      </div>
+                      <div className="text-sm text-foreground/70 font-medium">
+                        {stat.label}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Projects Section */}
+      {featuredProjects.length > 0 && (
+        <section className="py-16 md:py-24 bg-gradient-to-br from-accent/10 via-background to-secondary/10">
+          <div className="container mx-auto px-4">
+            <div className="mb-8">
+              <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary mb-2">
+                Featured Projects
+              </h2>
+              <p className="text-foreground/70">
+                Highlighted initiatives making significant impact in evangelism
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredProjects.map((project, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                >
+                  <Card className="h-full border-2 hover:border-primary/50 hover:shadow-xl transition-all group">
+                    <CardHeader>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                          {getIcon(project.category)}
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          {getStatusBadge(project.type)}
+                          <Badge variant="outline" className="text-xs">
+                            {project.year}
+                          </Badge>
+                        </div>
+                      </div>
+                      <CardTitle className="text-xl text-primary mb-2">
+                        {project.name}
+                      </CardTitle>
+                      <CardDescription className="flex items-center gap-2">
+                        <Badge className={`${getBadgeColor(project.topic)} text-xs`}>
+                          {project.topic}
+                        </Badge>
+                        <span className="text-xs">•</span>
+                        <span className="text-xs">{project.category}</span>
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-foreground/80 text-sm leading-relaxed mb-4 line-clamp-3">
+                        {project.description}
+                      </p>
+                      <div className="pt-4 border-t border-border">
+                        <p className="text-xs text-foreground/60">
+                          <span className="font-semibold">Distribution:</span>{" "}
+                          <span className="text-foreground/70">{project.distribution}</span>
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* All Projects with Tabs */}
       <section className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-4">
           <div className="mb-8">
             <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary mb-2">
-              Ongoing Projects
+              All Projects
             </h2>
             <p className="text-foreground/70">
-              Active evangelical initiatives producing Bible-based content and
-              outreach materials
+              Browse all our evangelical initiatives by status or category
             </p>
           </div>
 
-          <div className="space-y-6">
-            {projects.map((project, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-lg border border-border hover:shadow-lg transition-shadow p-6"
-              >
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="flex items-start gap-4 flex-1">
-                    <div className="p-3 bg-primary/10 rounded-lg flex-shrink-0">
-                      {getIcon(project.category)}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-heading font-bold text-lg text-primary mb-1">
-                        {project.name}
-                      </h3>
-                      <p className="text-foreground/70 text-sm">
-                        {project.category}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge
-                    className={`${getBadgeColor(
-                      project.topic,
-                    )} whitespace-nowrap`}
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="grid w-full grid-cols-5 mb-8">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
+              <TabsTrigger value="completed">Completed</TabsTrigger>
+              <TabsTrigger value="documentary">Documentary</TabsTrigger>
+              <TabsTrigger value="posters">Posters</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="all" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {projects.map((project, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: idx * 0.05 }}
                   >
-                    {project.topic}
-                  </Badge>
-                </div>
-
-                <p className="text-foreground/80 mb-4 leading-relaxed">
-                  {project.description}
-                </p>
-
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <p className="text-sm">
-                    <span className="font-semibold text-foreground">
-                      Distribution Strategy:
-                    </span>
-                    <span className="text-foreground/70 ml-2">
-                      {project.distribution}
-                    </span>
-                  </p>
-                </div>
+                    <Card className="h-full border-2 hover:border-primary/50 hover:shadow-lg transition-all">
+                      <CardHeader>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-start gap-4 flex-1">
+                            <div className="p-3 bg-primary/10 rounded-lg">
+                              {getIcon(project.category)}
+                            </div>
+                            <div className="flex-1">
+                              <CardTitle className="text-lg text-primary mb-1">
+                                {project.name}
+                              </CardTitle>
+                              <CardDescription>{project.category} • {project.year}</CardDescription>
+                            </div>
+                          </div>
+                          {getStatusBadge(project.type)}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge className={`${getBadgeColor(project.topic)} text-xs`}>
+                            {project.topic}
+                          </Badge>
+                          {project.featured && (
+                            <Badge variant="outline" className="text-xs">
+                              Featured
+                            </Badge>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-foreground/80 text-sm leading-relaxed mb-4">
+                          {project.description}
+                        </p>
+                        <div className="bg-muted/50 rounded-lg p-3">
+                          <p className="text-xs">
+                            <span className="font-semibold text-foreground">Distribution:</span>{" "}
+                            <span className="text-foreground/70">{project.distribution}</span>
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
               </div>
-            ))}
-          </div>
+            </TabsContent>
+
+            <TabsContent value="ongoing" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {ongoingProjects.map((project, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: idx * 0.05 }}
+                  >
+                    <Card className="h-full border-2 hover:border-primary/50 hover:shadow-lg transition-all">
+                      <CardHeader>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-start gap-4 flex-1">
+                            <div className="p-3 bg-primary/10 rounded-lg">
+                              {getIcon(project.category)}
+                            </div>
+                            <div className="flex-1">
+                              <CardTitle className="text-lg text-primary mb-1">
+                                {project.name}
+                              </CardTitle>
+                              <CardDescription>{project.category} • {project.year}</CardDescription>
+                            </div>
+                          </div>
+                          {getStatusBadge(project.type)}
+                        </div>
+                        <Badge className={`${getBadgeColor(project.topic)} text-xs`}>
+                          {project.topic}
+                        </Badge>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-foreground/80 text-sm leading-relaxed mb-4">
+                          {project.description}
+                        </p>
+                        <div className="bg-muted/50 rounded-lg p-3">
+                          <p className="text-xs">
+                            <span className="font-semibold text-foreground">Distribution:</span>{" "}
+                            <span className="text-foreground/70">{project.distribution}</span>
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="completed" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {completedProjects.map((project, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: idx * 0.05 }}
+                  >
+                    <Card className="h-full border-2 hover:border-primary/50 hover:shadow-lg transition-all">
+                      <CardHeader>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-start gap-4 flex-1">
+                            <div className="p-3 bg-primary/10 rounded-lg">
+                              {getIcon(project.category)}
+                            </div>
+                            <div className="flex-1">
+                              <CardTitle className="text-lg text-primary mb-1">
+                                {project.name}
+                              </CardTitle>
+                              <CardDescription>{project.category} • {project.year}</CardDescription>
+                            </div>
+                          </div>
+                          {getStatusBadge(project.type)}
+                        </div>
+                        <Badge className={`${getBadgeColor(project.topic)} text-xs`}>
+                          {project.topic}
+                        </Badge>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-foreground/80 text-sm leading-relaxed mb-4">
+                          {project.description}
+                        </p>
+                        <div className="bg-muted/50 rounded-lg p-3">
+                          <p className="text-xs">
+                            <span className="font-semibold text-foreground">Distribution:</span>{" "}
+                            <span className="text-foreground/70">{project.distribution}</span>
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="documentary" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {projects.filter(p => p.category === "Documentary").map((project, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: idx * 0.05 }}
+                  >
+                    <Card className="h-full border-2 hover:border-primary/50 hover:shadow-lg transition-all">
+                      <CardHeader>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-start gap-4 flex-1">
+                            <div className="p-3 bg-primary/10 rounded-lg">
+                              {getIcon(project.category)}
+                            </div>
+                            <div className="flex-1">
+                              <CardTitle className="text-lg text-primary mb-1">
+                                {project.name}
+                              </CardTitle>
+                              <CardDescription>{project.category} • {project.year}</CardDescription>
+                            </div>
+                          </div>
+                          {getStatusBadge(project.type)}
+                        </div>
+                        <Badge className={`${getBadgeColor(project.topic)} text-xs`}>
+                          {project.topic}
+                        </Badge>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-foreground/80 text-sm leading-relaxed mb-4">
+                          {project.description}
+                        </p>
+                        <div className="bg-muted/50 rounded-lg p-3">
+                          <p className="text-xs">
+                            <span className="font-semibold text-foreground">Distribution:</span>{" "}
+                            <span className="text-foreground/70">{project.distribution}</span>
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="posters" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {projects.filter(p => p.category === "Posters").map((project, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: idx * 0.05 }}
+                  >
+                    <Card className="h-full border-2 hover:border-primary/50 hover:shadow-lg transition-all">
+                      <CardHeader>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-start gap-4 flex-1">
+                            <div className="p-3 bg-primary/10 rounded-lg">
+                              {getIcon(project.category)}
+                            </div>
+                            <div className="flex-1">
+                              <CardTitle className="text-lg text-primary mb-1">
+                                {project.name}
+                              </CardTitle>
+                              <CardDescription>{project.category} • {project.year}</CardDescription>
+                            </div>
+                          </div>
+                          {getStatusBadge(project.type)}
+                        </div>
+                        <Badge className={`${getBadgeColor(project.topic)} text-xs`}>
+                          {project.topic}
+                        </Badge>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-foreground/80 text-sm leading-relaxed mb-4">
+                          {project.description}
+                        </p>
+                        <div className="bg-muted/50 rounded-lg p-3">
+                          <p className="text-xs">
+                            <span className="font-semibold text-foreground">Distribution:</span>{" "}
+                            <span className="text-foreground/70">{project.distribution}</span>
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </section>
 

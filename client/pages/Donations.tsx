@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Heart, Globe, DollarSign, Target, Users, Zap } from "lucide-react";

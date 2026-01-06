@@ -64,22 +64,40 @@
     </script>
     
     <!-- Netlify Identity Widget -->
-    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
-      // Initialize Netlify Identity before React loads to handle invite tokens
-      if (window.netlifyIdentity) {
-        window.netlifyIdentity.on("init", function(user) {
-          if (!user) {
-            // Check for invite token in URL hash
-            const hash = window.location.hash;
-            if (hash && hash.includes('invite_token')) {
-              // Open signup modal to complete invitation
-              window.netlifyIdentity.open('signup');
-            }
+      // Load Netlify Identity script and initialize after DOM is ready
+      (function() {
+        if (document.getElementById('netlify-identity-widget')) return;
+        
+        function initNetlifyIdentity() {
+          if (window.netlifyIdentity) {
+            window.netlifyIdentity.on("init", function(user) {
+              if (!user) {
+                // Check for invite token in URL hash
+                const hash = window.location.hash;
+                if (hash && hash.includes('invite_token')) {
+                  // Open signup modal to complete invitation
+                  window.netlifyIdentity.open('signup');
+                }
+              }
+            });
+            window.netlifyIdentity.init();
           }
-        });
-        window.netlifyIdentity.init();
-      }
+        }
+        
+        const script = document.createElement('script');
+        script.src = 'https://identity.netlify.com/v1/netlify-identity-widget.js';
+        script.async = true;
+        script.onload = function() {
+          // Wait for DOM to be ready
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initNetlifyIdentity);
+          } else {
+            initNetlifyIdentity();
+          }
+        };
+        document.head.appendChild(script);
+      })();
     </script>
   </head>
 

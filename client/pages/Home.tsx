@@ -304,8 +304,8 @@ export default function Home() {
                 📖 Ellen G. White Study
               </h3>
               <p className="text-foreground/70 text-sm">
-                Explore insights from "Evangelism (Ivugabutumwa)" and apply
-                them to modern ministry
+                Explore insights from "Evangelism (Ivugabutumwa)" and apply them
+                to modern ministry
               </p>
             </div>
 

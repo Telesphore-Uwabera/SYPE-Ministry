@@ -275,6 +275,134 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Devotions Section */}
+      <section className="py-16 md:py-24 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary mb-6">
+            Weekly Devotion Program
+          </h2>
+          <p className="text-foreground/70 text-lg max-w-3xl mb-8 leading-relaxed">
+            Join us every Sunday from 6:00 PM to 7:00 PM for an hour of prayer
+            and spiritual reflection. Our weekly devotion program is guided by
+            Jesus' methods and Ellen G. White's teachings on Evangelism
+            (Ivugabutumwa).
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <div className="bg-accent/10 rounded-lg p-6 border border-accent/30">
+              <h3 className="font-heading font-bold text-lg text-primary mb-3">
+                🙏 Prayer & Reflection
+              </h3>
+              <p className="text-foreground/70 text-sm">
+                Focused discussion about Jesus' evangelism methods and biblical
+                principles for sharing faith
+              </p>
+            </div>
+
+            <div className="bg-accent/10 rounded-lg p-6 border border-accent/30">
+              <h3 className="font-heading font-bold text-lg text-primary mb-3">
+                📖 Ellen G. White Study
+              </h3>
+              <p className="text-foreground/70 text-sm">
+                Explore insights from "Evangelism (Ivugabutumwa)" and apply
+                them to modern ministry
+              </p>
+            </div>
+
+            <div className="bg-accent/10 rounded-lg p-6 border border-accent/30">
+              <h3 className="font-heading font-bold text-lg text-primary mb-3">
+                💬 Community Sharing
+              </h3>
+              <p className="text-foreground/70 text-sm">
+                Connect with other young professionals and share prayer requests
+                together
+              </p>
+            </div>
+          </div>
+
+          <p className="text-foreground/70 text-center">
+            <strong>When:</strong> Every Sunday, 6:00 PM – 7:00 PM <br />
+            <strong>Where:</strong> WhatsApp Community Group
+          </p>
+        </div>
+      </section>
+
+      {/* Videos & Multimedia Section */}
+      <section className="py-16 md:py-24 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary mb-12">
+            Videos & Multimedia
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-border hover:shadow-lg transition-shadow">
+              <div className="h-40 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                <Play className="w-12 h-12 text-primary opacity-40" />
+              </div>
+              <div className="p-6">
+                <h3 className="font-heading font-bold text-lg text-primary mb-2">
+                  Sermons & Teachings
+                </h3>
+                <p className="text-foreground/70 text-sm mb-4">
+                  Inspiring sermons and biblical teachings to deepen your faith
+                  and understanding of God's Word
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-border hover:shadow-lg transition-shadow">
+              <div className="h-40 bg-gradient-to-br from-secondary/20 to-accent/20 flex items-center justify-center">
+                <Play className="w-12 h-12 text-secondary opacity-40" />
+              </div>
+              <div className="p-6">
+                <h3 className="font-heading font-bold text-lg text-primary mb-2">
+                  Evangelism Videos
+                </h3>
+                <p className="text-foreground/70 text-sm mb-4">
+                  Practical videos demonstrating Jesus' methods and effective
+                  ways to share the Gospel with others
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-border hover:shadow-lg transition-shadow">
+              <div className="h-40 bg-gradient-to-br from-accent/20 to-primary/20 flex items-center justify-center">
+                <Play className="w-12 h-12 text-accent-foreground opacity-40" />
+              </div>
+              <div className="p-6">
+                <h3 className="font-heading font-bold text-lg text-primary mb-2">
+                  Testimonies
+                </h3>
+                <p className="text-foreground/70 text-sm mb-4">
+                  Real stories of transformation and faith from members of the
+                  SYPE community
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-border hover:shadow-lg transition-shadow">
+              <div className="h-40 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                <Play className="w-12 h-12 text-primary opacity-40" />
+              </div>
+              <div className="p-6">
+                <h3 className="font-heading font-bold text-lg text-primary mb-2">
+                  Graphics & Posters
+                </h3>
+                <p className="text-foreground/70 text-sm mb-4">
+                  Visual content for social media sharing and evangelistic
+                  outreach
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-foreground/70 text-center text-lg">
+            <strong>Follow our YouTube channel and social media</strong> for the
+            latest videos and multimedia content
+          </p>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-16 md:py-24 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 text-center">

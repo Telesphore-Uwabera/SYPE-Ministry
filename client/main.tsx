@@ -11,5 +11,5 @@ if (!container) {
 ReactDOM.createRoot(container).render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>
+  </React.StrictMode>,
 );

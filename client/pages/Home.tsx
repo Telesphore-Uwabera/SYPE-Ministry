@@ -240,32 +240,56 @@ export default function Home() {
       </motion.section>
 
       {/* Evangelical Impact Section */}
-      <section className="py-16 md:py-24 bg-white">
+      <motion.section
+        className="py-16 md:py-24 bg-white"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+      >
         <div className="container mx-auto px-4">
-          <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary text-center mb-12">
+          <motion.h2
+            className="font-heading font-bold text-3xl md:text-4xl text-primary text-center mb-12"
+            variants={itemVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
             Evangelical Impact
-          </h2>
+          </motion.h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <motion.div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
             {/* Stat Card */}
-            <div className="text-center">
+            <motion.div className="text-center" variants={cardVariants} whileHover="hover">
               <div className="flex justify-center mb-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <motion.div
+                  className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center"
+                  whileHover={{ scale: 1.2, rotate: 10 }}
+                >
                   <Users className="w-6 h-6 text-primary" />
-                </div>
+                </motion.div>
               </div>
               <p className="text-4xl font-heading font-bold text-primary mb-2">
                 150+
               </p>
               <p className="text-foreground/70 font-medium">Active Members</p>
-            </div>
+            </motion.div>
 
             {/* Stat Card */}
-            <div className="text-center">
+            <motion.div className="text-center" variants={cardVariants} whileHover="hover">
               <div className="flex justify-center mb-4">
-                <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center">
+                <motion.div
+                  className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center"
+                  whileHover={{ scale: 1.2, rotate: 10 }}
+                >
                   <Rocket className="w-6 h-6 text-secondary" />
-                </div>
+                </motion.div>
               </div>
               <p className="text-4xl font-heading font-bold text-secondary mb-2">
                 25+
@@ -273,27 +297,33 @@ export default function Home() {
               <p className="text-foreground/70 font-medium">
                 Evangelical Projects
               </p>
-            </div>
+            </motion.div>
 
             {/* Stat Card */}
-            <div className="text-center">
+            <motion.div className="text-center" variants={cardVariants} whileHover="hover">
               <div className="flex justify-center mb-4">
-                <div className="w-12 h-12 bg-accent/30 rounded-lg flex items-center justify-center">
+                <motion.div
+                  className="w-12 h-12 bg-accent/30 rounded-lg flex items-center justify-center"
+                  whileHover={{ scale: 1.2, rotate: 10 }}
+                >
                   <BookOpen className="w-6 h-6 text-accent-foreground" />
-                </div>
+                </motion.div>
               </div>
               <p className="text-4xl font-heading font-bold text-primary mb-2">
                 100+
               </p>
               <p className="text-foreground/70 font-medium">Media Resources</p>
-            </div>
+            </motion.div>
 
             {/* Stat Card */}
-            <div className="text-center">
+            <motion.div className="text-center" variants={cardVariants} whileHover="hover">
               <div className="flex justify-center mb-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <motion.div
+                  className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center"
+                  whileHover={{ scale: 1.2, rotate: 10 }}
+                >
                   <Target className="w-6 h-6 text-primary" />
-                </div>
+                </motion.div>
               </div>
               <p className="text-4xl font-heading font-bold text-primary mb-2">
                 52
@@ -301,10 +331,10 @@ export default function Home() {
               <p className="text-foreground/70 font-medium">
                 Prayer & Outreach Programs
               </p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Featured Content Section */}
       <section className="py-16 md:py-24 bg-muted/30">

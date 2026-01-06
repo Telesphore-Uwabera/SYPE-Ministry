@@ -55,30 +55,48 @@ export default function Home() {
           <div className="absolute bottom-10 left-10 w-96 h-96 bg-secondary rounded-full blur-3xl"></div>
         </div>
 
-        <div className="container mx-auto px-4 relative z-10 text-center">
-          <h1 className="font-heading font-bold text-4xl md:text-5xl lg:text-6xl leading-tight mb-6">
+        <motion.div
+          className="container mx-auto px-4 relative z-10 text-center"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.h1
+            className="font-heading font-bold text-4xl md:text-5xl lg:text-6xl leading-tight mb-6"
+            variants={itemVariants}
+          >
             Equipping Young Professionals for Evangelism
-          </h1>
-          <p className="text-lg md:text-xl leading-relaxed max-w-2xl mx-auto mb-8 opacity-95">
+          </motion.h1>
+          <motion.p
+            className="text-lg md:text-xl leading-relaxed max-w-2xl mx-auto mb-8 opacity-95"
+            variants={itemVariants}
+          >
             Seventh-day Adventist Young Professionals united to spread the
             Gospel through talents, professions, and service.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              asChild
-              className="bg-accent text-accent-foreground hover:bg-accent/90 px-8 py-6 text-base font-semibold rounded-lg"
-            >
-              <Link to="/membership">Join the Ministry</Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10 px-8 py-6 text-base font-semibold rounded-lg"
-            >
-              <Link to="/donations">Support Evangelism</Link>
-            </Button>
-          </div>
-        </div>
+          </motion.p>
+          <motion.div
+            className="flex flex-col sm:flex-row gap-4 justify-center"
+            variants={itemVariants}
+          >
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                asChild
+                className="bg-accent text-accent-foreground hover:bg-accent/90 px-8 py-6 text-base font-semibold rounded-lg transition-all"
+              >
+                <Link to="/membership">Join the Ministry</Link>
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                asChild
+                variant="outline"
+                className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10 px-8 py-6 text-base font-semibold rounded-lg transition-all"
+              >
+                <Link to="/donations">Support Evangelism</Link>
+              </Button>
+            </motion.div>
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* About Snapshot Section */}

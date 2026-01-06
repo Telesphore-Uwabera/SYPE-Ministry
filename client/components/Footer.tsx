@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Mail, Phone, MapPin, Facebook, Linkedin, Youtube } from "lucide-react";
+import { Mail, Phone, MapPin, Facebook, Youtube, Instagram } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -60,6 +60,14 @@ export default function Footer() {
                   className="hover:underline opacity-90 hover:opacity-100"
                 >
                   Contact
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/faqs"
+                  className="hover:underline opacity-90 hover:opacity-100"
+                >
+                  FAQs
                 </Link>
               </li>
             </ul>
@@ -162,10 +170,29 @@ export default function Footer() {
             </a>
             <a
               href="#"
+              target="_blank"
+              rel="noopener noreferrer"
               className="p-2 bg-primary-foreground/10 hover:bg-primary-foreground/20 rounded-lg transition-colors"
-              aria-label="LinkedIn"
+              aria-label="Instagram"
             >
-              <Linkedin size={20} />
+              <Instagram size={20} />
+            </a>
+            <a
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 bg-primary-foreground/10 hover:bg-primary-foreground/20 rounded-lg transition-colors"
+              aria-label="X (Twitter)"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
             </a>
             <a
               href="https://www.youtube.com/@sypeministry5276"
@@ -186,6 +213,28 @@ export default function Footer() {
             <br />
             <span className="not-italic font-semibold">— Matthew 24:14</span>
           </p>
+          <div className="flex flex-wrap justify-center gap-4 mb-4">
+            <Link
+              to="/terms"
+              className="hover:underline opacity-90 hover:opacity-100 text-sm"
+            >
+              Terms and Conditions
+            </Link>
+            <span className="opacity-50">|</span>
+            <Link
+              to="/privacy"
+              className="hover:underline opacity-90 hover:opacity-100 text-sm"
+            >
+              Privacy Policy
+            </Link>
+            <span className="opacity-50">|</span>
+            <Link
+              to="/cookies"
+              className="hover:underline opacity-90 hover:opacity-100 text-sm"
+            >
+              Cookies Policy
+            </Link>
+          </div>
           <p>
             © 2024 SYPE Ministry. All rights reserved. | Seventh-day Adventist
             Young Professionals in Evangelism

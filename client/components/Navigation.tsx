@@ -13,8 +13,6 @@ export default function Navigation() {
     { label: "Donations", href: "/donations" },
     { label: "Library", href: "/library" },
     { label: "News", href: "/news" },
-    { label: "Devotions", href: "/devotions" },
-    { label: "Videos", href: "/videos" },
     { label: "Departments", href: "/departments" },
     { label: "Projects", href: "/projects" },
     { label: "Contact", href: "/contact" },

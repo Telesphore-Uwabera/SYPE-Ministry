@@ -553,10 +553,26 @@ export default function Home() {
             </div>
           </div>
 
-          <p className="text-foreground/70 text-center text-lg">
-            <strong>Follow our YouTube channel and social media</strong> for the
-            latest videos and multimedia content
-          </p>
+          <div className="text-center">
+            <p className="text-foreground/70 text-lg mb-4">
+              <strong>Follow our YouTube channel and social media</strong> for the
+              latest videos and multimedia content
+            </p>
+            <Button
+              asChild
+              variant="outline"
+              className="bg-accent text-accent-foreground hover:bg-accent/90"
+            >
+              <a
+                href="https://www.youtube.com/@sypeministry5276"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Visit Our YouTube Channel
+              </a>
+            </Button>
+          </div>
         </div>
       </section>
 

@@ -26,9 +26,11 @@ export default function Navigation() {
           to="/"
           className="flex items-center gap-2 font-heading font-bold text-xl text-primary hover:text-primary/90 transition-colors"
         >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-sm">
-            S
-          </div>
+          <img
+            src="/Sype logo.png"
+            alt="SYPE Ministry Logo"
+            className="h-10 w-auto object-contain"
+          />
           <span className="hidden sm:inline">SYPE Ministry</span>
         </Link>
 

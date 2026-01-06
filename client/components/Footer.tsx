@@ -8,9 +8,16 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* About Section */}
           <div>
-            <h3 className="font-heading font-bold text-lg mb-4">
-              SYPE Ministry
-            </h3>
+            <div className="flex items-center gap-2 mb-4">
+              <img
+                src="/Sype logo.png"
+                alt="SYPE Ministry Logo"
+                className="h-8 w-auto object-contain"
+              />
+              <h3 className="font-heading font-bold text-lg">
+                SYPE Ministry
+              </h3>
+            </div>
             <p className="text-sm leading-relaxed opacity-90">
               Equipping young SDA professionals for evangelism through talents,
               professions, and service.
@@ -108,19 +115,28 @@ export default function Footer() {
               <li className="flex items-center gap-2">
                 <Mail size={16} />
                 <a
-                  href="mailto:sype@example.com"
+                  href="mailto:sypeministry@gmail.com"
                   className="hover:underline opacity-90 hover:opacity-100"
                 >
-                  sype@example.com
+                  sypeministry@gmail.com
                 </a>
               </li>
               <li className="flex items-center gap-2">
                 <Phone size={16} />
                 <a
-                  href="tel:+250700000000"
+                  href="tel:+250780430990"
                   className="hover:underline opacity-90 hover:opacity-100"
                 >
-                  +250 700 000 000
+                  +250 780 430 990
+                </a>
+              </li>
+              <li className="flex items-center gap-2">
+                <Phone size={16} />
+                <a
+                  href="tel:+250785073847"
+                  className="hover:underline opacity-90 hover:opacity-100"
+                >
+                  +250 785 073 847
                 </a>
               </li>
               <li className="flex items-start gap-2">
@@ -152,7 +168,9 @@ export default function Footer() {
               <Linkedin size={20} />
             </a>
             <a
-              href="#"
+              href="https://www.youtube.com/@sypeministry5276"
+              target="_blank"
+              rel="noopener noreferrer"
               className="p-2 bg-primary-foreground/10 hover:bg-primary-foreground/20 rounded-lg transition-colors"
               aria-label="YouTube"
             >

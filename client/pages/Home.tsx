@@ -143,19 +143,44 @@ export default function Home() {
       </motion.section>
 
       {/* Mission & Purpose Cards Section */}
-      <section className="py-16 md:py-24 bg-muted/30">
+      <motion.section
+        className="py-16 md:py-24 bg-muted/30"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+      >
         <div className="container mx-auto px-4">
-          <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary text-center mb-12">
+          <motion.h2
+            className="font-heading font-bold text-3xl md:text-4xl text-primary text-center mb-12"
+            variants={itemVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
             Our Mission & Purpose
-          </h2>
+          </motion.h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
             {/* Purpose Card */}
-            <div className="bg-white rounded-lg p-8 shadow-sm border border-border hover:shadow-lg transition-shadow">
+            <motion.div
+              className="bg-white rounded-lg p-8 shadow-sm border border-border hover:shadow-lg transition-shadow"
+              variants={cardVariants}
+              whileHover="hover"
+            >
               <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+                <motion.div
+                  className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center"
+                  whileHover={{ rotate: 10, scale: 1.1 }}
+                >
                   <Target className="w-8 h-8 text-primary-foreground" />
-                </div>
+                </motion.div>
               </div>
               <h3 className="font-heading font-bold text-xl text-primary text-center mb-4">
                 Purpose
@@ -164,14 +189,21 @@ export default function Home() {
                 Connecting and equipping young SDA professionals for active
                 evangelism
               </p>
-            </div>
+            </motion.div>
 
             {/* Mission Card */}
-            <div className="bg-white rounded-lg p-8 shadow-sm border border-border hover:shadow-lg transition-shadow">
+            <motion.div
+              className="bg-white rounded-lg p-8 shadow-sm border border-border hover:shadow-lg transition-shadow"
+              variants={cardVariants}
+              whileHover="hover"
+            >
               <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-secondary to-accent rounded-lg flex items-center justify-center">
+                <motion.div
+                  className="w-16 h-16 bg-gradient-to-br from-secondary to-accent rounded-lg flex items-center justify-center"
+                  whileHover={{ rotate: 10, scale: 1.1 }}
+                >
                   <Rocket className="w-8 h-8 text-primary" />
-                </div>
+                </motion.div>
               </div>
               <h3 className="font-heading font-bold text-xl text-primary text-center mb-4">
                 Mission
@@ -180,14 +212,21 @@ export default function Home() {
                 Enabling professionals to serve through evangelical projects and
                 outreach
               </p>
-            </div>
+            </motion.div>
 
             {/* Vision Card */}
-            <div className="bg-white rounded-lg p-8 shadow-sm border border-border hover:shadow-lg transition-shadow">
+            <motion.div
+              className="bg-white rounded-lg p-8 shadow-sm border border-border hover:shadow-lg transition-shadow"
+              variants={cardVariants}
+              whileHover="hover"
+            >
               <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-accent to-primary rounded-lg flex items-center justify-center">
+                <motion.div
+                  className="w-16 h-16 bg-gradient-to-br from-accent to-primary rounded-lg flex items-center justify-center"
+                  whileHover={{ rotate: 10, scale: 1.1 }}
+                >
                   <Sprout className="w-8 h-8 text-primary" />
-                </div>
+                </motion.div>
               </div>
               <h3 className="font-heading font-bold text-xl text-primary text-center mb-4">
                 Vision
@@ -195,10 +234,10 @@ export default function Home() {
               <p className="text-foreground/80 text-center">
                 Sustainable, organized, and innovative evangelism strategies
               </p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Evangelical Impact Section */}
       <section className="py-16 md:py-24 bg-white">

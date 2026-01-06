@@ -259,7 +259,7 @@ export default function Footer() {
               href="https://uwaberatelesphore.netlify.app/"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold hover:underline opacity-90 hover:opacity-100 transition-opacity"
+              className="inline-block px-3 py-1 border border-primary-foreground/30 rounded hover:border-primary-foreground/60 font-semibold opacity-90 hover:opacity-100 transition-all"
             >
               contact the developer
             </a>

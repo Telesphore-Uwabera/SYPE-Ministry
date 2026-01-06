@@ -105,7 +105,7 @@ export default function Admin() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     // Placeholder authentication - replace with real auth
-    if (password === "admin123") {
+    if (password === "Admin123") {
       setIsAuthenticated(true);
     } else {
       alert("Invalid password");

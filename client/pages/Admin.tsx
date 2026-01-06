@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,14 +15,93 @@ import {
   Image as ImageIcon,
   BookOpen,
   Shield,
+  LogOut,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+// Netlify Identity types
+interface NetlifyUser {
+  id: string;
+  email: string;
+  user_metadata?: {
+    full_name?: string;
+  };
+}
+
+interface NetlifyIdentity {
+  init: () => void;
+  on: (event: string, callback: (user: NetlifyUser | null) => void) => void;
+  currentUser: () => NetlifyUser | null;
+  open: (modal: string) => void;
+  close: () => void;
+  logout: () => void;
+}
+
+declare global {
+  interface Window {
+    netlifyIdentity?: NetlifyIdentity;
+  }
+}
+
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<NetlifyUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [useNetlifyIdentity, setUseNetlifyIdentity] = useState(false);
   const [password, setPassword] = useState("");
 
-  // TODO: Implement proper authentication
+  useEffect(() => {
+    // Check if Netlify Identity is available
+    if (window.netlifyIdentity) {
+      setUseNetlifyIdentity(true);
+      window.netlifyIdentity.init();
+
+      // Handle invite tokens in the URL hash
+      const hash = window.location.hash;
+      if (hash && hash.includes('invite_token')) {
+        // Open signup modal to complete invitation
+        window.netlifyIdentity.open('signup');
+      }
+
+      // Check current user
+      const currentUser = window.netlifyIdentity.currentUser();
+      if (currentUser) {
+        setUser(currentUser);
+        setIsAuthenticated(true);
+      }
+
+      // Listen for login events
+      window.netlifyIdentity.on("login", (user) => {
+        setUser(user);
+        setIsAuthenticated(true);
+        window.netlifyIdentity?.close();
+        // Clear invite token from URL after successful login
+        if (window.location.hash.includes('invite_token')) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      });
+
+      // Listen for signup events (when accepting invite)
+      window.netlifyIdentity.on("signup", (user) => {
+        setUser(user);
+        setIsAuthenticated(true);
+        window.netlifyIdentity?.close();
+        // Clear invite token from URL after successful signup
+        if (window.location.hash.includes('invite_token')) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      });
+
+      // Listen for logout events
+      window.netlifyIdentity.on("logout", () => {
+        setUser(null);
+        setIsAuthenticated(false);
+      });
+    }
+    setIsLoading(false);
+  }, []);
+
+  // Fallback authentication (if Netlify Identity is not enabled)
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     // Placeholder authentication - replace with real auth
@@ -32,6 +111,25 @@ export default function Admin() {
       alert("Invalid password");
     }
   };
+
+  const handleLogout = () => {
+    if (useNetlifyIdentity && window.netlifyIdentity) {
+      window.netlifyIdentity.logout();
+    } else {
+      setIsAuthenticated(false);
+      setPassword("");
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center">
+          <p>Loading...</p>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
@@ -44,29 +142,48 @@ export default function Admin() {
                 <CardTitle className="text-2xl">Admin Login</CardTitle>
               </div>
               <CardDescription>
-                Enter your admin credentials to access the dashboard
+                {useNetlifyIdentity
+                  ? "Click the button below to login with Netlify Identity"
+                  : "Enter your admin credentials to access the dashboard"}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium mb-2">
-                    Password
-                  </label>
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="Enter admin password"
-                    required
-                  />
+              {useNetlifyIdentity ? (
+                <div className="space-y-4">
+                  <Button
+                    onClick={() => window.netlifyIdentity?.open("login")}
+                    className="w-full"
+                  >
+                    Login with Netlify Identity
+                  </Button>
+                  <p className="text-sm text-foreground/60 text-center">
+                    Netlify Identity is enabled. Use your registered email to login.
+                  </p>
                 </div>
-                <Button type="submit" className="w-full">
-                  Login
-                </Button>
-              </form>
+              ) : (
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium mb-2">
+                      Password
+                    </label>
+                    <input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="Enter admin password"
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full">
+                    Login
+                  </Button>
+                  <p className="text-sm text-foreground/60 text-center">
+                    To enable Netlify Identity, go to your Netlify dashboard → Identity → Enable Identity
+                  </p>
+                </form>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -222,12 +339,24 @@ export default function Admin() {
                   Manage SYPE Ministry website content and operations
                 </p>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => setIsAuthenticated(false)}
-              >
-                Logout
-              </Button>
+              <div className="flex items-center gap-4">
+                {user && (
+                  <div className="text-sm text-foreground/70">
+                    <p className="font-semibold">{user.email}</p>
+                    {user.user_metadata?.full_name && (
+                      <p className="text-xs">{user.user_metadata.full_name}</p>
+                    )}
+                  </div>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={handleLogout}
+                  className="flex items-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </Button>
+              </div>
             </div>
           </div>
 

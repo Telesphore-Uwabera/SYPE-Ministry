@@ -151,6 +151,22 @@ PORT=8080
 
 The admin panel is accessible at `/admin` (authentication required).
 
+### Netlify Integration
+
+The admin panel is configured to work with Netlify:
+
+- **Netlify Identity**: For user authentication (optional - can be enabled in Netlify dashboard)
+- **Netlify CMS**: Content management system configuration available in `admin/config.yml`
+- **SPA Routing**: Admin route is properly configured in `netlify.toml` for client-side routing
+
+To enable Netlify Identity:
+1. Go to your Netlify site dashboard
+2. Navigate to Identity → Enable Identity
+3. Configure registration preferences
+4. Set up OAuth providers (optional)
+
+The admin panel will automatically detect and use Netlify Identity when enabled.
+
 ### Admin Panel Features (Planned)
 
 The admin panel will include the following functionalities:

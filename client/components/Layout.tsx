@@ -5,6 +5,18 @@ import Footer from "./Footer";
 import BackToTop from "./BackToTop";
 import SEO from "./SEO";
 
+// Initialize Netlify Identity
+declare global {
+  interface Window {
+    netlifyIdentity?: {
+      init: () => void;
+      on: (event: string, callback: (user: any) => void) => void;
+      currentUser: () => any;
+      logout: () => void;
+    };
+  }
+}
+
 interface LayoutProps {
   children: ReactNode;
 }
@@ -13,16 +25,29 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
 
   useEffect(() => {
+    // Initialize Netlify Identity if available
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.init();
+      
+      // Handle invite tokens in the URL hash
+      const hash = window.location.hash;
+      if (hash && hash.includes('invite_token')) {
+        // Netlify Identity will automatically handle the invite token
+        // Open the modal to complete the invitation
+        window.netlifyIdentity.open('signup');
+      }
+    }
+
     // Scroll to top when route changes
     window.scrollTo({
       top: 0,
       behavior: "smooth",
     });
 
-    // Handle hash links for smooth scrolling
+    // Handle hash links for smooth scrolling (but skip invite tokens)
     const handleHashChange = () => {
       const hash = window.location.hash;
-      if (hash) {
+      if (hash && !hash.includes('invite_token')) {
         const element = document.querySelector(hash);
         if (element) {
           setTimeout(() => {

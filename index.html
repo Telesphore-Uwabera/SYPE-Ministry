@@ -62,6 +62,25 @@
       ]
     }
     </script>
+    
+    <!-- Netlify Identity Widget -->
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script>
+      // Initialize Netlify Identity before React loads to handle invite tokens
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.on("init", function(user) {
+          if (!user) {
+            // Check for invite token in URL hash
+            const hash = window.location.hash;
+            if (hash && hash.includes('invite_token')) {
+              // Open signup modal to complete invitation
+              window.netlifyIdentity.open('signup');
+            }
+          }
+        });
+        window.netlifyIdentity.init();
+      }
+    </script>
   </head>
 
   <body>

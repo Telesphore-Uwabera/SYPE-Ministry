@@ -83,9 +83,7 @@ export default function Membership() {
                     Active SDA Member in ASSA
                   </h3>
                   <p className="text-foreground/70">
-                    Any Seventh-day Adventist member from Adventist Student
-                    Associations (ASSAs) who is willing to support and
-                    participate in SYPE's evangelical mission.
+                    Seventh-day Adventist member from Adventist Student and Alumni Associations (ASSA Kigali) Plus any other location.
                   </p>
                 </div>
               </div>

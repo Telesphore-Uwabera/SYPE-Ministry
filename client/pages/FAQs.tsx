@@ -31,7 +31,7 @@ export default function FAQs() {
       questions: [
         {
           q: "Who can become a member of SYPE Ministry?",
-          a: "Any active Seventh-day Adventist member from Adventist Student Associations (ASSAs) who is willing to support and participate in SYPE's evangelical mission can become a member."
+          a: "Seventh-day Adventist member from Adventist Student and Alumni Associations (ASSA Kigali) Plus any other location."
         },
         {
           q: "How do I join SYPE Ministry?",

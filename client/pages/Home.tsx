@@ -145,7 +145,7 @@ export default function Home() {
                 <Button
                   asChild
                   variant="outline"
-                  className="border-primary text-primary hover:bg-primary/10 px-6 py-3 rounded-lg transition-all"
+                  className="border-black text-black hover:bg-black hover:text-white px-6 py-3 rounded-lg transition-all"
                 >
                   <Link to="/contact">Contact Us</Link>
                 </Button>

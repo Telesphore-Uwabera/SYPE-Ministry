@@ -544,7 +544,7 @@ export default function About() {
                 questions: [
                   {
                     q: "Who can become a member of SYPE Ministry?",
-                    a: "Any active Seventh-day Adventist member from Adventist Student Associations (ASSAs) who is willing to support and participate in SYPE's evangelical mission can become a member."
+                    a: "Seventh-day Adventist member from Adventist Student and Alumni Associations (ASSA Kigali) Plus any other location."
                   },
                   {
                     q: "How do I join SYPE Ministry?",
@@ -651,7 +651,7 @@ export default function About() {
             <Button
               asChild
               variant="outline"
-              className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10 px-8 py-6 text-base font-semibold rounded-lg"
+              className="border-white text-black bg-white hover:bg-black hover:text-white px-8 py-6 text-base font-semibold rounded-lg"
             >
               <Link to="/contact">Contact Us</Link>
             </Button>

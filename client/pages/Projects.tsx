@@ -685,7 +685,7 @@ export default function Projects() {
             <Button
               asChild
               variant="outline"
-              className="border-primary text-primary hover:bg-primary/10 px-8 py-6 text-base font-semibold rounded-lg"
+              className="border-black text-black hover:bg-black hover:text-white px-8 py-6 text-base font-semibold rounded-lg"
             >
               <Link to="/contact">Contact Us</Link>
             </Button>

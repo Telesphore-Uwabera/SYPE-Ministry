@@ -126,11 +126,11 @@ export default function Contact() {
                     rel={info.link.startsWith("http") ? "noopener noreferrer" : undefined}
                     className="block h-full"
                   >
-                    <Card className="h-full hover:shadow-xl transition-all duration-300 cursor-pointer border-2 hover:border-primary bg-gradient-to-br from-white to-primary/5">
-                      <CardHeader>
+                    <Card className="h-full hover:shadow-xl transition-all duration-300 cursor-pointer border-2 hover:border-primary bg-gradient-to-br from-white to-primary/5 flex flex-col">
+                      <CardHeader className="flex-shrink-0">
                         <div className="flex items-center gap-3 mb-2">
                           <motion.div
-                            className="p-2 bg-primary/10 rounded-lg"
+                            className="p-2 bg-primary/10 rounded-lg flex-shrink-0"
                             whileHover={{ rotate: 360, scale: 1.2 }}
                             transition={{ duration: 0.6 }}
                           >
@@ -138,27 +138,29 @@ export default function Contact() {
                           </motion.div>
                           <CardTitle className="text-lg">{info.title}</CardTitle>
                         </div>
-                        <CardDescription>{info.description}</CardDescription>
+                        <CardDescription className="text-sm">{info.description}</CardDescription>
                       </CardHeader>
-                      <CardContent>
-                        <p className="text-foreground font-medium">{info.content}</p>
+                      <CardContent className="flex-1 flex items-center">
+                        <p className={`text-foreground font-medium ${info.title === "Phone" ? "text-xs leading-tight" : ""}`}>
+                          {info.content}
+                        </p>
                       </CardContent>
                     </Card>
                   </a>
                 </HoverAnimation>
               ) : (
                 <HoverAnimation key={index} scale={1.02} y={-5}>
-                  <Card className="h-full border-2 bg-gradient-to-br from-white to-primary/5">
-                    <CardHeader>
+                  <Card className="h-full border-2 bg-gradient-to-br from-white to-primary/5 flex flex-col">
+                    <CardHeader className="flex-shrink-0">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-primary/10 rounded-lg">
+                        <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
                           <Icon className="w-5 h-5 text-primary" />
                         </div>
                         <CardTitle className="text-lg">{info.title}</CardTitle>
                       </div>
-                      <CardDescription>{info.description}</CardDescription>
+                      <CardDescription className="text-sm">{info.description}</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="flex-1 flex items-center">
                       <p className="text-foreground font-medium">{info.content}</p>
                     </CardContent>
                   </Card>

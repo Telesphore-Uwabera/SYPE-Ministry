@@ -1,7 +1,9 @@
+import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Play, FileText, Image as ImageIcon, Video, CheckCircle2, Clock, TrendingUp, Award } from "lucide-react";
 import { motion } from "framer-motion";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
@@ -668,11 +670,26 @@ export default function Projects() {
             and strategic distribution to maximize impact across digital and
             traditional platforms.
           </p>
-          <p className="text-foreground/70 text-lg leading-relaxed">
+          <p className="text-foreground/70 text-lg leading-relaxed mb-8">
             Every SYPE member can contribute their unique talents and
             professions to make these projects successful and bring the message
             of Christ to more people.
           </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              asChild
+              className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-6 text-base font-semibold rounded-lg"
+            >
+              <Link to="/membership">Join Our Projects</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="border-primary text-primary hover:bg-primary/10 px-8 py-6 text-base font-semibold rounded-lg"
+            >
+              <Link to="/contact">Contact Us</Link>
+            </Button>
+          </div>
         </div>
       </section>
     </Layout>

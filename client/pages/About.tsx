@@ -641,12 +641,21 @@ export default function About() {
             Join SYPE Ministry and contribute your talents and profession to
             spreading the Gospel effectively across communities.
           </p>
-          <Button
-            asChild
-            className="bg-accent text-accent-foreground hover:bg-accent/90 px-8 py-6 text-base font-semibold rounded-lg"
-          >
-            <Link to="/membership">Join SYPE Today</Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              asChild
+              className="bg-accent text-accent-foreground hover:bg-accent/90 px-8 py-6 text-base font-semibold rounded-lg"
+            >
+              <Link to="/membership">Join SYPE Today</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10 px-8 py-6 text-base font-semibold rounded-lg"
+            >
+              <Link to="/contact">Contact Us</Link>
+            </Button>
+          </div>
         </div>
       </section>
     </Layout>

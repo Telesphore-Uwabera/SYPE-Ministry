@@ -132,13 +132,24 @@ export default function Home() {
               in public universities in Kigali and beyond, dedicated to
               structured, consistent, and impactful evangelism.
             </motion.p>
-            <motion.div variants={itemVariants} whileHover={{ scale: 1.05 }}>
-              <Button
-                asChild
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 rounded-lg transition-all"
-              >
-                <Link to="/about">Learn More</Link>
-              </Button>
+            <motion.div variants={itemVariants} className="flex gap-4">
+              <motion.div whileHover={{ scale: 1.05 }}>
+                <Button
+                  asChild
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 rounded-lg transition-all"
+                >
+                  <Link to="/about">Learn More</Link>
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }}>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="border-primary text-primary hover:bg-primary/10 px-6 py-3 rounded-lg transition-all"
+                >
+                  <Link to="/contact">Contact Us</Link>
+                </Button>
+              </motion.div>
             </motion.div>
           </motion.div>
         </div>

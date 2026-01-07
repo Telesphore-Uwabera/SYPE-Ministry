@@ -11,6 +11,8 @@ import {
   BarChart3,
   Sparkles,
 } from "lucide-react";
+import { motion } from "framer-motion";
+import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 
 export default function Departments() {
   const departments = [
@@ -97,88 +99,183 @@ export default function Departments() {
   return (
     <Layout>
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary via-secondary to-primary py-16 md:py-20 text-primary-foreground">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="font-heading font-bold text-4xl md:text-5xl mb-4">
-            Our Departments
-          </h1>
-          <p className="text-lg opacity-90 max-w-2xl mx-auto">
-            Organized structure with specialized departments working together to
-            advance our evangelical mission
-          </p>
+      <section className="relative overflow-hidden bg-gradient-to-r from-primary via-secondary to-primary py-16 md:py-20 text-primary-foreground">
+        <motion.div
+          className="absolute inset-0 opacity-10"
+          animate={{
+            backgroundPosition: ["0% 0%", "100% 100%"],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            repeatType: "reverse",
+          }}
+        >
+          <div className="absolute top-10 right-10 w-72 h-72 bg-accent rounded-full blur-3xl"></div>
+          <div className="absolute bottom-10 left-10 w-96 h-96 bg-secondary rounded-full blur-3xl"></div>
+        </motion.div>
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <ScrollAnimation direction="scale" delay={0.2}>
+            <motion.h1
+              className="font-heading font-bold text-4xl md:text-5xl mb-4"
+              animate={{
+                textShadow: [
+                  "0 0 0px rgba(255,255,255,0)",
+                  "0 0 20px rgba(255,255,255,0.3)",
+                  "0 0 0px rgba(255,255,255,0)",
+                ],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              Our Departments
+            </motion.h1>
+          </ScrollAnimation>
+          <ScrollAnimation direction="fade" delay={0.6}>
+            <p className="text-lg opacity-90 max-w-2xl mx-auto">
+              Organized structure with specialized departments working together to
+              advance our evangelical mission
+            </p>
+          </ScrollAnimation>
         </div>
       </section>
 
       {/* Overview Section */}
       <section className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-4 max-w-3xl">
-          <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary mb-6">
-            Our Organization
-          </h2>
-          <p className="text-foreground/70 text-lg leading-relaxed mb-6">
-            SYPE Ministry operates through a dedicated committee structure with
-            six specialized departments. Each department has clear roles and
-            responsibilities to ensure our ministry runs efficiently and
-            effectively.
-          </p>
-          <p className="text-foreground/70 text-lg leading-relaxed">
-            Our organizational approach follows Ellen G. White's principle:
-            "Everything must be done according to a well-matured plan, and with
-            system. God has entrusted His sacred work to men, and He asks that
-            they shall do it carefully."
-          </p>
+          <ScrollAnimation direction="up" delay={0.2}>
+            <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary mb-6">
+              Our Organization
+            </h2>
+          </ScrollAnimation>
+          <ScrollAnimation direction="fade" delay={0.4}>
+            <p className="text-foreground/70 text-lg leading-relaxed mb-6">
+              SYPE Ministry operates through a dedicated committee structure with
+              six specialized departments. Each department has clear roles and
+              responsibilities to ensure our ministry runs efficiently and
+              effectively.
+            </p>
+          </ScrollAnimation>
+          <ScrollAnimation direction="fade" delay={0.6}>
+            <motion.p
+              className="text-foreground/70 text-lg leading-relaxed border-l-4 border-primary pl-6 italic"
+              whileHover={{ borderColor: "rgba(59, 130, 246, 0.8)", x: 5 }}
+              transition={{ duration: 0.3 }}
+            >
+              Our organizational approach follows Ellen G. White's principle:
+              "Everything must be done according to a well-matured plan, and with
+              system. God has entrusted His sacred work to men, and He asks that
+              they shall do it carefully."
+            </motion.p>
+          </ScrollAnimation>
         </div>
       </section>
 
       {/* Departments Grid */}
       <section className="py-16 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <StaggerContainer
+            className="grid grid-cols-1 md:grid-cols-2 gap-8"
+            staggerDelay={0.3}
+            direction="scale"
+          >
             {departments.map((dept, idx) => {
               const IconComponent = dept.icon;
               return (
-                <div
-                  key={idx}
-                  className="bg-white rounded-lg p-8 border border-border hover:shadow-lg transition-shadow"
-                >
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="p-3 bg-primary/10 rounded-lg flex-shrink-0">
-                      <IconComponent className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-heading font-bold text-xl text-primary">
-                        {dept.title}
-                      </h3>
-                      <p className="text-primary text-sm font-semibold">
-                        {dept.subtitle}
-                      </p>
-                    </div>
-                  </div>
-
-                  <p className="text-foreground/80 mb-5 leading-relaxed">
-                    {dept.description}
-                  </p>
-
-                  <div>
-                    <p className="font-heading font-semibold text-primary mb-3">
-                      Key Responsibilities:
-                    </p>
-                    <ul className="space-y-2">
-                      {dept.responsibilities.map((resp, respIdx) => (
-                        <li
-                          key={respIdx}
-                          className="flex gap-2 text-foreground/70 text-sm"
+                <HoverAnimation key={idx} scale={1.02} y={-5}>
+                  <motion.div
+                    className="bg-white rounded-lg p-8 border border-border hover:shadow-2xl transition-all bg-gradient-to-br from-white to-primary/5 relative overflow-hidden group"
+                    whileHover={{
+                      borderColor: "rgba(59, 130, 246, 0.5)",
+                      rotateY: 2,
+                    }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    {/* Animated background gradient */}
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      initial={false}
+                    />
+                    <div className="relative z-10">
+                      <div className="flex items-start gap-4 mb-4">
+                        <motion.div
+                          className="p-3 bg-primary/10 rounded-lg flex-shrink-0 group-hover:bg-primary/20 transition-colors"
+                          whileHover={{ rotate: 360, scale: 1.2 }}
+                          transition={{ duration: 0.6 }}
                         >
-                          <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
-                          <span>{resp}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
+                          <IconComponent className="w-6 h-6 text-primary" />
+                        </motion.div>
+                        <div className="flex-1">
+                          <motion.h3
+                            className="font-heading font-bold text-xl text-primary"
+                            whileHover={{ x: 5 }}
+                            transition={{ type: "spring", stiffness: 400 }}
+                          >
+                            {dept.title}
+                          </motion.h3>
+                          <p className="text-primary text-sm font-semibold">
+                            {dept.subtitle}
+                          </p>
+                        </div>
+                      </div>
+
+                      <motion.p
+                        className="text-foreground/80 mb-5 leading-relaxed"
+                        initial={{ opacity: 0.8 }}
+                        whileHover={{ opacity: 1 }}
+                      >
+                        {dept.description}
+                      </motion.p>
+
+                      <div>
+                        <motion.p
+                          className="font-heading font-semibold text-primary mb-3"
+                          whileHover={{ x: 5 }}
+                        >
+                          Key Responsibilities:
+                        </motion.p>
+                        <motion.ul
+                          className="space-y-2"
+                          initial={{ opacity: 0 }}
+                          whileInView={{ opacity: 1 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: idx * 0.2 + 0.6 }}
+                        >
+                          {dept.responsibilities.map((resp, respIdx) => (
+                            <motion.li
+                              key={respIdx}
+                              className="flex gap-2 text-foreground/70 text-sm"
+                              initial={{ opacity: 0, x: -10 }}
+                              whileInView={{ opacity: 1, x: 0 }}
+                              viewport={{ once: true }}
+                              transition={{ delay: respIdx * 0.1 + idx * 0.2 + 0.8 }}
+                              whileHover={{ x: 5, color: "rgba(59, 130, 246, 1)" }}
+                            >
+                              <motion.div
+                                animate={{ rotate: [0, 10, -10, 0] }}
+                                transition={{
+                                  duration: 2,
+                                  repeat: Infinity,
+                                  repeatDelay: 3,
+                                  delay: respIdx * 0.2,
+                                }}
+                              >
+                                <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
+                              </motion.div>
+                              <span>{resp}</span>
+                            </motion.li>
+                          ))}
+                        </motion.ul>
+                      </div>
+                    </div>
+                  </motion.div>
+                </HoverAnimation>
               );
             })}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 

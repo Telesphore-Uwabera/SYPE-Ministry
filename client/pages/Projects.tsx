@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Play, FileText, Image as ImageIcon, Video, CheckCircle2, Clock, TrendingUp, Award } from "lucide-react";
 import { motion } from "framer-motion";
+import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 
 export default function Projects() {
 
@@ -174,7 +175,7 @@ export default function Projects() {
             className="text-lg opacity-90 max-w-2xl mx-auto"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
           >
             Discover our diverse evangelical initiatives producing impactful
             content to spread the Gospel
@@ -185,35 +186,56 @@ export default function Projects() {
       {/* Statistics Section */}
       <section className="py-12 bg-white border-b border-border">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <StaggerContainer
+            className="grid grid-cols-2 md:grid-cols-4 gap-6"
+            staggerDelay={0.2}
+            direction="scale"
+          >
             {stats.map((stat, idx) => {
               const IconComponent = stat.icon;
               return (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: idx * 0.1 }}
-                >
-                  <Card className="text-center border-2 hover:border-primary/50 transition-colors">
-                    <CardContent className="pt-6">
-                      <div className="flex justify-center mb-3">
-                        <div className={`p-3 bg-primary/10 rounded-lg ${stat.color}`}>
-                          <IconComponent className="w-6 h-6" />
+                <HoverAnimation key={idx} scale={1.05} y={-5}>
+                  <motion.div
+                    whileHover={{ rotateY: 5 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <Card className="text-center border-2 hover:border-primary/50 hover:shadow-xl transition-all bg-gradient-to-br from-white to-primary/5">
+                      <CardContent className="pt-6">
+                        <motion.div
+                          className="flex justify-center mb-3"
+                          whileHover={{ rotate: 360, scale: 1.2 }}
+                          transition={{ duration: 0.6 }}
+                        >
+                          <motion.div
+                            className={`p-3 bg-primary/10 rounded-lg ${stat.color}`}
+                            whileHover={{ backgroundColor: "rgba(59, 130, 246, 0.2)" }}
+                          >
+                            <IconComponent className="w-6 h-6" />
+                          </motion.div>
+                        </motion.div>
+                        <motion.div
+                          className="text-3xl font-heading font-bold text-primary mb-1"
+                          initial={{ scale: 0 }}
+                          whileInView={{ scale: 1 }}
+                          viewport={{ once: true }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 200,
+                            delay: idx * 0.1,
+                          }}
+                        >
+                          {stat.value}
+                        </motion.div>
+                        <div className="text-sm text-foreground/70 font-medium">
+                          {stat.label}
                         </div>
-                      </div>
-                      <div className="text-3xl font-heading font-bold text-primary mb-1">
-                        {stat.value}
-                      </div>
-                      <div className="text-sm text-foreground/70 font-medium">
-                        {stat.label}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                </HoverAnimation>
               );
             })}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
@@ -221,23 +243,29 @@ export default function Projects() {
       {featuredProjects.length > 0 && (
         <section className="py-16 md:py-24 bg-gradient-to-br from-accent/10 via-background to-secondary/10">
           <div className="container mx-auto px-4">
-            <div className="mb-8">
-              <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary mb-2">
-                Featured Projects
-              </h2>
-              <p className="text-foreground/70">
-                Highlighted initiatives making significant impact in evangelism
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <ScrollAnimation direction="up" delay={0.2}>
+              <div className="mb-8">
+                <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary mb-2">
+                  Featured Projects
+                </h2>
+                <p className="text-foreground/70">
+                  Highlighted initiatives making significant impact in evangelism
+                </p>
+              </div>
+            </ScrollAnimation>
+            <StaggerContainer
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              staggerDelay={0.3}
+              direction="up"
+            >
               {featuredProjects.map((project, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: idx * 0.1 }}
-                >
-                  <Card className="h-full border-2 hover:border-primary/50 hover:shadow-xl transition-all group">
+                <HoverAnimation key={idx} scale={1.02} y={-8}>
+                  <motion.div
+                    whileHover={{ rotateY: 5, rotateX: 5 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                    style={{ perspective: 1000 }}
+                  >
+                    <Card className="h-full border-2 hover:border-primary/50 hover:shadow-2xl transition-all group bg-gradient-to-br from-white to-primary/5">
                     <CardHeader>
                       <div className="flex items-start justify-between mb-3">
                         <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
@@ -273,9 +301,10 @@ export default function Projects() {
                       </div>
                     </CardContent>
                   </Card>
-                </motion.div>
+                  </motion.div>
+                </HoverAnimation>
               ))}
-            </div>
+            </StaggerContainer>
           </div>
         </section>
       )}

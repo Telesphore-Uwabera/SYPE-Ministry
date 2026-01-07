@@ -3,16 +3,16 @@ import { Mail, Phone, MapPin, Facebook, Youtube, Instagram, Linkedin } from "luc
 
 export default function Footer() {
   return (
-    <footer className="bg-primary text-primary-foreground mt-20">
+    <footer className="bg-slate-900 text-white mt-20">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-8">
           {/* About Section */}
           <div>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex flex-col items-start gap-2 mb-4">
               <img
                 src="/Sype logo.png"
                 alt="SYPE Ministry Logo"
-                className="h-8 w-auto object-contain"
+                className="h-32 w-auto object-contain"
               />
               <h3 className="font-heading font-bold text-lg">
                 SYPE Ministry

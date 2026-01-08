@@ -35,6 +35,7 @@ import { Switch } from "@/components/ui/switch";
 import { Newspaper, Plus, Search, Edit, Trash2, Eye } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import ImageUpload from "./ImageUpload";
 
 export default function NewsManagement() {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
@@ -219,13 +220,11 @@ export default function NewsManagement() {
                 />
               </div>
               <div>
-                <Label htmlFor="image">Featured Image URL</Label>
-                <Input
-                  id="image"
-                  type="url"
+                <ImageUpload
                   value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
+                  onChange={(url) => setFormData({ ...formData, image: url })}
+                  category="news"
+                  label="Featured Image"
                 />
               </div>
               <div className="flex items-center gap-2">

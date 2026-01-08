@@ -1,0 +1,7 @@
+# This file ensures the images directory is tracked by Git
+# Uploaded images will be stored in subdirectories:
+# - news/
+# - projects/
+# - members/
+# - events/
+# - media/

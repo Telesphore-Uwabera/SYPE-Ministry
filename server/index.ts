@@ -1,8 +1,10 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import path from "path";
 import { handleDemo } from "./routes/demo";
 import * as adminRoutes from "./routes/admin";
+import * as uploadRoutes from "./routes/upload";
 
 export function createServer() {
   const app = express();
@@ -12,6 +14,10 @@ export function createServer() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  // Serve static files from public directory
+  app.use("/images", express.static(path.join(process.cwd(), "public", "images")));
+  app.use(express.static(path.join(process.cwd(), "public")));
+
   // Example API routes
   app.get("/api/ping", (_req, res) => {
     const ping = process.env.PING_MESSAGE ?? "ping";
@@ -19,6 +25,10 @@ export function createServer() {
   });
 
   app.get("/api/demo", handleDemo);
+
+  // Image Upload Routes
+  app.post("/api/upload/image", uploadRoutes.uploadImage);
+  app.post("/api/upload/images", uploadRoutes.uploadImages);
 
   // Admin API Routes - Members
   app.get("/api/admin/members", adminRoutes.getMembers);

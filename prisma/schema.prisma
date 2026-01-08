@@ -1,0 +1,144 @@
+// Prisma Schema for SYPE Ministry Admin Panel
+// Database: PostgreSQL (Supabase)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Member {
+  id          String   @id @default(uuid())
+  name        String
+  email       String   @unique
+  phone       String?
+  role        String   // "Student" | "Alumni" | "Admin"
+  status      String   // "Active" | "Inactive" | "Pending"
+  joinDate    DateTime @default(now())
+  department  String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("members")
+}
+
+model NewsArticle {
+  id          String   @id @default(uuid())
+  title       String
+  author      String
+  publishDate DateTime @default(now())
+  excerpt     String
+  body        String   @db.Text
+  image       String?  // URL to image in Supabase Storage
+  featured    Boolean  @default(false)
+  category    String?
+  tags        String[] // Array of tags
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("news_articles")
+}
+
+model Project {
+  id           String    @id @default(uuid())
+  name         String
+  category     String    // "Documentary" | "Posters" | "Articles"
+  topic        String
+  description  String    @db.Text
+  distribution String
+  status       String    // "ongoing" | "completed" | "planned"
+  year         String
+  teamMembers  String[]  // Array of member IDs or names
+  startDate    DateTime?
+  endDate      DateTime?
+  budget       Float?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("projects")
+}
+
+model Event {
+  id           String    @id @default(uuid())
+  title        String
+  description  String    @db.Text
+  date         DateTime
+  time         String
+  location     String
+  category     String
+  rsvpRequired Boolean   @default(false)
+  rsvpCount    Int       @default(0)
+  maxAttendees Int?
+  attendees    String[]  // Array of member IDs or emails
+  status       String    // "upcoming" | "ongoing" | "completed" | "cancelled"
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("events")
+}
+
+model Donation {
+  id            String    @id @default(uuid())
+  donorName     String
+  donorEmail    String
+  amount        Float
+  currency      String    @default("RWF")
+  date          DateTime  @default(now())
+  type          String    // "one-time" | "monthly" | "project-based"
+  projectId     String?
+  paymentMethod String?
+  receiptSent   Boolean   @default(false)
+  notes         String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("donations")
+}
+
+model FAQ {
+  id       String @id @default(uuid())
+  category String
+  question String @db.Text
+  answer   String @db.Text
+  order    Int    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("faqs")
+}
+
+model MediaFile {
+  id          String    @id @default(uuid())
+  name        String
+  type        String    // "image" | "video" | "document"
+  url         String    // URL to file in Supabase Storage
+  thumbnail   String?   // URL to thumbnail in Supabase Storage
+  size        Int       // Size in bytes
+  uploadDate  DateTime  @default(now())
+  category    String?
+  tags        String[]  // Array of tags
+  description String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("media_files")
+}
+
+model EmailCampaign {
+  id         String    @id @default(uuid())
+  subject    String
+  body       String    @db.Text
+  recipients String[]  // Array of email addresses
+  sentDate   DateTime?
+  status     String    // "draft" | "scheduled" | "sent"
+  scheduledDate DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("email_campaigns")
+}

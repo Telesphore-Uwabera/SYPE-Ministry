@@ -572,27 +572,26 @@ export default function Navigation() {
           mass: 0.8,
         }}
         className={cn(
-          "fixed top-0 left-0 right-0 z-40 transition-all duration-500",
+          "fixed top-0 left-0 right-0 z-40 transition-all duration-500 w-full",
           "bg-white/90 backdrop-blur-lg border-b border-border/40 shadow-xl"
         )}
       >
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Duplicate Logo */}
+        <div className="w-full px-6 md:px-8 lg:px-12">
+          <div className="flex items-center justify-between h-20 md:h-24 lg:h-28">
+            {/* Duplicate Logo - Only logo, no text */}
             <motion.div
               whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
               transition={{ type: "spring", stiffness: 400 }}
             >
               <Link
                 to="/"
-                className="flex items-center gap-3 font-heading font-bold text-xl md:text-2xl text-primary"
+                className="flex items-center font-heading font-bold text-primary"
               >
                 <img
                   src="/Sype logo.png"
                   alt="SYPE Ministry Logo"
-                  className="h-10 md:h-12 w-auto object-contain"
+                  className="h-14 md:h-16 lg:h-20 w-auto object-contain"
                 />
-                <span className="hidden sm:inline-block">SYPE Ministry</span>
               </Link>
             </motion.div>
 
@@ -604,7 +603,7 @@ export default function Navigation() {
                   <Link
                     key={link.href}
                     to={link.href}
-                    className="relative px-3 py-2 text-xs font-medium rounded-md overflow-hidden group"
+                    className="relative px-4 py-2 text-sm font-medium rounded-md overflow-hidden group"
                   >
                     <motion.span
                       className={cn(

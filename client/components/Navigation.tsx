@@ -274,7 +274,7 @@ export default function Navigation() {
                   >
                     <Link
                       to={link.href}
-                      className="relative px-4 py-2 text-sm font-medium rounded-md overflow-hidden group"
+                      className="relative px-3 py-2 text-xs font-medium rounded-md overflow-hidden group"
                     >
                       <motion.span
                         className={cn(
@@ -604,7 +604,7 @@ export default function Navigation() {
                   <Link
                     key={link.href}
                     to={link.href}
-                    className="relative px-4 py-2 text-sm font-medium rounded-md overflow-hidden group"
+                    className="relative px-3 py-2 text-xs font-medium rounded-md overflow-hidden group"
                   >
                     <motion.span
                       className={cn(

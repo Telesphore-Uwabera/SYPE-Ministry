@@ -228,7 +228,7 @@ export default function Donations() {
             <Button
               asChild
               variant="outline"
-              className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10 px-8 py-6 text-base font-semibold rounded-lg"
+              className="border-black text-black bg-white hover:bg-black hover:text-white px-8 py-6 text-base font-semibold rounded-lg transition-all"
             >
               <Link to="/contact">Contact for Details</Link>
             </Button>

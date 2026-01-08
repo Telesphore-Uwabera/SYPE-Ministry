@@ -334,23 +334,23 @@ export default function Projects() {
 
             <TabsContent value="all" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {projects.map((project, idx) => (
+            {projects.map((project, idx) => (
                   <motion.div
-                    key={idx}
+                key={idx}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: idx * 0.05 }}
-                  >
+              >
                     <Card className="h-full border-2 hover:border-primary/50 hover:shadow-lg transition-all">
                       <CardHeader>
                         <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-start gap-4 flex-1">
+                  <div className="flex items-start gap-4 flex-1">
                             <div className="p-3 bg-primary/10 rounded-lg">
-                              {getIcon(project.category)}
-                            </div>
-                            <div className="flex-1">
+                      {getIcon(project.category)}
+                    </div>
+                    <div className="flex-1">
                               <CardTitle className="text-lg text-primary mb-1">
-                                {project.name}
+                        {project.name}
                               </CardTitle>
                               <CardDescription>{project.category} • {project.year}</CardDescription>
                             </div>
@@ -376,13 +376,13 @@ export default function Projects() {
                           <p className="text-xs">
                             <span className="font-semibold text-foreground">Distribution:</span>{" "}
                             <span className="text-foreground/70">{project.distribution}</span>
-                          </p>
-                        </div>
+                      </p>
+                    </div>
                       </CardContent>
                     </Card>
                   </motion.div>
                 ))}
-              </div>
+                  </div>
             </TabsContent>
 
             <TabsContent value="ongoing" className="space-y-6">
@@ -411,8 +411,8 @@ export default function Projects() {
                           {getStatusBadge(project.type)}
                         </div>
                         <Badge className={`${getBadgeColor(project.topic)} text-xs`}>
-                          {project.topic}
-                        </Badge>
+                    {project.topic}
+                  </Badge>
                       </CardHeader>
                       <CardContent>
                         <p className="text-foreground/80 text-sm leading-relaxed mb-4">
@@ -428,7 +428,7 @@ export default function Projects() {
                     </Card>
                   </motion.div>
                 ))}
-              </div>
+                </div>
             </TabsContent>
 
             <TabsContent value="completed" className="space-y-6">
@@ -462,8 +462,8 @@ export default function Projects() {
                       </CardHeader>
                       <CardContent>
                         <p className="text-foreground/80 text-sm leading-relaxed mb-4">
-                          {project.description}
-                        </p>
+                  {project.description}
+                </p>
                         <div className="bg-muted/50 rounded-lg p-3">
                           <p className="text-xs">
                             <span className="font-semibold text-foreground">Distribution:</span>{" "}
@@ -514,8 +514,8 @@ export default function Projects() {
                           <p className="text-xs">
                             <span className="font-semibold text-foreground">Distribution:</span>{" "}
                             <span className="text-foreground/70">{project.distribution}</span>
-                          </p>
-                        </div>
+                  </p>
+                </div>
                       </CardContent>
                     </Card>
                   </motion.div>
@@ -561,12 +561,12 @@ export default function Projects() {
                             <span className="font-semibold text-foreground">Distribution:</span>{" "}
                             <span className="text-foreground/70">{project.distribution}</span>
                           </p>
-                        </div>
+              </div>
                       </CardContent>
                     </Card>
                   </motion.div>
-                ))}
-              </div>
+            ))}
+          </div>
             </TabsContent>
           </Tabs>
         </div>

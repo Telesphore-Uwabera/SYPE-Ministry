@@ -67,8 +67,8 @@ export default function ContactInfoBar() {
         >
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between h-10 md:h-12">
-              {/* Contact Info Items */}
-              <div className="hidden md:flex items-center gap-6 flex-1">
+              {/* Desktop: Show all contact info */}
+              <div className="hidden lg:flex items-center gap-6 flex-1">
                 {contactInfo.map((info, index) => {
                   const IconComponent = info.icon;
                   const content = (
@@ -142,32 +142,124 @@ export default function ContactInfoBar() {
                 })}
               </div>
 
-              {/* Mobile: Show only phones and email */}
-              <div className="flex md:hidden items-center gap-2 flex-1">
+              {/* Medium screens (tablets): Show phones, email, and location */}
+              <div className="hidden md:flex lg:hidden items-center gap-3 flex-1">
                 <motion.a
                   href="tel:+250780430990"
-                  className="flex items-center gap-1 group"
+                  className="flex items-center gap-1.5 group"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 }}
                 >
-                  <Phone size={12} className="text-primary group-hover:text-primary/80 transition-colors" />
+                  <Phone size={12} className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0" />
+                  <span className="text-[10px] text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
+                    +250 780 430 990
+                  </span>
                 </motion.a>
                 <motion.a
                   href="tel:+250785073847"
-                  className="flex items-center gap-1 group"
+                  className="flex items-center gap-1.5 group"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
                 >
-                  <Phone size={12} className="text-primary group-hover:text-primary/80 transition-colors" />
+                  <Phone size={12} className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0" />
+                  <span className="text-[10px] text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
+                    +250 785 073 847
+                  </span>
                 </motion.a>
                 <motion.a
                   href="mailto:sypeministry@gmail.com"
-                  className="flex items-center gap-1 group"
+                  className="flex items-center gap-1.5 group"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
                 >
-                  <Mail size={12} className="text-primary group-hover:text-primary/80 transition-colors" />
+                  <Mail size={12} className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0" />
+                  <span className="text-[10px] text-white/90 group-hover:text-white transition-colors truncate max-w-[120px]">
+                    sypeministry@gmail.com
+                  </span>
                 </motion.a>
+                <motion.div
+                  className="flex items-center gap-1.5"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <MapPin size={12} className="text-primary flex-shrink-0" />
+                  <span className="text-[10px] text-white/90 whitespace-nowrap">
+                    Kigali
+                  </span>
+                </motion.div>
+              </div>
+
+              {/* Small screens (mobile): Show phones and email with full text */}
+              <div className="flex md:hidden items-center gap-2 flex-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <motion.a
+                  href="tel:+250780430990"
+                  className="flex items-center gap-1 group flex-shrink-0"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <Phone size={11} className="text-primary group-hover:text-primary/80 transition-colors" />
+                  <span className="text-[9px] text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
+                    0780 430 990
+                  </span>
+                </motion.a>
+                <motion.a
+                  href="tel:+250785073847"
+                  className="flex items-center gap-1 group flex-shrink-0"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Phone size={11} className="text-primary group-hover:text-primary/80 transition-colors" />
+                  <span className="text-[9px] text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
+                    0785 073 847
+                  </span>
+                </motion.a>
+                <motion.a
+                  href="mailto:sypeministry@gmail.com"
+                  className="flex items-center gap-1 group flex-shrink-0"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <Mail size={11} className="text-primary group-hover:text-primary/80 transition-colors" />
+                  <span className="text-[9px] text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
+                    sypeministry@gmail.com
+                  </span>
+                </motion.a>
+                <motion.div
+                  className="flex items-center gap-1 group flex-shrink-0"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <Link
+                    to="/contact"
+                    className="flex items-center gap-1 group"
+                    aria-label="Location"
+                  >
+                    <MapPin size={11} className="text-primary group-hover:text-primary/80 transition-colors" />
+                    <span className="text-[9px] text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
+                      Kigali, Rwanda
+                    </span>
+                  </Link>
+                </motion.div>
               </div>
 
               {/* Close Button */}

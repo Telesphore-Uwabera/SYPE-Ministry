@@ -78,6 +78,7 @@ export default function About() {
               className="space-y-8 text-foreground/80 leading-relaxed"
               staggerDelay={0.4}
               direction="left"
+              detectScrollDirection
             >
               {/* Timeline Item 1 */}
               <motion.div

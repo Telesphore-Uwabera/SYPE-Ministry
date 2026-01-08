@@ -150,7 +150,7 @@ export default function Layout({ children }: LayoutProps) {
     <div className="flex flex-col min-h-screen bg-background">
       <SEO {...pageSEO} />
       <Navigation />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 pt-[104px] md:pt-[128px]">{children}</main>
       <Footer />
       <BackToTop />
     </div>

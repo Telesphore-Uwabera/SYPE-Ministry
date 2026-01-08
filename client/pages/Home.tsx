@@ -374,7 +374,7 @@ export default function Home() {
             </h2>
           </ScrollAnimation>
 
-          <StaggerContainer
+          <StaggerContainer detectScrollDirection
             className="grid grid-cols-1 md:grid-cols-3 gap-8"
             staggerDelay={0.3}
             direction="up"
@@ -513,7 +513,7 @@ export default function Home() {
             </p>
           </ScrollAnimation>
 
-          <StaggerContainer
+          <StaggerContainer detectScrollDirection
             className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8"
             staggerDelay={0.2}
             direction="up"
@@ -603,7 +603,7 @@ export default function Home() {
             </h2>
           </ScrollAnimation>
 
-          <StaggerContainer
+          <StaggerContainer detectScrollDirection
             className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8"
             staggerDelay={0.2}
             direction="up"

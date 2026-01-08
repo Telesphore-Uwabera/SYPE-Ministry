@@ -181,6 +181,7 @@ export default function Departments() {
             className="grid grid-cols-1 md:grid-cols-2 gap-8"
             staggerDelay={0.3}
             direction="scale"
+            detectScrollDirection
           >
             {departments.map((dept, idx) => {
               const IconComponent = dept.icon;

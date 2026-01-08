@@ -192,6 +192,7 @@ export default function Projects() {
             className="grid grid-cols-2 md:grid-cols-4 gap-6"
             staggerDelay={0.2}
             direction="scale"
+            detectScrollDirection
           >
             {stats.map((stat, idx) => {
               const IconComponent = stat.icon;

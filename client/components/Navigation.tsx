@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, Search, Heart, ChevronDown, Users, Mail, HelpCircle, FileText, BookOpen, DollarSign, Building2, FolderOpen, Newspaper, Calendar, Video, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import ContactInfoBar from "./ContactInfoBar";
 
 interface SearchResult {
   title: string;
@@ -191,12 +192,16 @@ export default function Navigation() {
 
   return (
     <>
+      {/* Contact Info Bar */}
+      <ContactInfoBar />
+
       {/* Scroll Progress Indicator */}
       <motion.div
-        className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary/80 to-primary z-[60] origin-left"
+        className="fixed left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary/80 to-primary z-[60] origin-left"
         animate={{ scaleX: scrollProgress / 100 }}
         initial={{ scaleX: 0 }}
         transition={{ duration: 0.1 }}
+        style={{ top: "40px" }} // Adjust based on contact bar height (h-10 = 40px)
       />
 
       {/* Main Navigation with fade and zoom effects */}
@@ -215,10 +220,10 @@ export default function Navigation() {
           mass: 0.8,
         }}
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
+          "fixed left-0 right-0 z-50 transition-all duration-500",
           isScrolled
-            ? "bg-white/95 backdrop-blur-xl border-b border-border/50 shadow-lg"
-            : "bg-white/80 backdrop-blur-sm border-b border-border/30 shadow-sm"
+            ? "bg-white/95 backdrop-blur-xl border-b border-border/50 shadow-lg top-10 md:top-12"
+            : "bg-white/80 backdrop-blur-sm border-b border-border/30 shadow-sm top-10 md:top-12"
         )}
       >
         <div className="container mx-auto px-4">
@@ -572,8 +577,8 @@ export default function Navigation() {
           mass: 0.8,
         }}
         className={cn(
-          "fixed top-0 left-0 right-0 z-40 transition-all duration-500 w-full",
-          "bg-white/90 backdrop-blur-lg border-b border-border/40 shadow-xl"
+          "fixed left-0 right-0 z-40 transition-all duration-500 w-full",
+          "bg-white/90 backdrop-blur-lg border-b border-border/40 shadow-xl top-10 md:top-12"
         )}
       >
         <div className="w-full px-6 md:px-8 lg:px-12">

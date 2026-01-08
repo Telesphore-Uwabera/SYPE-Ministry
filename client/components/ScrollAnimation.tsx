@@ -6,10 +6,11 @@ interface ScrollAnimationProps {
   className?: string;
   delay?: number;
   duration?: number;
-  direction?: "up" | "down" | "left" | "right" | "fade" | "scale";
+  direction?: "up" | "down" | "left" | "right" | "fade" | "scale" | "slide-up" | "slide-down" | "rotate" | "bounce";
   stagger?: number;
   once?: boolean;
   amount?: number;
+  detectScrollDirection?: boolean; // New prop to enable scroll direction detection
 }
 
 const directionVariants: Record<string, Variants> = {
@@ -37,6 +38,31 @@ const directionVariants: Record<string, Variants> = {
     hidden: { opacity: 0, scale: 0.8 },
     visible: { opacity: 1, scale: 1 },
   },
+  "slide-up": {
+    hidden: { opacity: 0, y: 100, scale: 0.9 },
+    visible: { opacity: 1, y: 0, scale: 1 },
+  },
+  "slide-down": {
+    hidden: { opacity: 0, y: -100, scale: 0.9 },
+    visible: { opacity: 1, y: 0, scale: 1 },
+  },
+  rotate: {
+    hidden: { opacity: 0, rotate: -10, scale: 0.9 },
+    visible: { opacity: 1, rotate: 0, scale: 1 },
+  },
+  bounce: {
+    hidden: { opacity: 0, y: 50, scale: 0.8 },
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 20,
+      }
+    },
+  },
 };
 
 export default function ScrollAnimation({
@@ -48,11 +74,70 @@ export default function ScrollAnimation({
   stagger = 0,
   once = true,
   amount = 0.3,
+  detectScrollDirection = false,
 }: ScrollAnimationProps) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once, amount });
+  const [scrollDirection, setScrollDirection] = useState<"up" | "down">("down");
+  const [lastScrollY, setLastScrollY] = useState(0);
 
-  const variants = directionVariants[direction] || directionVariants.up;
+  // Detect scroll direction if enabled
+  useEffect(() => {
+    if (!detectScrollDirection) return;
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY > lastScrollY) {
+        setScrollDirection("down");
+      } else if (currentScrollY < lastScrollY) {
+        setScrollDirection("up");
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [detectScrollDirection, lastScrollY]);
+
+  // Determine which variant to use based on scroll direction
+  let variants = directionVariants[direction] || directionVariants.up;
+  
+  if (detectScrollDirection) {
+    // Different animations based on scroll direction
+    if (scrollDirection === "down") {
+      // When scrolling down: slide up from bottom
+      variants = {
+        hidden: { opacity: 0, y: 80, scale: 0.95 },
+        visible: { 
+          opacity: 1, 
+          y: 0, 
+          scale: 1,
+          transition: {
+            type: "spring",
+            stiffness: 200,
+            damping: 20,
+          }
+        },
+      };
+    } else {
+      // When scrolling up: slide down from top with bounce
+      variants = {
+        hidden: { opacity: 0, y: -80, scale: 0.95 },
+        visible: { 
+          opacity: 1, 
+          y: 0, 
+          scale: 1,
+          transition: {
+            type: "spring",
+            stiffness: 250,
+            damping: 18,
+          }
+        },
+      };
+    }
+  }
 
   return (
     <motion.div
@@ -64,7 +149,7 @@ export default function ScrollAnimation({
       transition={{
         duration,
         delay,
-        ease: [0.25, 0.46, 0.45, 0.94], // Custom easing
+        ease: detectScrollDirection ? undefined : [0.25, 0.46, 0.45, 0.94], // Custom easing only if not using scroll direction
       }}
     >
       {children}
@@ -77,8 +162,9 @@ interface StaggerContainerProps {
   children: ReactNode;
   className?: string;
   staggerDelay?: number;
-  direction?: "up" | "down" | "left" | "right" | "fade" | "scale";
+  direction?: "up" | "down" | "left" | "right" | "fade" | "scale" | "slide-up" | "slide-down" | "rotate" | "bounce";
   once?: boolean;
+  detectScrollDirection?: boolean;
 }
 
 export function StaggerContainer({
@@ -87,9 +173,32 @@ export function StaggerContainer({
   staggerDelay = 0.1,
   direction = "up",
   once = true,
+  detectScrollDirection = false,
 }: StaggerContainerProps) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once, amount: 0.2 });
+  const [scrollDirection, setScrollDirection] = useState<"up" | "down">("down");
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  // Detect scroll direction if enabled
+  useEffect(() => {
+    if (!detectScrollDirection) return;
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY > lastScrollY) {
+        setScrollDirection("down");
+      } else if (currentScrollY < lastScrollY) {
+        setScrollDirection("up");
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [detectScrollDirection, lastScrollY]);
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -102,7 +211,39 @@ export function StaggerContainer({
     },
   };
 
-  const itemVariants = directionVariants[direction] || directionVariants.up;
+  let itemVariants = directionVariants[direction] || directionVariants.up;
+
+  if (detectScrollDirection) {
+    if (scrollDirection === "down") {
+      itemVariants = {
+        hidden: { opacity: 0, y: 60, scale: 0.95 },
+        visible: { 
+          opacity: 1, 
+          y: 0, 
+          scale: 1,
+          transition: {
+            type: "spring",
+            stiffness: 200,
+            damping: 20,
+          }
+        },
+      };
+    } else {
+      itemVariants = {
+        hidden: { opacity: 0, y: -60, scale: 0.95 },
+        visible: { 
+          opacity: 1, 
+          y: 0, 
+          scale: 1,
+          transition: {
+            type: "spring",
+            stiffness: 250,
+            damping: 18,
+          }
+        },
+      };
+    }
+  }
 
   return (
     <motion.div

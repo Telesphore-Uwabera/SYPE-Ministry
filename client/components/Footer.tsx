@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin, Facebook, Youtube, Instagram, Linkedin } from "lucide-react";
+import MTNPayment from "./MTNPayment";
 
 export default function Footer() {
   return (
@@ -222,6 +223,11 @@ export default function Footer() {
               <span>Ask SYPE</span>
             </Link>
           </div>
+        </div>
+
+        {/* MTN Payment Section */}
+        <div className="mb-8">
+          <MTNPayment variant="footer" />
         </div>
 
         {/* Scripture Quote & Copyright */}

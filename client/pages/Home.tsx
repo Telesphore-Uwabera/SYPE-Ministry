@@ -436,7 +436,7 @@ export default function Home() {
                   </h3>
                   <p className="text-foreground/70 text-sm mb-4">
                     Weekly prayer and reflection using Jesus' methods. Every
-                    Sunday 6:00 PM - 7:00 PM.
+                    Every day 6:00 AM - 7:00 AM.
                   </p>
                   <Link
                     to="/devotions"
@@ -501,13 +501,13 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <ScrollAnimation direction="up" delay={0.4}>
             <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary mb-6">
-              Weekly Devotion Program
+              Daily Devotion Program
             </h2>
           </ScrollAnimation>
           <ScrollAnimation direction="up" delay={0.4}>
             <p className="text-foreground/70 text-lg max-w-3xl mb-8 leading-relaxed">
-              Join us every Sunday from 6:00 PM to 7:00 PM for an hour of prayer
-              and spiritual reflection. Our weekly devotion program is guided by
+              Join us every day from 6:00 AM to 7:00 AM for an hour of prayer
+              and spiritual reflection. Our daily devotion program is guided by
               Jesus' methods and Ellen G. White's teachings on Evangelism
               (Ivugabutumwa).
             </p>
@@ -587,7 +587,7 @@ export default function Home() {
 
           <ScrollAnimation direction="fade" delay={1.0}>
             <p className="text-foreground/70 text-center">
-              <strong>When:</strong> Every Sunday, 6:00 PM – 7:00 PM <br />
+              <strong>When:</strong> Every day, 6:00 AM – 7:00 AM <br />
               <strong>Where:</strong> WhatsApp Community Group
             </p>
           </ScrollAnimation>

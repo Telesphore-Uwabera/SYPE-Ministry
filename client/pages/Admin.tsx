@@ -16,8 +16,20 @@ import {
   BookOpen,
   Shield,
   LogOut,
+  HelpCircle,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MemberManagement from "@/components/admin/MemberManagement";
+import NewsManagement from "@/components/admin/NewsManagement";
+import ProjectManagement from "@/components/admin/ProjectManagement";
+import EventManagement from "@/components/admin/EventManagement";
+import DonationManagement from "@/components/admin/DonationManagement";
+import FAQManagement from "@/components/admin/FAQManagement";
+import MediaManagement from "@/components/admin/MediaManagement";
+import Communication from "@/components/admin/Communication";
+import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
+import SettingsManagement from "@/components/admin/Settings";
+import { getAnalytics } from "@/lib/adminStore";
 
 // Netlify Identity types
 interface NetlifyUser {
@@ -362,228 +374,95 @@ export default function Admin() {
 
           {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Total Members</CardDescription>
-                <CardTitle className="text-3xl">150+</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Active Projects</CardDescription>
-                <CardTitle className="text-3xl">25+</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Media Resources</CardDescription>
-                <CardTitle className="text-3xl">100+</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>News Articles</CardDescription>
-                <CardTitle className="text-3xl">0</CardTitle>
-              </CardHeader>
-            </Card>
+            {(() => {
+              const stats = getAnalytics();
+              return (
+                <>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardDescription>Total Members</CardDescription>
+                      <CardTitle className="text-3xl">{stats.totalMembers}</CardTitle>
+                    </CardHeader>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardDescription>Active Projects</CardDescription>
+                      <CardTitle className="text-3xl">{stats.activeProjects}</CardTitle>
+                    </CardHeader>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardDescription>Total Donations</CardDescription>
+                      <CardTitle className="text-3xl">{stats.totalDonations}</CardTitle>
+                    </CardHeader>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardDescription>News Articles</CardDescription>
+                      <CardTitle className="text-3xl">{stats.totalNewsArticles}</CardTitle>
+                    </CardHeader>
+                  </Card>
+                </>
+              );
+            })()}
           </div>
 
           {/* Admin Features */}
-          <Tabs defaultValue="all" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="all">All Features</TabsTrigger>
-              <TabsTrigger value="content">Content</TabsTrigger>
-              <TabsTrigger value="members">Members</TabsTrigger>
+          <Tabs defaultValue="analytics" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10">
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="members">Members</TabsTrigger>
+              <TabsTrigger value="news">News</TabsTrigger>
+              <TabsTrigger value="projects">Projects</TabsTrigger>
+              <TabsTrigger value="events">Events</TabsTrigger>
+              <TabsTrigger value="donations">Donations</TabsTrigger>
+              <TabsTrigger value="faqs">FAQs</TabsTrigger>
+              <TabsTrigger value="media">Media</TabsTrigger>
+              <TabsTrigger value="communication">Communication</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="all" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {adminFeatures.map((feature, index) => {
-                  const IconComponent = feature.icon;
-                  return (
-                    <Card key={index} className="hover:shadow-lg transition-shadow">
-                      <CardHeader>
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="p-2 bg-primary/10 rounded-lg">
-                            <IconComponent className="w-5 h-5 text-primary" />
-                          </div>
-                          <CardTitle className="text-lg">{feature.title}</CardTitle>
-                        </div>
-                        <CardDescription>{feature.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="px-2 py-1 bg-muted text-xs rounded">
-                              {feature.status}
-                            </span>
-                          </div>
-                          <ul className="text-sm text-foreground/70 space-y-1 mt-3">
-                            {feature.features.slice(0, 3).map((item, idx) => (
-                              <li key={idx} className="flex items-start gap-2">
-                                <span className="text-primary mt-1">•</span>
-                                <span>{item}</span>
-                              </li>
-                            ))}
-                            {feature.features.length > 3 && (
-                              <li className="text-primary text-xs">
-                                +{feature.features.length - 3} more features
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="content">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {adminFeatures
-                  .filter((f) =>
-                    ["Content Management", "Media Management", "News & Announcements"].includes(
-                      f.title
-                    )
-                  )
-                  .map((feature, index) => {
-                    const IconComponent = feature.icon;
-                    return (
-                      <Card key={index} className="hover:shadow-lg transition-shadow">
-                        <CardHeader>
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                              <IconComponent className="w-5 h-5 text-primary" />
-                            </div>
-                            <CardTitle className="text-lg">{feature.title}</CardTitle>
-                          </div>
-                          <CardDescription>{feature.description}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <ul className="text-sm text-foreground/70 space-y-1">
-                            {feature.features.map((item, idx) => (
-                              <li key={idx} className="flex items-start gap-2">
-                                <span className="text-primary mt-1">•</span>
-                                <span>{item}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-              </div>
+            <TabsContent value="analytics">
+              <AnalyticsDashboard />
             </TabsContent>
 
             <TabsContent value="members">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {adminFeatures
-                  .filter((f) => f.title === "Member Management")
-                  .map((feature, index) => {
-                    const IconComponent = feature.icon;
-                    return (
-                      <Card key={index} className="hover:shadow-lg transition-shadow">
-                        <CardHeader>
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                              <IconComponent className="w-5 h-5 text-primary" />
-                            </div>
-                            <CardTitle className="text-lg">{feature.title}</CardTitle>
-                          </div>
-                          <CardDescription>{feature.description}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <ul className="text-sm text-foreground/70 space-y-1">
-                            {feature.features.map((item, idx) => (
-                              <li key={idx} className="flex items-start gap-2">
-                                <span className="text-primary mt-1">•</span>
-                                <span>{item}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-              </div>
+              <MemberManagement />
             </TabsContent>
 
-            <TabsContent value="analytics">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {adminFeatures
-                  .filter((f) => f.title === "Analytics & Reports")
-                  .map((feature, index) => {
-                    const IconComponent = feature.icon;
-                    return (
-                      <Card key={index} className="hover:shadow-lg transition-shadow">
-                        <CardHeader>
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                              <IconComponent className="w-5 h-5 text-primary" />
-                            </div>
-                            <CardTitle className="text-lg">{feature.title}</CardTitle>
-                          </div>
-                          <CardDescription>{feature.description}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <ul className="text-sm text-foreground/70 space-y-1">
-                            {feature.features.map((item, idx) => (
-                              <li key={idx} className="flex items-start gap-2">
-                                <span className="text-primary mt-1">•</span>
-                                <span>{item}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-              </div>
+            <TabsContent value="news">
+              <NewsManagement />
+            </TabsContent>
+
+            <TabsContent value="projects">
+              <ProjectManagement />
+            </TabsContent>
+
+            <TabsContent value="events">
+              <EventManagement />
+            </TabsContent>
+
+            <TabsContent value="donations">
+              <DonationManagement />
+            </TabsContent>
+
+            <TabsContent value="faqs">
+              <FAQManagement />
+            </TabsContent>
+
+            <TabsContent value="media">
+              <MediaManagement />
+            </TabsContent>
+
+            <TabsContent value="communication">
+              <Communication />
+            </TabsContent>
+
+            <TabsContent value="settings">
+              <SettingsManagement />
             </TabsContent>
           </Tabs>
 
-          {/* Implementation Notes */}
-          <Card className="mt-8 bg-primary/5 border-primary/20">
-            <CardHeader>
-              <CardTitle>Implementation Roadmap</CardTitle>
-              <CardDescription>
-                The following features are planned for implementation
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-primary mb-2">Phase 1: Core Features</h3>
-                  <ul className="text-sm text-foreground/70 space-y-1 list-disc list-inside">
-                    <li>Authentication system (JWT-based)</li>
-                    <li>Database integration (PostgreSQL/MongoDB)</li>
-                    <li>Member management CRUD operations</li>
-                    <li>Basic content management</li>
-                  </ul>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-primary mb-2">Phase 2: Content Management</h3>
-                  <ul className="text-sm text-foreground/70 space-y-1 list-disc list-inside">
-                    <li>News article management</li>
-                    <li>Media library with file upload</li>
-                    <li>FAQ management</li>
-                    <li>Page content editor</li>
-                  </ul>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-primary mb-2">Phase 3: Advanced Features</h3>
-                  <ul className="text-sm text-foreground/70 space-y-1 list-disc list-inside">
-                    <li>Donation tracking and reporting</li>
-                    <li>Event management system</li>
-                    <li>Email campaign system</li>
-                    <li>Analytics dashboard</li>
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </Layout>

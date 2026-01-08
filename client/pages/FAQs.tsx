@@ -52,11 +52,11 @@ export default function FAQs() {
       questions: [
         {
           q: "What activities does SYPE Ministry organize?",
-          a: "SYPE organizes various activities including weekly prayer and devotion programs, evangelism projects, mission camps, media content creation (videos, posters, written content), and digital outreach initiatives."
+          a: "SYPE organizes various activities including daily prayer and devotion programs, evangelism projects, mission camps, media content creation (videos, posters, written content), and digital outreach initiatives."
         },
         {
-          q: "When are the weekly devotion programs?",
-          a: "Our weekly prayer and devotion program takes place every Sunday from 6:00 PM to 7:00 PM via WhatsApp. The program focuses on Jesus' methods and Ellen G. White's teachings on evangelism."
+          q: "When are the daily devotion programs?",
+          a: "Our daily prayer and devotion program takes place every day from 6:00 AM to 7:00 AM via WhatsApp. The program focuses on Jesus' methods and Ellen G. White's teachings on evangelism."
         },
         {
           q: "How can I participate in evangelism projects?",

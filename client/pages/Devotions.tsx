@@ -10,7 +10,7 @@ export default function Devotions() {
       <section className="bg-gradient-to-r from-primary via-secondary to-primary py-16 md:py-20 text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
           <h1 className="font-heading font-bold text-4xl md:text-5xl mb-4">
-            Weekly Devotion Program
+            Daily Devotion Program
           </h1>
           <p className="text-lg opacity-90 max-w-2xl mx-auto">
             Join us for weekly prayer and spiritual reflection guided by Jesus'
@@ -38,7 +38,7 @@ export default function Devotions() {
                   <div>
                     <p className="font-semibold text-primary">Time</p>
                     <p className="text-foreground/70">
-                      Every Sunday: 6:00 PM – 7:00 PM
+                      Every day: 6:00 AM – 7:00 AM
                     </p>
                   </div>
                 </div>
@@ -194,7 +194,7 @@ export default function Devotions() {
           </h2>
 
           <p className="text-foreground/70 text-lg leading-relaxed mb-8">
-            The weekly devotion program is more than just a meeting—it's a
+            The daily devotion program is more than just a meeting—it's a
             spiritual community where young professionals connect with each
             other, strengthen their faith, and grow together in their
             understanding of evangelism. Every member is invited to lead a
@@ -220,7 +220,7 @@ export default function Devotions() {
           </h2>
           <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
             Connect with other young SDA professionals in prayer and spiritual
-            growth every Sunday at 6:00 PM.
+            growth every day at 6:00 AM.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button

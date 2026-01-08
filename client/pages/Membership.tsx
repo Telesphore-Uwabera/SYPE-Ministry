@@ -187,11 +187,11 @@ export default function Membership() {
               <div className="flex items-center gap-2 mb-3">
                 <Heart className="w-5 h-5 text-primary" />
                 <h3 className="font-heading font-bold text-lg text-primary">
-                  Weekly Prayer & Devotion Program
+                  Daily Prayer & Devotion Program
                 </h3>
               </div>
               <p className="text-foreground/70 mb-2">
-                <strong>Time:</strong> Every Sunday, 6:00 PM – 7:00 PM
+                <strong>Time:</strong> Every day, 6:00 AM – 7:00 AM
               </p>
               <p className="text-foreground/70 mb-2">
                 <strong>Format:</strong> 1 hour of "Jesus Methods" devotion

@@ -257,19 +257,20 @@ export default function Projects() {
               </div>
             </ScrollAnimation>
             <StaggerContainer
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch"
               staggerDelay={0.3}
               direction="up"
             >
               {featuredProjects.map((project, idx) => (
                 <HoverAnimation key={idx} scale={1.02} y={-8}>
                   <motion.div
+                    className="h-full"
                     whileHover={{ rotateY: 5, rotateX: 5 }}
                     transition={{ type: "spring", stiffness: 300 }}
                     style={{ perspective: 1000 }}
                   >
-                    <Card className="h-full border-2 hover:border-primary/50 hover:shadow-2xl transition-all group bg-gradient-to-br from-white to-primary/5">
-                    <CardHeader>
+                    <Card className="h-full flex flex-col border-2 hover:border-primary/50 hover:shadow-2xl transition-all group bg-gradient-to-br from-white to-primary/5">
+                    <CardHeader className="flex-shrink-0">
                       <div className="flex items-start justify-between mb-3">
                         <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
                           {getIcon(project.category)}
@@ -281,7 +282,7 @@ export default function Projects() {
                           </Badge>
                         </div>
                       </div>
-                      <CardTitle className="text-xl text-primary mb-2">
+                      <CardTitle className="text-xl text-primary mb-2 min-h-[56px]">
                         {project.name}
                       </CardTitle>
                       <CardDescription className="flex items-center gap-2">
@@ -292,11 +293,11 @@ export default function Projects() {
                         <span className="text-xs">{project.category}</span>
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <p className="text-foreground/80 text-sm leading-relaxed mb-4 line-clamp-3">
+                    <CardContent className="flex-1 flex flex-col min-h-0">
+                      <p className="text-foreground/80 text-sm leading-relaxed mb-4 flex-1 min-h-[100px]">
                         {project.description}
                       </p>
-                      <div className="pt-4 border-t border-border">
+                      <div className="pt-4 border-t border-border mt-auto flex-shrink-0">
                         <p className="text-xs text-foreground/60">
                           <span className="font-semibold">Distribution:</span>{" "}
                           <span className="text-foreground/70">{project.distribution}</span>

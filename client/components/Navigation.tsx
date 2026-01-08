@@ -4,6 +4,7 @@ import { Menu, X, Search, Heart, ChevronDown, Users, Mail, HelpCircle, FileText,
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import ContactInfoBar from "./ContactInfoBar";
+import MTNPayment from "./MTNPayment";
 
 interface SearchResult {
   title: string;
@@ -57,7 +58,7 @@ export default function Navigation() {
     { title: "Donations", href: "/donations", description: "Support our evangelism efforts", category: "Pages", icon: DollarSign },
     { title: "Library", href: "/library", description: "Access ministry resources and materials", category: "Pages", icon: BookOpen },
     { title: "News", href: "/news", description: "Latest news and announcements", category: "Pages", icon: Newspaper },
-    { title: "Devotions", href: "/devotions", description: "Weekly devotion program", category: "Pages", icon: Calendar },
+    { title: "Devotions", href: "/devotions", description: "Daily devotion program", category: "Pages", icon: Calendar },
     { title: "Videos", href: "/videos", description: "Watch ministry videos and content", category: "Pages", icon: Video },
     { title: "Departments", href: "/departments", description: "Explore our ministry departments", category: "Pages", icon: Building2 },
     { title: "Projects", href: "/projects", description: "View our evangelical projects", category: "Pages", icon: FolderOpen },
@@ -195,13 +196,16 @@ export default function Navigation() {
       {/* Contact Info Bar */}
       <ContactInfoBar />
 
+      {/* MTN Payment Bar */}
+      <MTNPayment variant="bar" />
+
       {/* Scroll Progress Indicator */}
       <motion.div
         className="fixed left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary/80 to-primary z-[60] origin-left"
         animate={{ scaleX: scrollProgress / 100 }}
         initial={{ scaleX: 0 }}
         transition={{ duration: 0.1 }}
-        style={{ top: "40px" }} // Adjust based on contact bar height (h-10 = 40px)
+        style={{ top: "80px" }} // Adjust based on contact bar (40px) + MTN bar (40px)
       />
 
       {/* Main Navigation with fade and zoom effects */}
@@ -222,8 +226,8 @@ export default function Navigation() {
         className={cn(
           "fixed left-0 right-0 z-50 transition-all duration-500",
           isScrolled
-            ? "bg-white/95 backdrop-blur-xl border-b border-border/50 shadow-lg top-10 md:top-12"
-            : "bg-white/80 backdrop-blur-sm border-b border-border/30 shadow-sm top-10 md:top-12"
+            ? "bg-white/95 backdrop-blur-xl border-b border-border/50 shadow-lg top-[80px] md:top-[96px]"
+            : "bg-white/80 backdrop-blur-sm border-b border-border/30 shadow-sm top-[80px] md:top-[96px]"
         )}
       >
         <div className="container mx-auto px-4">
@@ -578,7 +582,7 @@ export default function Navigation() {
         }}
         className={cn(
           "fixed left-0 right-0 z-40 transition-all duration-500 w-full",
-          "bg-white/90 backdrop-blur-lg border-b border-border/40 shadow-xl top-10 md:top-12"
+          "bg-white/90 backdrop-blur-lg border-b border-border/40 shadow-xl top-[80px] md:top-[96px]"
         )}
       >
         <div className="w-full px-6 md:px-8 lg:px-12">

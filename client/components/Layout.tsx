@@ -4,6 +4,7 @@ import Navigation from "./Navigation";
 import Footer from "./Footer";
 import BackToTop from "./BackToTop";
 import SEO from "./SEO";
+import MTNPayment from "./MTNPayment";
 
 // Initialize Netlify Identity
 declare global {
@@ -117,9 +118,9 @@ export default function Layout({ children }: LayoutProps) {
         };
       case "/devotions":
         return {
-          title: "Weekly Devotion Program - SYPE Ministry",
+          title: "Daily Devotion Program - SYPE Ministry",
           description:
-            "Join us every Sunday from 6:00 PM to 7:00 PM for weekly prayer and spiritual reflection guided by Jesus' methods and Ellen G. White's teachings.",
+            "Join us every day from 6:00 AM to 7:00 AM for daily prayer and spiritual reflection guided by Jesus' methods and Ellen G. White's teachings.",
           keywords:
             "SYPE Devotions, Weekly Prayer, Sunday Devotion, Prayer Program, Spiritual Reflection",
         };
@@ -150,9 +151,11 @@ export default function Layout({ children }: LayoutProps) {
     <div className="flex flex-col min-h-screen bg-background">
       <SEO {...pageSEO} />
       <Navigation />
-      <main className="flex-1 pt-[104px] md:pt-[128px]">{children}</main>
+      <main className="flex-1 pt-[144px] md:pt-[168px]">{children}</main>
       <Footer />
       <BackToTop />
+      {/* Floating MTN Payment - Appears on all pages */}
+      <MTNPayment variant="floating" className="hidden md:block" />
     </div>
   );
 }

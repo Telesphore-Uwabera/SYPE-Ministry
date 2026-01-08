@@ -1,22 +1,9 @@
 import { useState, useEffect } from "react";
-import Layout from "@/components/Layout";
+import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Users,
-  FileText,
-  Video,
-  Newspaper,
-  DollarSign,
-  Settings,
-  BarChart3,
-  Mail,
-  Calendar,
-  Image as ImageIcon,
-  BookOpen,
   Shield,
-  LogOut,
-  HelpCircle,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MemberManagement from "@/components/admin/MemberManagement";
@@ -135,18 +122,15 @@ export default function Admin() {
 
   if (isLoading) {
     return (
-      <Layout>
-        <div className="min-h-screen flex items-center justify-center">
-          <p>Loading...</p>
-        </div>
-      </Layout>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p>Loading...</p>
+      </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <Layout>
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-muted/50 to-background py-12">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-muted/50 to-background py-12">
           <Card className="w-full max-w-md">
             <CardHeader>
               <div className="flex items-center gap-3 mb-2">
@@ -199,176 +183,22 @@ export default function Admin() {
             </CardContent>
           </Card>
         </div>
-      </Layout>
     );
   }
 
-  const adminFeatures = [
-    {
-      icon: Users,
-      title: "Member Management",
-      description: "Manage members, registrations, and member profiles",
-      status: "planned",
-      features: [
-        "View all members",
-        "Add/Edit/Delete members",
-        "Member registration approval",
-        "Member activity tracking",
-        "Export member data",
-      ],
-    },
-    {
-      icon: FileText,
-      title: "Content Management",
-      description: "Manage website content, pages, and articles",
-      status: "planned",
-      features: [
-        "Edit page content",
-        "Manage news articles",
-        "Update FAQs",
-        "Manage library resources",
-        "Content versioning",
-      ],
-    },
-    {
-      icon: Video,
-      title: "Media Management",
-      description: "Upload and manage videos, images, and multimedia",
-      status: "planned",
-      features: [
-        "Upload videos to YouTube",
-        "Manage video library",
-        "Image gallery management",
-        "Media file organization",
-        "Bulk upload support",
-      ],
-    },
-    {
-      icon: Newspaper,
-      title: "News & Announcements",
-      description: "Create and manage news posts and announcements",
-      status: "planned",
-      features: [
-        "Create news articles",
-        "Schedule announcements",
-        "News categories",
-        "Featured news",
-        "News analytics",
-      ],
-    },
-    {
-      icon: DollarSign,
-      title: "Donation Management",
-      description: "Track donations and financial contributions",
-      status: "planned",
-      features: [
-        "View donation records",
-        "Donation reports",
-        "Donor management",
-        "Financial summaries",
-        "Export donation data",
-      ],
-    },
-    {
-      icon: Calendar,
-      title: "Event Management",
-      description: "Manage events, devotions, and ministry activities",
-      status: "planned",
-      features: [
-        "Create events",
-        "Event calendar",
-        "RSVP management",
-        "Event reminders",
-        "Attendance tracking",
-      ],
-    },
-    {
-      icon: BookOpen,
-      title: "Project Management",
-      description: "Manage evangelical projects and initiatives",
-      status: "planned",
-      features: [
-        "Create projects",
-        "Project status tracking",
-        "Team assignments",
-        "Project timeline",
-        "Project reports",
-      ],
-    },
-    {
-      icon: Mail,
-      title: "Communication",
-      description: "Send emails, newsletters, and announcements",
-      status: "planned",
-      features: [
-        "Email campaigns",
-        "Newsletter management",
-        "Bulk messaging",
-        "Email templates",
-        "Communication logs",
-      ],
-    },
-    {
-      icon: BarChart3,
-      title: "Analytics & Reports",
-      description: "View website analytics and ministry statistics",
-      status: "planned",
-      features: [
-        "Website traffic analytics",
-        "Member statistics",
-        "Donation reports",
-        "Project progress",
-        "Custom reports",
-      ],
-    },
-    {
-      icon: Settings,
-      title: "Settings",
-      description: "Configure website settings and preferences",
-      status: "planned",
-      features: [
-        "Site configuration",
-        "User permissions",
-        "Email settings",
-        "Social media links",
-        "Backup & restore",
-      ],
-    },
-  ];
-
   return (
-    <Layout>
+    <AdminLayout user={user} onLogout={handleLogout}>
       <div className="min-h-screen bg-gradient-to-br from-muted/50 to-background py-12">
         <div className="container mx-auto px-4">
           {/* Header */}
           <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="font-heading font-bold text-4xl text-primary mb-2">
-                  Admin Dashboard
-                </h1>
-                <p className="text-foreground/70">
-                  Manage SYPE Ministry website content and operations
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                {user && (
-                  <div className="text-sm text-foreground/70">
-                    <p className="font-semibold">{user.email}</p>
-                    {user.user_metadata?.full_name && (
-                      <p className="text-xs">{user.user_metadata.full_name}</p>
-                    )}
-                  </div>
-                )}
-                <Button
-                  variant="outline"
-                  onClick={handleLogout}
-                  className="flex items-center gap-2"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Logout
-                </Button>
-              </div>
+            <div className="mb-4">
+              <h1 className="font-heading font-bold text-4xl text-primary mb-2">
+                Admin Dashboard
+              </h1>
+              <p className="text-foreground/70">
+                Manage SYPE Ministry website content and operations
+              </p>
             </div>
           </div>
 
@@ -465,7 +295,7 @@ export default function Admin() {
 
         </div>
       </div>
-    </Layout>
+    </AdminLayout>
   );
 }
 

@@ -1,5 +1,5 @@
 import { RequestHandler, Request, Response } from "express";
-import { Member, NewsArticle, Project, Event, Donation, FAQ, MediaFile, EmailCampaign } from "../../client/types/admin";
+import { Member, NewsArticle, Project, Event, Donation, FAQ, MediaFile, EmailCampaign, Book, EmailSubscriber, CommitteeMember } from "../../client/types/admin";
 
 // In-memory storage (replace with database in production)
 let members: Member[] = [];
@@ -10,6 +10,9 @@ let donations: Donation[] = [];
 let faqs: FAQ[] = [];
 let media: MediaFile[] = [];
 let campaigns: EmailCampaign[] = [];
+let books: Book[] = [];
+let subscribers: EmailSubscriber[] = [];
+let committeeMembers: CommitteeMember[] = [];
 
 // Helper function to generate ID
 const generateId = () => Date.now().toString();
@@ -59,7 +62,16 @@ export const deleteMember: RequestHandler = (req, res) => {
 
 // News API
 export const getNews: RequestHandler = (req, res) => {
-  res.json(news);
+  const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+  let result = [...news].sort((a, b) => {
+    const dateA = new Date(a.publishDate || 0).getTime();
+    const dateB = new Date(b.publishDate || 0).getTime();
+    return dateB - dateA; // Sort by newest first
+  });
+  if (limit && limit > 0) {
+    result = result.slice(0, limit);
+  }
+  res.json(result);
 };
 
 export const getNewsArticle: RequestHandler = (req, res) => {
@@ -75,6 +87,7 @@ export const createNews: RequestHandler = (req, res) => {
   const newArticle: NewsArticle = {
     id: generateId(),
     views: 0,
+    publishDate: req.body.publishDate || new Date().toISOString(),
     ...req.body,
   };
   news.push(newArticle);
@@ -275,6 +288,327 @@ export const deleteFAQ: RequestHandler = (req, res) => {
   res.status(204).send();
 };
 
+// Media API
+export const getMedia: RequestHandler = (req, res) => {
+  let result = [...media];
+  
+  // Filter by category if provided
+  const category = req.query.category as string | undefined;
+  if (category) {
+    const categories = category.split(',').map(c => c.trim().toLowerCase());
+    result = result.filter((m) => {
+      const fileCategory = m.category?.toLowerCase() || "";
+      return categories.some(cat => fileCategory === cat || fileCategory.includes(cat));
+    });
+  }
+  
+  // Filter by type if provided
+  const type = req.query.type as string | undefined;
+  if (type) {
+    result = result.filter((m) => m.type === type);
+  }
+  
+  // Sort by upload date (newest first)
+  result.sort((a, b) => {
+    const dateA = new Date(a.uploadDate || 0).getTime();
+    const dateB = new Date(b.uploadDate || 0).getTime();
+    return dateB - dateA;
+  });
+  
+  res.json(result);
+};
+
+export const getMediaFile: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const file = media.find((m) => m.id === id);
+  if (!file) {
+    return res.status(404).json({ error: "Media file not found" });
+  }
+  res.json(file);
+};
+
+export const createMedia: RequestHandler = (req, res) => {
+  const newFile: MediaFile = {
+    id: generateId(),
+    uploadDate: new Date().toISOString(),
+    ...req.body,
+  };
+  media.push(newFile);
+  res.status(201).json(newFile);
+};
+
+export const updateMedia: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const index = media.findIndex((m) => m.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: "Media file not found" });
+  }
+  media[index] = { ...media[index], ...req.body };
+  res.json(media[index]);
+};
+
+export const deleteMedia: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const index = media.findIndex((m) => m.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: "Media file not found" });
+  }
+  media.splice(index, 1);
+  res.status(204).send();
+};
+
+// Books API
+export const getBooks: RequestHandler = (req, res) => {
+  let result = [...books];
+  
+  // Filter by category if provided
+  const category = req.query.category as string | undefined;
+  if (category && category !== "All") {
+    result = result.filter((b) => b.category === category);
+  }
+  
+  // Sort by upload date (newest first)
+  result.sort((a, b) => {
+    const dateA = new Date(a.uploadDate || 0).getTime();
+    const dateB = new Date(b.uploadDate || 0).getTime();
+    return dateB - dateA;
+  });
+  
+  res.json(result);
+};
+
+export const getBook: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const book = books.find((b) => b.id === id);
+  if (!book) {
+    return res.status(404).json({ error: "Book not found" });
+  }
+  res.json(book);
+};
+
+export const createBook: RequestHandler = (req, res) => {
+  const newBook: Book = {
+    id: generateId(),
+    uploadDate: new Date().toISOString(),
+    downloads: 0,
+    featured: false,
+    ...req.body,
+  };
+  books.push(newBook);
+  res.status(201).json(newBook);
+};
+
+export const updateBook: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const index = books.findIndex((b) => b.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: "Book not found" });
+  }
+  books[index] = { ...books[index], ...req.body };
+  res.json(books[index]);
+};
+
+export const deleteBook: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const index = books.findIndex((b) => b.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: "Book not found" });
+  }
+  books.splice(index, 1);
+  res.status(204).send();
+};
+
+export const trackBookDownload: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const book = books.find((b) => b.id === id);
+  if (!book) {
+    return res.status(404).json({ error: "Book not found" });
+  }
+  book.downloads = (book.downloads || 0) + 1;
+  res.json({ downloads: book.downloads });
+};
+
+// Email Subscribers API
+export const getSubscribers: RequestHandler = (req, res) => {
+  let result = [...subscribers];
+  
+  // Filter by status if provided
+  const status = req.query.status as string | undefined;
+  if (status) {
+    result = result.filter((s) => s.status === status);
+  }
+  
+  // Sort by subscribed date (newest first)
+  result.sort((a, b) => {
+    const dateA = new Date(a.subscribedAt || 0).getTime();
+    const dateB = new Date(b.subscribedAt || 0).getTime();
+    return dateB - dateA;
+  });
+  
+  res.json(result);
+};
+
+export const getSubscriber: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const subscriber = subscribers.find((s) => s.id === id);
+  if (!subscriber) {
+    return res.status(404).json({ error: "Subscriber not found" });
+  }
+  res.json(subscriber);
+};
+
+export const createSubscriber: RequestHandler = (req, res) => {
+  const { email, name, source } = req.body;
+  
+  // Validate email
+  if (!email || !email.includes("@")) {
+    return res.status(400).json({ error: "Valid email is required" });
+  }
+  
+  // Check if email already exists
+  const existing = subscribers.find((s) => s.email.toLowerCase() === email.toLowerCase());
+  if (existing) {
+    if (existing.status === "active") {
+      return res.status(400).json({ error: "Email is already subscribed" });
+    } else {
+      // Reactivate unsubscribed user
+      existing.status = "active";
+      existing.subscribedAt = new Date().toISOString();
+      if (name) existing.name = name;
+      if (source) existing.source = source;
+      return res.json(existing);
+    }
+  }
+  
+  const newSubscriber: EmailSubscriber = {
+    id: generateId(),
+    email: email.toLowerCase(),
+    name: name || undefined,
+    subscribedAt: new Date().toISOString(),
+    status: "active",
+    source: source || "footer",
+    tags: [],
+  };
+  
+  subscribers.push(newSubscriber);
+  res.status(201).json(newSubscriber);
+};
+
+export const updateSubscriber: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const index = subscribers.findIndex((s) => s.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: "Subscriber not found" });
+  }
+  subscribers[index] = { ...subscribers[index], ...req.body };
+  res.json(subscribers[index]);
+};
+
+export const deleteSubscriber: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const index = subscribers.findIndex((s) => s.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: "Subscriber not found" });
+  }
+  subscribers.splice(index, 1);
+  res.status(204).send();
+};
+
+export const unsubscribe: RequestHandler = (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+  
+  const subscriber = subscribers.find((s) => s.email.toLowerCase() === email.toLowerCase());
+  if (!subscriber) {
+    return res.status(404).json({ error: "Email not found in our subscribers list" });
+  }
+  
+  subscriber.status = "unsubscribed";
+  res.json({ message: "Successfully unsubscribed", subscriber });
+};
+
+// Committee Members API
+export const getCommitteeMembers: RequestHandler = (req, res) => {
+  let result = [...committeeMembers];
+  
+  // Filter by category if provided
+  const category = req.query.category as string | undefined;
+  if (category) {
+    result = result.filter((m) => m.category === category);
+  }
+  
+  // Filter by active status if provided (default: show only active)
+  const active = req.query.active !== "false";
+  if (active) {
+    result = result.filter((m) => m.active !== false);
+  }
+  
+  // Sort by category, then by order
+  result.sort((a, b) => {
+    const categoryOrder = { leadership: 1, team: 2, auditor: 3, asa_representatives: 4, board_chancellors: 5 };
+    const categoryDiff = (categoryOrder[a.category] || 99) - (categoryOrder[b.category] || 99);
+    if (categoryDiff !== 0) return categoryDiff;
+    return a.order - b.order;
+  });
+  
+  res.json(result);
+};
+
+export const getCommitteeMember: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const member = committeeMembers.find((m) => m.id === id);
+  if (!member) {
+    return res.status(404).json({ error: "Committee member not found" });
+  }
+  res.json(member);
+};
+
+export const createCommitteeMember: RequestHandler = (req, res) => {
+  const { position, name, church, phone, category, image, email, order, active } = req.body;
+  
+  if (!position || !name || !church || !phone || !category) {
+    return res.status(400).json({ error: "Position, name, church, phone, and category are required" });
+  }
+  
+  const newMember: CommitteeMember = {
+    id: generateId(),
+    position,
+    name,
+    church,
+    phone,
+    category: category as "leadership" | "team" | "auditor" | "asa_representatives" | "board_chancellors",
+    image: image || undefined,
+    email: email || undefined,
+    order: order ?? (committeeMembers.filter(m => m.category === category).length + 1),
+    active: active !== undefined ? active : true,
+  };
+  
+  committeeMembers.push(newMember);
+  res.status(201).json(newMember);
+};
+
+export const updateCommitteeMember: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const index = committeeMembers.findIndex((m) => m.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: "Committee member not found" });
+  }
+  committeeMembers[index] = { ...committeeMembers[index], ...req.body };
+  res.json(committeeMembers[index]);
+};
+
+export const deleteCommitteeMember: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const index = committeeMembers.findIndex((m) => m.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: "Committee member not found" });
+  }
+  committeeMembers.splice(index, 1);
+  res.status(204).send();
+};
+
 // Analytics API
 export const getAnalytics: RequestHandler = (req, res) => {
   const analytics = {
@@ -287,6 +621,11 @@ export const getAnalytics: RequestHandler = (req, res) => {
     totalEvents: events.length,
     upcomingEvents: events.filter((e) => e.status === "upcoming").length,
     totalNewsArticles: news.length,
+    totalBooks: books.length,
+    totalSubscribers: subscribers.length,
+    activeSubscribers: subscribers.filter((s) => s.status === "active").length,
+    totalCommitteeMembers: committeeMembers.length,
+    activeCommitteeMembers: committeeMembers.filter((m) => m.active !== false).length,
   };
   res.json(analytics);
 };

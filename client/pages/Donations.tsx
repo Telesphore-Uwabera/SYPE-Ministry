@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Heart, Globe, DollarSign, Target, Users, Zap } from "lucide-react";
+import { Heart, Globe, DollarSign, Target, Users, Zap, MessageCircle } from "lucide-react";
 
 export default function Donations() {
   const donationOptions = [
@@ -259,6 +259,43 @@ export default function Donations() {
             >
               Call Us
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* WhatsApp Training Group Section */}
+      <section className="py-16 md:py-24 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg p-6 border-2 border-green-500/30">
+              <div className="flex flex-col md:flex-row items-center gap-4">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <MessageCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading font-bold text-lg text-primary mb-1">
+                      Join Our Training Program
+                    </h3>
+                    <p className="text-sm text-foreground/70">
+                      Connect with members on WhatsApp for training and discussions
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  asChild
+                  className="bg-green-500 hover:bg-green-600 text-white px-6 py-6 text-base font-semibold rounded-lg whitespace-nowrap"
+                >
+                  <a
+                    href="https://chat.whatsapp.com/DIKintfrZjbARzYMQ1SQbN"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Join WhatsApp Group
+                  </a>
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </section>

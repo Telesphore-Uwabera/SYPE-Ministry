@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Layout from "@/components/Layout";
-import { Mail, Phone, Youtube, MapPin, Send } from "lucide-react";
+import { Mail, Phone, Youtube, MapPin, Send, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -72,6 +72,13 @@ export default function Contact() {
       link: null,
       description: "Based in Rwanda",
     },
+    {
+      icon: MessageCircle,
+      title: "WhatsApp Training",
+      content: "Join our training group",
+      link: "https://chat.whatsapp.com/DIKintfrZjbARzYMQ1SQbN",
+      description: "Connect with members on WhatsApp",
+    },
   ];
 
   const containerVariants = {
@@ -112,14 +119,14 @@ export default function Contact() {
 
           {/* Contact Cards */}
           <StaggerContainer
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12 items-stretch"
             staggerDelay={0.15}
             direction="up"
           >
             {contactInfo.map((info, index) => {
               const Icon = info.icon;
               const CardComponent = info.link ? (
-                <HoverAnimation key={index} scale={1.02} y={-5}>
+                <HoverAnimation key={index} scale={1.02} y={-5} className="h-full">
                   <a
                     href={info.link}
                     target={info.link.startsWith("http") ? "_blank" : undefined}
@@ -128,7 +135,7 @@ export default function Contact() {
                   >
                     <Card className="h-full hover:shadow-xl transition-all duration-300 cursor-pointer border-2 hover:border-primary bg-gradient-to-br from-white to-primary/5 flex flex-col">
                       <CardHeader className="flex-shrink-0">
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center gap-2 mb-2">
                           <motion.div
                             className="p-2 bg-primary/10 rounded-lg flex-shrink-0"
                             whileHover={{ rotate: 360, scale: 1.2 }}
@@ -136,12 +143,12 @@ export default function Contact() {
                           >
                             <Icon className="w-5 h-5 text-primary" />
                           </motion.div>
-                          <CardTitle className="text-lg">{info.title}</CardTitle>
+                          <CardTitle className="text-base lg:text-sm leading-tight">{info.title}</CardTitle>
                         </div>
-                        <CardDescription className="text-sm">{info.description}</CardDescription>
+                        <CardDescription className="text-xs">{info.description}</CardDescription>
                       </CardHeader>
-                      <CardContent className="flex-1 flex items-center">
-                        <p className={`text-foreground font-medium ${info.title === "Phone" ? "text-xs leading-tight" : ""}`}>
+                      <CardContent className="flex-1 flex items-center min-w-0">
+                        <p className={`text-foreground font-medium text-sm ${info.title === "Phone" ? "text-xs leading-tight whitespace-nowrap overflow-x-auto w-full text-center" : ""}`}>
                           {info.content}
                         </p>
                       </CardContent>
@@ -149,19 +156,21 @@ export default function Contact() {
                   </a>
                 </HoverAnimation>
               ) : (
-                <HoverAnimation key={index} scale={1.02} y={-5}>
+                <HoverAnimation key={index} scale={1.02} y={-5} className="h-full">
                   <Card className="h-full border-2 bg-gradient-to-br from-white to-primary/5 flex flex-col">
                     <CardHeader className="flex-shrink-0">
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center gap-2 mb-2">
                         <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
                           <Icon className="w-5 h-5 text-primary" />
                         </div>
-                        <CardTitle className="text-lg">{info.title}</CardTitle>
+                        <CardTitle className="text-base lg:text-sm leading-tight">{info.title}</CardTitle>
                       </div>
-                      <CardDescription className="text-sm">{info.description}</CardDescription>
+                      <CardDescription className="text-xs">{info.description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex-1 flex items-center">
-                      <p className="text-foreground font-medium">{info.content}</p>
+                    <CardContent className="flex-1 flex items-center min-w-0">
+                      <p className={`text-foreground font-medium text-sm ${info.title === "Phone" ? "text-xs leading-tight whitespace-nowrap overflow-x-auto w-full text-center" : ""}`}>
+                        {info.content}
+                      </p>
                     </CardContent>
                   </Card>
                 </HoverAnimation>

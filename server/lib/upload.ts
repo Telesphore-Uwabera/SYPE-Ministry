@@ -13,6 +13,7 @@ const UPLOAD_DIRS = {
   members: path.join(process.cwd(), "public", "images", "members"),
   events: path.join(process.cwd(), "public", "images", "events"),
   media: path.join(process.cwd(), "public", "images", "media"),
+  committee: path.join(process.cwd(), "public", "images", "committee"),
 };
 
 // Ensure directories exist

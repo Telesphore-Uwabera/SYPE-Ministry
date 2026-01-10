@@ -11,9 +11,288 @@ import {
   Newspaper,
   Heart,
   MessageCircle,
+  Clock,
+  Calendar,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
+import { useEffect, useState } from "react";
+import { NewsArticle } from "@/types/admin";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+// Devotion interface
+interface Devotion {
+  id: string;
+  title: string;
+  date: string;
+  excerpt: string;
+  image?: string;
+}
+
+// YouTube Video interface
+interface YouTubeVideo {
+  id: string;
+  title: string;
+  thumbnail: string;
+  publishedAt: string;
+  description: string;
+  videoId: string;
+}
+
+// Latest News Cards Component
+function LatestNewsCards() {
+  const [news, setNews] = useState<NewsArticle[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/admin/news?limit=3")
+      .then((res) => res.json())
+      .then((data) => {
+        // Sort by publishDate (newest first) and take first 3
+        const sortedNews = (Array.isArray(data) ? data : []).sort(
+          (a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+        );
+        setNews(sortedNews.slice(0, 3));
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
+        ))}
+      </StaggerContainer>
+    );
+  }
+
+  if (news.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Newspaper className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-40" />
+        <p className="text-foreground/70">No news articles available yet.</p>
+      </div>
+    );
+  }
+
+  return (
+    <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
+      {news.map((article) => (
+        <HoverAnimation key={article.id} scale={1.02} y={-8}>
+          <Link to={`/news#${article.id}`}>
+            <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer">
+              {article.image ? (
+                <div className="relative h-48 overflow-hidden">
+                  <img
+                    src={article.image}
+                    alt={article.title}
+                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                  />
+                </div>
+              ) : (
+                <div className="h-48 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                  <Newspaper className="w-16 h-16 text-primary opacity-40" />
+                </div>
+              )}
+              <CardHeader>
+                <CardTitle className="line-clamp-2">{article.title}</CardTitle>
+                <CardDescription className="flex items-center gap-2 text-xs">
+                  <Calendar className="w-3 h-3" />
+                  {new Date(article.publishDate).toLocaleDateString()}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-foreground/70 line-clamp-3">{article.excerpt}</p>
+              </CardContent>
+            </Card>
+          </Link>
+        </HoverAnimation>
+      ))}
+    </StaggerContainer>
+  );
+}
+
+// Latest Devotions Cards Component
+function LatestDevotionsCards() {
+  const [devotions, setDevotions] = useState<Devotion[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch devotions from API (using news with category "devotion" for now)
+    fetch("/api/admin/news?limit=10")
+      .then((res) => res.json())
+      .then((data) => {
+        // Filter for devotions or use latest 3 news if no devotions category exists
+        const devotionsData = (Array.isArray(data) ? data : [])
+          .filter((item: NewsArticle) => item.category?.toLowerCase() === "devotion")
+          .sort((a: NewsArticle, b: NewsArticle) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime())
+          .slice(0, 3)
+          .map((item: NewsArticle) => ({
+            id: item.id,
+            title: item.title,
+            date: item.publishDate,
+            excerpt: item.excerpt,
+            image: item.image,
+          }));
+        setDevotions(devotionsData);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
+        ))}
+      </StaggerContainer>
+    );
+  }
+
+  if (devotions.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-40" />
+        <p className="text-foreground/70">No devotions available yet.</p>
+        <p className="text-sm text-foreground/60 mt-2">Join us daily at 6:00 AM - 7:00 AM for live devotions!</p>
+      </div>
+    );
+  }
+
+  return (
+    <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
+      {devotions.map((devotion) => (
+        <HoverAnimation key={devotion.id} scale={1.02} y={-8}>
+          <Link to={`/devotions#${devotion.id}`}>
+            <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer">
+              {devotion.image ? (
+                <div className="relative h-48 overflow-hidden">
+                  <img
+                    src={devotion.image}
+                    alt={devotion.title}
+                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                  />
+                </div>
+              ) : (
+                <div className="h-48 bg-gradient-to-br from-secondary/20 to-accent/20 flex items-center justify-center">
+                  <BookOpen className="w-16 h-16 text-secondary opacity-40" />
+                </div>
+              )}
+              <CardHeader>
+                <CardTitle className="line-clamp-2">{devotion.title}</CardTitle>
+                <CardDescription className="flex items-center gap-2 text-xs">
+                  <Clock className="w-3 h-3" />
+                  Daily 6:00 AM - 7:00 AM
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-foreground/70 line-clamp-3">{devotion.excerpt}</p>
+              </CardContent>
+            </Card>
+          </Link>
+        </HoverAnimation>
+      ))}
+    </StaggerContainer>
+  );
+}
+
+// Latest Videos Cards Component
+function LatestVideosCards() {
+  const [videos, setVideos] = useState<YouTubeVideo[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/youtube/latest?limit=3")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setVideos(data.slice(0, 3));
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
+        ))}
+      </StaggerContainer>
+    );
+  }
+
+  if (videos.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Play className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-40" />
+        <p className="text-foreground/70 mb-4">No videos available yet.</p>
+        <a
+          href="https://www.youtube.com/@sypeministry5276"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 text-accent font-semibold hover:text-accent-foreground transition-colors"
+        >
+          Visit Our YouTube Channel
+          <motion.span
+            animate={{ x: [0, 5, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            →
+          </motion.span>
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
+      {videos.map((video) => (
+        <HoverAnimation key={video.id} scale={1.02} y={-8}>
+          <a
+            href={`https://www.youtube.com/watch?v=${video.videoId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block h-full"
+          >
+            <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer">
+              <div className="relative h-48 overflow-hidden group">
+                <img
+                  src={video.thumbnail}
+                  alt={video.title}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                  <Play className="w-16 h-16 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </div>
+              <CardHeader>
+                <CardTitle className="line-clamp-2">{video.title}</CardTitle>
+                <CardDescription className="flex items-center gap-2 text-xs">
+                  <Calendar className="w-3 h-3" />
+                  {new Date(video.publishedAt).toLocaleDateString()}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-foreground/70 line-clamp-3">{video.description}</p>
+              </CardContent>
+            </Card>
+          </a>
+        </HoverAnimation>
+      ))}
+    </StaggerContainer>
+  );
+}
 
 export default function Home() {
   const containerVariants = {
@@ -365,134 +644,84 @@ export default function Home() {
         </div>
       </motion.section>
 
-      {/* Featured Content Section */}
+      {/* Featured Content Section - Latest News */}
       <section className="py-16 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           <ScrollAnimation direction="fade" delay={0.4}>
-            <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary text-center mb-12">
-              Featured Content
-            </h2>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary">
+                Latest News
+              </h2>
+              <Link
+                to="/news"
+                className="text-accent font-semibold hover:text-accent-foreground transition-colors inline-flex items-center gap-2"
+              >
+                View All
+                <motion.span
+                  animate={{ x: [0, 5, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  →
+                </motion.span>
+              </Link>
+            </div>
           </ScrollAnimation>
 
-          <StaggerContainer detectScrollDirection
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
-            staggerDelay={0.3}
-            direction="up"
-          >
-            {/* Latest News Card */}
-            <HoverAnimation scale={1.02} y={-8}>
-              <motion.div
-                className="bg-white rounded-lg overflow-hidden shadow-sm border border-border hover:shadow-xl transition-all duration-300"
-                whileHover={{ borderColor: "rgba(59, 130, 246, 0.3)" }}
-              >
-                <motion.div
-                  className="h-48 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center"
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Newspaper className="w-16 h-16 text-primary opacity-40" />
-                </motion.div>
-                <div className="p-6">
-                  <h3 className="font-heading font-semibold text-lg text-primary mb-3">
-                    Latest News
-                  </h3>
-                  <p className="text-foreground/70 text-sm mb-4">
-                    Stay updated with the latest ministry announcements, events,
-                    and mission reports.
-                  </p>
-                  <Link
-                    to="/news"
-                    className="inline-flex items-center text-accent font-semibold hover:text-accent-foreground transition-colors group"
-                  >
-                    Read News
-                    <motion.span
-                      className="ml-2"
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                    >
-                      →
-                    </motion.span>
-                  </Link>
-                </div>
-              </motion.div>
-            </HoverAnimation>
+          <LatestNewsCards />
+        </div>
+      </section>
 
-            {/* Recent Devotions Card */}
-            <HoverAnimation scale={1.02} y={-8}>
-              <motion.div
-                className="bg-white rounded-lg overflow-hidden shadow-sm border border-border hover:shadow-xl transition-all duration-300"
-                whileHover={{ borderColor: "rgba(59, 130, 246, 0.3)" }}
+      {/* Featured Content Section - Devotions */}
+      <section className="py-16 md:py-24 bg-white">
+        <div className="container mx-auto px-4">
+          <ScrollAnimation direction="fade" delay={0.4}>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary">
+                Devotions
+              </h2>
+              <Link
+                to="/devotions"
+                className="text-accent font-semibold hover:text-accent-foreground transition-colors inline-flex items-center gap-2"
               >
-                <motion.div
-                  className="h-48 bg-gradient-to-br from-secondary/20 to-accent/20 flex items-center justify-center"
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.3 }}
+                View All
+                <motion.span
+                  animate={{ x: [0, 5, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                  <BookOpen className="w-16 h-16 text-secondary opacity-40" />
-                </motion.div>
-                <div className="p-6">
-                  <h3 className="font-heading font-semibold text-lg text-primary mb-3">
-                    Devotions
-                  </h3>
-                  <p className="text-foreground/70 text-sm mb-4">
-                    Weekly prayer and reflection using Jesus' methods. Every
-                    Every day 6:00 AM - 7:00 AM.
-                  </p>
-                  <Link
-                    to="/devotions"
-                    className="inline-flex items-center text-accent font-semibold hover:text-accent-foreground transition-colors group"
-                  >
-                    View Devotions
-                    <motion.span
-                      className="ml-2"
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                    >
-                      →
-                    </motion.span>
-                  </Link>
-                </div>
-              </motion.div>
-            </HoverAnimation>
+                  →
+                </motion.span>
+              </Link>
+            </div>
+          </ScrollAnimation>
 
-            {/* Latest Videos Card */}
-            <HoverAnimation scale={1.02} y={-8}>
-              <motion.div
-                className="bg-white rounded-lg overflow-hidden shadow-sm border border-border hover:shadow-xl transition-all duration-300"
-                whileHover={{ borderColor: "rgba(59, 130, 246, 0.3)" }}
+          <LatestDevotionsCards />
+        </div>
+      </section>
+
+      {/* Featured Content Section - Videos & Multimedia */}
+      <section className="py-16 md:py-24 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <ScrollAnimation direction="fade" delay={0.4}>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary">
+                Videos & Multimedia
+              </h2>
+              <Link
+                to="/videos"
+                className="text-accent font-semibold hover:text-accent-foreground transition-colors inline-flex items-center gap-2"
               >
-                <motion.div
-                  className="h-48 bg-gradient-to-br from-accent/20 to-primary/20 flex items-center justify-center"
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.3 }}
+                View All
+                <motion.span
+                  animate={{ x: [0, 5, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                  <Play className="w-16 h-16 text-accent-foreground opacity-40" />
-                </motion.div>
-                <div className="p-6">
-                  <h3 className="font-heading font-semibold text-lg text-primary mb-3">
-                    Videos & Multimedia
-                  </h3>
-                  <p className="text-foreground/70 text-sm mb-4">
-                    Explore sermons, testimonies, evangelism videos, and media
-                    resources.
-                  </p>
-                  <Link
-                    to="/videos"
-                    className="inline-flex items-center text-accent font-semibold hover:text-accent-foreground transition-colors group"
-                  >
-                    Watch Videos
-                    <motion.span
-                      className="ml-2"
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                    >
-                      →
-                    </motion.span>
-                  </Link>
-                </div>
-              </motion.div>
-            </HoverAnimation>
-          </StaggerContainer>
+                  →
+                </motion.span>
+              </Link>
+            </div>
+          </ScrollAnimation>
+
+          <LatestVideosCards />
         </div>
       </section>
 
@@ -778,6 +1007,45 @@ export default function Home() {
               </Button>
             </HoverAnimation>
           </ScrollAnimation>
+        </div>
+      </section>
+
+      {/* WhatsApp Training Group Section */}
+      <section className="py-16 md:py-24 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <ScrollAnimation direction="fade" delay={0.2}>
+              <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg p-6 border-2 border-green-500/30">
+                <div className="flex flex-col md:flex-row items-center gap-4">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <MessageCircle className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-heading font-bold text-lg text-primary mb-1">
+                        Join Our Training Program
+                      </h3>
+                      <p className="text-sm text-foreground/70">
+                        Connect with members on WhatsApp for training and discussions
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    asChild
+                    className="bg-green-500 hover:bg-green-600 text-white px-6 py-6 text-base font-semibold rounded-lg whitespace-nowrap"
+                  >
+                    <a
+                      href="https://chat.whatsapp.com/DIKintfrZjbARzYMQ1SQbN"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Join WhatsApp Group
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </ScrollAnimation>
+          </div>
         </div>
       </section>
     </Layout>

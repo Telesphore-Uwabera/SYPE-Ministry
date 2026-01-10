@@ -119,7 +119,7 @@ export default function FAQs() {
         },
         {
           q: "Do you have a WhatsApp group?",
-          a: "Yes, SYPE has a WhatsApp community group for members. The group is used for communication, coordination, and sharing approved evangelism materials."
+          a: "Yes, SYPE has a WhatsApp community group for members. Join our Training Program group at https://chat.whatsapp.com/DIKintfrZjbARzYMQ1SQbN. The group is used for communication, coordination, and sharing approved evangelism materials."
         },
         {
           q: "How often do you update your website?",

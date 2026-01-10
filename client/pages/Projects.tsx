@@ -7,100 +7,31 @@ import { Button } from "@/components/ui/button";
 import { Play, FileText, Image as ImageIcon, Video, CheckCircle2, Clock, TrendingUp, Award } from "lucide-react";
 import { motion } from "framer-motion";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
+import { useEffect, useState } from "react";
+import { Project } from "@/types/admin";
 
 export default function Projects() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const projects = [
-    {
-      category: "Documentary",
-      name: "Final Global Crisis",
-      topic: "Prophecy",
-      description:
-        "A series of 8-10 short documentaries (15-20 minutes) explaining prophecy from books of Daniel and Revelation, with focus on Sabbath and Sunday worship.",
-      distribution: "Upload on YouTube, Facebook, and share on WhatsApp groups",
-      type: "ongoing",
-      year: "2020",
-      featured: true,
-    },
-    {
-      category: "Documentary",
-      name: "USA in Prophecy",
-      topic: "Prophecy",
-      description:
-        "Documentary series exploring the role of the USA in biblical prophecy and eschatology.",
-      distribution: "Multiple digital platforms",
-      type: "ongoing",
-      year: "2020",
-      featured: false,
-    },
-    {
-      category: "Posters",
-      name: "Bible Highlights from Genesis to Revelation",
-      topic: "Evangelism",
-      description:
-        "Sharing highlights from bible verses and quotes covering the full biblical narrative from creation to redemption.",
-      distribution:
-        "Share on WhatsApp statuses and groups, Facebook, and elsewhere",
-      type: "completed",
-      year: "2021",
-      featured: true,
-    },
-    {
-      category: "Posters",
-      name: "All About Sabbath",
-      topic: "Gospel & Prophecy",
-      description:
-        "Happy Sabbath wishes and Bible truth about Sabbath with prophecy information.",
-      distribution: "Share on WhatsApp statuses, Facebook, and other channels",
-      type: "completed",
-      year: "2021",
-      featured: false,
-    },
-    {
-      category: "Posters",
-      name: "Councils on Nutrition and Foods",
-      topic: "Health",
-      description:
-        "Sharing highlights articles from the book 'Councils on Nutrition and Foods' for health education and temperance promotion.",
-      distribution: "Social media platforms and church groups",
-      type: "ongoing",
-      year: "2022",
-      featured: false,
-    },
-    {
-      category: "Articles",
-      name: "Center of End Time",
-      topic: "Prophecy",
-      description:
-        "Comprehensive tract describing the essential topics of Bible prophecy focusing on Sabbath and Sunday worship.",
-      distribution: "Social media and door-to-door distribution",
-      type: "completed",
-      year: "2021",
-      featured: false,
-    },
-    {
-      category: "Articles",
-      name: "Healthy in its Natural State",
-      topic: "Health",
-      description:
-        "Educational tract showing that health is the right hand of Jesus Christ through the 3rd angel's message.",
-      distribution: "Print and digital sharing",
-      type: "completed",
-      year: "2022",
-      featured: true,
-    },
-    {
-      category: "Articles",
-      name: "The Path of Salvation in Sanctuary",
-      topic: "Gospel",
-      description:
-        "Tract describing sanctuary images as the steps to the Gospel message.",
-      distribution: "Various media and door-to-door outreach",
-      type: "ongoing",
-      year: "2023",
-      featured: false,
-    },
-  ];
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch("/api/admin/projects");
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setProjects(data);
+      }
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const getIcon = (category: string) => {
     switch (category) {
@@ -132,12 +63,20 @@ export default function Projects() {
     }
   };
 
-  const getStatusBadge = (type: string) => {
-    if (type === "completed") {
+  const getStatusBadge = (status: string) => {
+    if (status === "completed") {
       return (
         <Badge className="bg-green-100 text-green-800 border-green-300">
           <CheckCircle2 className="w-3 h-3 mr-1" />
           Completed
+        </Badge>
+      );
+    }
+    if (status === "planned") {
+      return (
+        <Badge className="bg-gray-100 text-gray-800 border-gray-300">
+          <Clock className="w-3 h-3 mr-1" />
+          Planned
         </Badge>
       );
     }
@@ -150,14 +89,17 @@ export default function Projects() {
   };
 
   const featuredProjects = projects.filter(p => p.featured);
-  const ongoingProjects = projects.filter(p => p.type === "ongoing");
-  const completedProjects = projects.filter(p => p.type === "completed");
+  const ongoingProjects = projects.filter(p => p.status === "ongoing");
+  const completedProjects = projects.filter(p => p.status === "completed");
+
+  // Calculate unique categories
+  const uniqueCategories = new Set(projects.map(p => p.category)).size;
 
   const stats = [
     { label: "Total Projects", value: projects.length, icon: Award, color: "text-primary" },
     { label: "Ongoing", value: ongoingProjects.length, icon: Clock, color: "text-blue-600" },
     { label: "Completed", value: completedProjects.length, icon: CheckCircle2, color: "text-green-600" },
-    { label: "Categories", value: 3, icon: TrendingUp, color: "text-secondary" },
+    { label: "Categories", value: uniqueCategories, icon: TrendingUp, color: "text-secondary" },
   ];
 
   return (
@@ -186,6 +128,7 @@ export default function Projects() {
       </section>
 
       {/* Statistics Section */}
+      {!loading && (
       <section className="py-12 bg-white border-b border-border">
         <div className="container mx-auto px-4">
           <StaggerContainer
@@ -241,6 +184,19 @@ export default function Projects() {
           </StaggerContainer>
         </div>
       </section>
+      )}
+
+      {loading && (
+        <section className="py-12 bg-white border-b border-border">
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Featured Projects Section */}
       {featuredProjects.length > 0 && (
@@ -276,7 +232,7 @@ export default function Projects() {
                           {getIcon(project.category)}
                         </div>
                         <div className="flex flex-col gap-2">
-                          {getStatusBadge(project.type)}
+                          {getStatusBadge(project.status)}
                           <Badge variant="outline" className="text-xs">
                             {project.year}
                           </Badge>
@@ -309,6 +265,22 @@ export default function Projects() {
                 </HoverAnimation>
               ))}
             </StaggerContainer>
+          </div>
+        </section>
+      )}
+
+      {loading && (
+        <section className="py-16 md:py-24 bg-white">
+          <div className="container mx-auto px-4 text-center">
+            <p className="text-foreground/70">Loading projects...</p>
+          </div>
+        </section>
+      )}
+
+      {!loading && projects.length === 0 && (
+        <section className="py-16 md:py-24 bg-white">
+          <div className="container mx-auto px-4 text-center">
+            <p className="text-foreground/70">No projects available yet.</p>
           </div>
         </section>
       )}
@@ -357,7 +329,7 @@ export default function Projects() {
                               <CardDescription>{project.category} • {project.year}</CardDescription>
                             </div>
                           </div>
-                          {getStatusBadge(project.type)}
+                          {getStatusBadge(project.status)}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <Badge className={`${getBadgeColor(project.topic)} text-xs`}>
@@ -410,7 +382,7 @@ export default function Projects() {
                               <CardDescription>{project.category} • {project.year}</CardDescription>
                             </div>
                           </div>
-                          {getStatusBadge(project.type)}
+                          {getStatusBadge(project.status)}
                         </div>
                         <Badge className={`${getBadgeColor(project.topic)} text-xs`}>
                     {project.topic}
@@ -456,7 +428,7 @@ export default function Projects() {
                               <CardDescription>{project.category} • {project.year}</CardDescription>
                             </div>
                           </div>
-                          {getStatusBadge(project.type)}
+                          {getStatusBadge(project.status)}
                         </div>
                         <Badge className={`${getBadgeColor(project.topic)} text-xs`}>
                           {project.topic}
@@ -502,7 +474,7 @@ export default function Projects() {
                               <CardDescription>{project.category} • {project.year}</CardDescription>
                             </div>
                           </div>
-                          {getStatusBadge(project.type)}
+                          {getStatusBadge(project.status)}
                         </div>
                         <Badge className={`${getBadgeColor(project.topic)} text-xs`}>
                           {project.topic}
@@ -548,7 +520,7 @@ export default function Projects() {
                               <CardDescription>{project.category} • {project.year}</CardDescription>
                             </div>
                           </div>
-                          {getStatusBadge(project.type)}
+                          {getStatusBadge(project.status)}
                         </div>
                         <Badge className={`${getBadgeColor(project.topic)} text-xs`}>
                           {project.topic}

@@ -35,6 +35,7 @@ export interface Project {
   distribution: string;
   status: "ongoing" | "completed" | "planned";
   year: string;
+  featured?: boolean;
   teamMembers?: string[];
   startDate?: string;
   endDate?: string;
@@ -91,6 +92,16 @@ export interface MediaFile {
   description?: string;
 }
 
+export interface EmailSubscriber {
+  id: string;
+  email: string;
+  name?: string;
+  subscribedAt: string;
+  status: "active" | "unsubscribed";
+  source?: string; // Where they subscribed from (e.g., "footer", "contact_form")
+  tags?: string[];
+}
+
 export interface EmailCampaign {
   id: string;
   subject: string;
@@ -101,6 +112,38 @@ export interface EmailCampaign {
   scheduledDate?: string;
   openRate?: number;
   clickRate?: number;
+}
+
+export interface Book {
+  id: string;
+  title: string;
+  author?: string;
+  category: "Health" | "Genzura" | "Ellen G. White Books" | "Bible" | "Inyandiko" | "Integuza" | "Others";
+  description?: string;
+  coverImage?: string;
+  fileUrl?: string; // PDF or document URL
+  isbn?: string;
+  publisher?: string;
+  publishDate?: string;
+  language?: string;
+  pages?: number;
+  tags?: string[];
+  featured: boolean;
+  uploadDate: string;
+  downloads?: number;
+}
+
+export interface CommitteeMember {
+  id: string;
+  position: string;
+  name: string;
+  church: string;
+  phone: string;
+  category: "leadership" | "team" | "auditor" | "asa_representatives" | "board_chancellors"; // For grouping on About page
+  image?: string; // URL to member photo
+  email?: string;
+  order: number; // For sorting within category
+  active: boolean; // To show/hide members
 }
 
 export interface Analytics {

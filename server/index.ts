@@ -5,6 +5,7 @@ import path from "path";
 import { handleDemo } from "./routes/demo";
 import * as adminRoutes from "./routes/admin";
 import * as uploadRoutes from "./routes/upload";
+import * as youtubeRoutes from "./routes/youtube";
 
 export function createServer() {
   const app = express();
@@ -72,8 +73,47 @@ export function createServer() {
   app.put("/api/admin/faqs/:id", adminRoutes.updateFAQ);
   app.delete("/api/admin/faqs/:id", adminRoutes.deleteFAQ);
 
+  // Admin API Routes - Media
+  app.get("/api/admin/media", adminRoutes.getMedia);
+  app.get("/api/admin/media/:id", adminRoutes.getMediaFile);
+  app.post("/api/admin/media", adminRoutes.createMedia);
+  app.put("/api/admin/media/:id", adminRoutes.updateMedia);
+  app.delete("/api/admin/media/:id", adminRoutes.deleteMedia);
+
+  // Admin API Routes - Books
+  app.get("/api/admin/books", adminRoutes.getBooks);
+  app.get("/api/admin/books/:id", adminRoutes.getBook);
+  app.post("/api/admin/books", adminRoutes.createBook);
+  app.put("/api/admin/books/:id", adminRoutes.updateBook);
+  app.delete("/api/admin/books/:id", adminRoutes.deleteBook);
+  app.post("/api/admin/books/:id/download", adminRoutes.trackBookDownload);
+
+  // Email Subscription Routes (Public)
+  app.post("/api/subscribe", adminRoutes.createSubscriber);
+  app.post("/api/unsubscribe", adminRoutes.unsubscribe);
+
+  // Admin API Routes - Email Subscribers
+  app.get("/api/admin/subscribers", adminRoutes.getSubscribers);
+  app.get("/api/admin/subscribers/:id", adminRoutes.getSubscriber);
+  app.put("/api/admin/subscribers/:id", adminRoutes.updateSubscriber);
+  app.delete("/api/admin/subscribers/:id", adminRoutes.deleteSubscriber);
+
+  // Admin API Routes - Committee Members
+  app.get("/api/admin/committee", adminRoutes.getCommitteeMembers);
+  app.get("/api/admin/committee/:id", adminRoutes.getCommitteeMember);
+  app.post("/api/admin/committee", adminRoutes.createCommitteeMember);
+  app.put("/api/admin/committee/:id", adminRoutes.updateCommitteeMember);
+  app.delete("/api/admin/committee/:id", adminRoutes.deleteCommitteeMember);
+
+  // Public API Routes - Committee Members (for About page)
+  app.get("/api/committee", adminRoutes.getCommitteeMembers);
+
   // Admin API Routes - Analytics
   app.get("/api/admin/analytics", adminRoutes.getAnalytics);
+
+  // YouTube API Routes
+  app.get("/api/youtube/latest", youtubeRoutes.getLatestVideos);
+  app.get("/api/youtube/videos", youtubeRoutes.getLatestVideos);
 
   return app;
 }

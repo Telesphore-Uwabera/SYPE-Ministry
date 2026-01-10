@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Analytics } from "@/types/admin";
-import { getAnalytics } from "@/lib/adminStore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, Users, BookOpen, DollarSign, Calendar, Newspaper } from "lucide-react";
 
@@ -11,8 +10,16 @@ export default function AnalyticsDashboard() {
     loadAnalytics();
   }, []);
 
-  const loadAnalytics = () => {
-    setAnalytics(getAnalytics());
+  const loadAnalytics = async () => {
+    try {
+      const response = await fetch("/api/admin/analytics");
+      const data = await response.json();
+      if (data) {
+        setAnalytics(data);
+      }
+    } catch (error) {
+      console.error("Error loading analytics:", error);
+    }
   };
 
   if (!analytics) {

@@ -1,8 +1,64 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Mail, Phone, MapPin, Facebook, Youtube, Instagram, Linkedin } from "lucide-react";
+import { Mail, Phone, MapPin, Facebook, Youtube, Instagram, Linkedin, Send, Check, MessageCircle } from "lucide-react";
 import MTNPayment from "./MTNPayment";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Footer() {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !email.includes("@")) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name: name || undefined, source: "footer" }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to subscribe");
+      }
+
+      setIsSubscribed(true);
+      setEmail("");
+      setName("");
+      toast({
+        title: "Subscribed successfully!",
+        description: "Thank you for subscribing to our newsletter.",
+      });
+
+      // Reset success message after 5 seconds
+      setTimeout(() => setIsSubscribed(false), 5000);
+    } catch (error: any) {
+      toast({
+        title: "Subscription failed",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   return (
     <footer className="bg-slate-900 text-white mt-20">
       <div className="container mx-auto px-4 py-12">
@@ -225,6 +281,88 @@ export default function Footer() {
           </div>
         </div>
 
+        {/* Email Subscription Section */}
+        <div className="mb-8 border-t border-primary-foreground/20 pt-8">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-6">
+              <h4 className="font-heading font-semibold text-lg mb-2">
+                Stay Connected
+              </h4>
+              <p className="text-sm opacity-90">
+                Subscribe to our newsletter for updates, news, and spiritual resources
+              </p>
+            </div>
+            {isSubscribed ? (
+              <div className="bg-green-500/20 border border-green-500/50 rounded-lg p-4 text-center">
+                <div className="flex items-center justify-center gap-2 text-green-400">
+                  <Check className="w-5 h-5" />
+                  <p className="font-semibold">Thank you for subscribing!</p>
+                </div>
+                <p className="text-sm opacity-90 mt-2">
+                  You'll receive our latest updates and resources.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 flex flex-col sm:flex-row gap-2">
+                  <Input
+                    type="text"
+                    placeholder="Your name (optional)"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="sm:w-40 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20"
+                  />
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 whitespace-nowrap"
+                >
+                  {isSubmitting ? (
+                    "Subscribing..."
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      Subscribe
+                    </>
+                  )}
+                </Button>
+              </form>
+            )}
+            
+            {/* WhatsApp Group Link */}
+            <div className="mt-6 pt-6 border-t border-primary-foreground/20">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <MessageCircle className="w-5 h-5 text-primary" />
+                <div className="text-center sm:text-left">
+                  <p className="text-sm font-semibold mb-1">Join Our Training Program</p>
+                  <p className="text-xs opacity-75 mb-2">Connect with members on WhatsApp for training and discussions</p>
+                </div>
+                <Button
+                  asChild
+                  className="bg-green-500 hover:bg-green-600 text-white whitespace-nowrap"
+                >
+                  <a
+                    href="https://chat.whatsapp.com/DIKintfrZjbARzYMQ1SQbN"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Join Group
+                  </a>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* MTN Payment Section */}
         <div className="mb-8">
           <MTNPayment variant="footer" />
@@ -271,7 +409,7 @@ export default function Footer() {
             </a>
           </p>
           <p>
-            © 2024 SYPE Ministry. All rights reserved. | Seventh-day Adventist
+            © 2026 SYPE Ministry. All rights reserved. | Seventh-day Adventist
             Young Professionals in Evangelism
           </p>
         </div>

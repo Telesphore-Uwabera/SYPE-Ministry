@@ -26,37 +26,8 @@ const saveToStorage = <T>(key: string, data: T[]): void => {
   localStorage.setItem(key, JSON.stringify(data));
 };
 
-// Initialize with sample data if empty
-const initializeData = () => {
-  if (getFromStorage(STORAGE_KEYS.MEMBERS, []).length === 0) {
-    const sampleMembers: Member[] = [
-      {
-        id: "1",
-        name: "John Doe",
-        email: "john@example.com",
-        phone: "+250 780 000 000",
-        role: "Alumni",
-        status: "Active",
-        joinDate: "2023-01-15",
-        department: "Media",
-      },
-      {
-        id: "2",
-        name: "Jane Smith",
-        email: "jane@example.com",
-        phone: "+250 781 000 000",
-        role: "Student",
-        status: "Active",
-        joinDate: "2024-03-20",
-        department: "Evangelism",
-      },
-    ];
-    saveToStorage(STORAGE_KEYS.MEMBERS, sampleMembers);
-  }
-};
-
-// Initialize on import
-initializeData();
+// Initialize with sample data if empty - removed default members
+// Members should be added manually through the admin panel
 
 // Member Management
 export const memberStore = {

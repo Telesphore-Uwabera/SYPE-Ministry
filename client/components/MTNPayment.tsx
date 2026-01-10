@@ -51,6 +51,9 @@ export default function MTNPayment({ variant = "bar", className = "" }: MTNPayme
                 {paymentCode}
               </p>
             </div>
+            <p className="text-xs text-center opacity-90">
+              Registered to: Niyonkuru Simeon
+            </p>
             <button
               onClick={handleCopy}
               className="text-xs bg-white/20 hover:bg-white/30 rounded px-3 py-1 transition-colors flex items-center gap-1"
@@ -81,7 +84,10 @@ export default function MTNPayment({ variant = "bar", className = "" }: MTNPayme
             <Smartphone className="w-5 h-5 text-primary" />
             <div>
               <p className="text-sm font-semibold text-primary">Support via MTN Mobile Money</p>
-              <p className="text-xs text-foreground/70">Dial the code below to donate</p>
+              <p className="text-xs text-white">Dial the code below to donate</p>
+              <p className="text-xs text-white/80 mt-1">
+                Registered to: <span className="font-medium">Niyonkuru Simeon</span>
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -111,16 +117,21 @@ export default function MTNPayment({ variant = "bar", className = "" }: MTNPayme
   return (
     <div className={`fixed top-10 md:top-12 left-0 right-0 z-[55] bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-white ${className}`}>
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-10 md:h-12">
-          <div className="flex items-center gap-2 md:gap-3 flex-1">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-1 md:gap-0 py-2 md:py-0 h-auto md:h-10 lg:h-12">
+          <div className="flex items-center gap-2 md:gap-3 flex-1 w-full md:w-auto">
             <Smartphone className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
-            <span className="text-xs md:text-sm font-semibold whitespace-nowrap">
-              Support via MTN:
-            </span>
-            <div className="bg-white/20 rounded px-2 py-1 flex-1 md:flex-initial overflow-x-auto">
-              <p className="text-xs md:text-sm font-mono font-bold text-center md:text-left whitespace-nowrap">
-                {paymentCode}
-              </p>
+            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3 flex-1">
+              <span className="text-xs md:text-sm font-semibold whitespace-nowrap">
+                Support via MTN:
+              </span>
+              <div className="bg-white/20 rounded px-2 py-1 flex-1 md:flex-initial overflow-x-auto">
+                <p className="text-xs md:text-sm font-mono font-bold text-center md:text-left whitespace-nowrap">
+                  {paymentCode}
+                </p>
+              </div>
+              <span className="text-xs opacity-90 whitespace-nowrap">
+                (Registered to: Niyonkuru Simeon)
+              </span>
             </div>
           </div>
           <button

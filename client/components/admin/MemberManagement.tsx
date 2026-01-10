@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Member } from "@/types/admin";
-import { memberStore } from "@/lib/adminStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,28 +57,67 @@ export default function MemberManagement() {
     loadMembers();
   }, []);
 
-  const loadMembers = () => {
-    setMembers(memberStore.getAll());
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingMember) {
-      memberStore.update(editingMember.id, formData);
+  const loadMembers = async () => {
+    try {
+      const response = await fetch("/api/admin/members");
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setMembers(data);
+      }
+    } catch (error) {
+      console.error("Error loading members:", error);
       toast({
-        title: "Member updated",
-        description: "Member information has been updated successfully.",
-      });
-    } else {
-      memberStore.create(formData);
-      toast({
-        title: "Member added",
-        description: "New member has been added successfully.",
+        title: "Error",
+        description: "Failed to load members. Please try again.",
+        variant: "destructive",
       });
     }
-    setIsDialogOpen(false);
-    resetForm();
-    loadMembers();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingMember) {
+        const response = await fetch(`/api/admin/members/${editingMember.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) throw new Error("Failed to update member");
+
+        toast({
+          title: "Member updated",
+          description: "Member information has been updated successfully.",
+        });
+      } else {
+        const response = await fetch("/api/admin/members", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to create member");
+        }
+
+        toast({
+          title: "Member added",
+          description: "New member has been added successfully.",
+        });
+      }
+
+      setIsDialogOpen(false);
+      resetForm();
+      loadMembers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save member. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEdit = (member: Member) => {
@@ -97,13 +135,26 @@ export default function MemberManagement() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    memberStore.delete(id);
-    toast({
-      title: "Member deleted",
-      description: "Member has been removed successfully.",
-    });
-    loadMembers();
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/admin/members/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete member");
+
+      toast({
+        title: "Member deleted",
+        description: "Member has been removed successfully.",
+      });
+      loadMembers();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete member. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const resetForm = () => {

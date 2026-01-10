@@ -1,15 +1,19 @@
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
+import { Button } from "@/components/ui/button";
 import {
-  Users,
   Megaphone,
   Zap,
   CheckCircle2,
+  Users,
+  Heart,
+  Video,
+  Image as ImageIcon,
   FileText,
-  BookOpen,
   Handshake,
   BarChart3,
   Sparkles,
+  MessageCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
@@ -17,47 +21,8 @@ import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/
 export default function Departments() {
   const departments = [
     {
-      icon: Users,
-      title: "Student Coordination",
-      subtitle: "Mobilizing Student Members",
-      description:
-        "Responsible for mobilizing students and coordinating student-led activities and engagement programs.",
-      responsibilities: [
-        "Recruit and engage student members",
-        "Organize student-focused events and activities",
-        "Facilitate participation in evangelical projects",
-        "Build community among student professionals",
-      ],
-    },
-    {
-      icon: Users,
-      title: "Alumni Coordination",
-      subtitle: "Mobilizing Alumni Professionals",
-      description:
-        "Responsible for mobilizing alumni professionals and coordinating their participation in ministry activities.",
-      responsibilities: [
-        "Connect with SYPE alumni across professions",
-        "Coordinate professional expertise for projects",
-        "Organize mentorship and networking opportunities",
-        "Facilitate resource contribution from professionals",
-      ],
-    },
-    {
-      icon: FileText,
-      title: "Documentation & Records",
-      subtitle: "Keeping Ministry Records",
-      description:
-        "In charge of documenting all meetings, member registrations, project archives, and institutional memory.",
-      responsibilities: [
-        "Record and archive all meetings",
-        "Maintain member registration database",
-        "Document project outcomes and learnings",
-        "Create and maintain institutional records",
-      ],
-    },
-    {
       icon: Megaphone,
-      title: "Communications",
+      title: "Communication Department",
       subtitle: "External & Internal Relations",
       description:
         "Responsible for public relations, member recruitment, formal announcements, and external communication.",
@@ -70,28 +35,93 @@ export default function Departments() {
     },
     {
       icon: Zap,
-      title: "Technical & Digital Assets",
-      subtitle: "Digital Presence & Assets",
+      title: "Public Evangelism Department",
+      subtitle: "Spreading the Gospel",
       description:
-        "In charge of SYPE's digital presence including YouTube channels, emails, and all digital communication platforms.",
+        "Focused on organizing and conducting evangelistic activities, outreach programs, and mission camps.",
       responsibilities: [
-        "Manage YouTube channel and video content",
-        "Oversee email communication systems",
-        "Maintain website and digital platforms",
-        "Handle technical aspects of content distribution",
+        "Organize evangelistic events and campaigns",
+        "Coordinate house-to-house evangelism",
+        "Plan and execute mission camps",
+        "Train members in evangelistic methods",
       ],
     },
     {
-      icon: CheckCircle2,
-      title: "Project Management",
-      subtitle: "Implementation & Assessment",
+      icon: Users,
+      title: "Fellowship Department",
+      subtitle: "Building Community",
       description:
-        "Responsible for follow-up on project implementation, monitoring progress, and assessing results.",
+        "Responsible for fostering spiritual growth, building relationships, and creating a supportive community among members.",
       responsibilities: [
-        "Monitor project implementation status",
-        "Track progress against project timelines",
-        "Assess project outcomes and impact",
-        "Provide feedback for continuous improvement",
+        "Organize fellowship meetings and activities",
+        "Facilitate spiritual growth programs",
+        "Build community among members",
+        "Coordinate prayer and worship sessions",
+      ],
+    },
+    {
+      icon: Heart,
+      title: "Prayers Department",
+      subtitle: "Spiritual Foundation",
+      description:
+        "In charge of prayer ministry, intercessory prayer, and spiritual support for members and ministry activities.",
+      responsibilities: [
+        "Organize prayer meetings and sessions",
+        "Coordinate intercessory prayers",
+        "Provide spiritual support for members",
+        "Lead daily devotion programs",
+      ],
+    },
+    {
+      icon: Video,
+      title: "Video Preparation",
+      subtitle: "Multimedia Content Creation",
+      description:
+        "Responsible for creating, editing, and producing video content for ministry use, including sermons, teachings, and promotional materials.",
+      responsibilities: [
+        "Record and edit video content",
+        "Produce sermons and teaching videos",
+        "Create promotional and documentary videos",
+        "Manage video distribution and publishing",
+      ],
+    },
+    {
+      icon: ImageIcon,
+      title: "Poster Preparation",
+      subtitle: "Visual Communication",
+      description:
+        "In charge of designing and creating visual materials including posters, graphics, flyers, and promotional content.",
+      responsibilities: [
+        "Design posters and promotional materials",
+        "Create graphics for events and campaigns",
+        "Develop visual branding materials",
+        "Manage visual content library",
+      ],
+    },
+    {
+      icon: FileText,
+      title: "Publishing Preparation",
+      subtitle: "Content Publishing",
+      description:
+        "Responsible for preparing, editing, and publishing written content including articles, newsletters, and documentation.",
+      responsibilities: [
+        "Edit and prepare written content for publication",
+        "Manage publishing schedules",
+        "Coordinate with writers and contributors",
+        "Ensure content quality and consistency",
+      ],
+    },
+    {
+      icon: Heart,
+      title: "Health Department",
+      subtitle: "Health & Wellness Ministry",
+      description:
+        "Focused on promoting health and wellness through education, health programs, and lifestyle counseling based on Adventist health principles.",
+      responsibilities: [
+        "Organize health education programs",
+        "Promote healthy lifestyle principles",
+        "Provide health counseling and support",
+        "Coordinate health-related activities and campaigns",
       ],
     },
   ];
@@ -154,7 +184,7 @@ export default function Departments() {
           <ScrollAnimation direction="fade" delay={0.4}>
             <p className="text-foreground/70 text-lg leading-relaxed mb-6">
               SYPE Ministry operates through a dedicated committee structure with
-              six specialized departments. Each department has clear roles and
+              eight specialized departments. Each department has clear roles and
               responsibilities to ensure our ministry runs efficiently and
               effectively.
             </p>
@@ -346,6 +376,43 @@ export default function Departments() {
             >
               Get Involved <span className="ml-2">→</span>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* WhatsApp Training Group Section */}
+      <section className="py-16 md:py-24 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg p-6 border-2 border-green-500/30">
+              <div className="flex flex-col md:flex-row items-center gap-4">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <MessageCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading font-bold text-lg text-primary mb-1">
+                      Join Our Training Program
+                    </h3>
+                    <p className="text-sm text-foreground/70">
+                      Connect with members on WhatsApp for training and discussions
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  asChild
+                  className="bg-green-500 hover:bg-green-600 text-white px-6 py-6 text-base font-semibold rounded-lg whitespace-nowrap"
+                >
+                  <a
+                    href="https://chat.whatsapp.com/DIKintfrZjbARzYMQ1SQbN"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Join WhatsApp Group
+                  </a>
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </section>

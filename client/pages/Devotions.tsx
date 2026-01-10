@@ -2,18 +2,14 @@ import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, Users, BookOpen, Heart, Calendar, Newspaper, ChevronDown, ChevronUp, Image as ImageIcon } from "lucide-react";
+import { Clock, Users, BookOpen, Heart, Calendar, Image as ImageIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 import { MediaFile } from "@/types/admin";
-import { NewsArticle } from "@/types/admin";
 
 export default function Devotions() {
   const [posters, setPosters] = useState<MediaFile[]>([]);
-  const [news, setNews] = useState<NewsArticle[]>([]);
   const [postersLoading, setPostersLoading] = useState(true);
-  const [newsLoading, setNewsLoading] = useState(true);
-  const [showAllNews, setShowAllNews] = useState(false);
 
   useEffect(() => {
     // Fetch devotion posters (images with category "devotions" or "posters")
@@ -32,22 +28,7 @@ export default function Devotions() {
       .catch(() => {
         setPostersLoading(false);
       });
-
-    // Fetch last 6 news articles
-    fetch("/api/admin/news?limit=6")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setNews(data.slice(0, 6)); // Last 6 news
-        }
-        setNewsLoading(false);
-      })
-      .catch(() => {
-        setNewsLoading(false);
-      });
   }, []);
-
-  const displayedNews = showAllNews ? news : news.slice(0, 3);
 
   return (
     <Layout>
@@ -267,104 +248,6 @@ export default function Devotions() {
         </div>
       </section>
 
-      {/* Last 6 News Articles */}
-      <section className="py-16 md:py-24 bg-white">
-        <div className="container mx-auto px-4">
-          <ScrollAnimation direction="up" delay={0.2}>
-            <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary text-center mb-12">
-              Latest News (Last 6 Articles)
-            </h2>
-          </ScrollAnimation>
-
-          {newsLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-80 bg-muted animate-pulse rounded-lg" />
-              ))}
-            </div>
-          ) : news.length === 0 ? (
-            <div className="text-center py-12">
-              <Newspaper className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-40" />
-              <p className="text-foreground/70 mb-4">No news articles available yet.</p>
-            </div>
-          ) : (
-            <>
-              <StaggerContainer
-                detectScrollDirection
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                staggerDelay={0.15}
-                direction="up"
-              >
-                {displayedNews.map((article) => (
-                  <HoverAnimation key={article.id} scale={1.02} y={-5}>
-                    <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300">
-                      {article.image && (
-                        <div className="relative h-48 overflow-hidden">
-                          <img
-                            src={article.image}
-                            alt={article.title}
-                            className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-                          />
-                        </div>
-                      )}
-                      <CardHeader>
-                        <CardDescription className="flex items-center gap-2 text-xs mb-2">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(article.publishDate).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </CardDescription>
-                        <CardTitle className="line-clamp-2 text-lg">{article.title}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-foreground/70 line-clamp-3 mb-4">
-                          {article.excerpt}
-                        </p>
-                        <Button
-                          asChild
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                        >
-                          <Link to={`/news#${article.id}`} className="inline-flex items-center justify-center gap-2">
-                            Read More
-                            <ExternalLink className="w-3 h-3" />
-                          </Link>
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </HoverAnimation>
-                ))}
-              </StaggerContainer>
-
-              {news.length > 3 && (
-                <div className="text-center mt-8">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowAllNews(!showAllNews)}
-                    className="flex items-center gap-2"
-                  >
-                    {showAllNews ? (
-                      <>
-                        <ChevronUp className="w-4 h-4" />
-                        View Less
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="w-4 h-4" />
-                        View More ({news.length - 3} more)
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </section>
-
       {/* Key Themes Section */}
       <section className="py-16 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
@@ -374,11 +257,11 @@ export default function Devotions() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <ScrollAnimation direction="up" delay={0.2}>
-              <div className="bg-white rounded-lg p-6 border border-border">
+              <div className="bg-white rounded-lg p-6 border border-border h-full flex flex-col">
                 <h3 className="font-heading font-bold text-lg text-primary mb-3">
                   Jesus' Methods
                 </h3>
-                <p className="text-foreground/70">
+                <p className="text-foreground/70 flex-grow">
                   Understanding and applying the compassionate, personal approach
                   Jesus used in reaching hearts and spreading the Gospel
                 </p>
@@ -386,11 +269,11 @@ export default function Devotions() {
             </ScrollAnimation>
 
             <ScrollAnimation direction="up" delay={0.3}>
-              <div className="bg-white rounded-lg p-6 border border-border">
+              <div className="bg-white rounded-lg p-6 border border-border h-full flex flex-col">
                 <h3 className="font-heading font-bold text-lg text-primary mb-3">
                   Biblical Foundation
                 </h3>
-                <p className="text-foreground/70">
+                <p className="text-foreground/70 flex-grow">
                   Grounding our evangelism in Scripture, drawing from the Great
                   Commission and apostolic witness
                 </p>
@@ -398,11 +281,11 @@ export default function Devotions() {
             </ScrollAnimation>
 
             <ScrollAnimation direction="up" delay={0.4}>
-              <div className="bg-white rounded-lg p-6 border border-border">
+              <div className="bg-white rounded-lg p-6 border border-border h-full flex flex-col">
                 <h3 className="font-heading font-bold text-lg text-primary mb-3">
                   Ellen G. White Insights
                 </h3>
-                <p className="text-foreground/70">
+                <p className="text-foreground/70 flex-grow">
                   Learning from "Evangelism (Ivugabutumwa)" and other inspired
                   writings on sharing faith effectively
                 </p>

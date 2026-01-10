@@ -15,14 +15,17 @@
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build",
     "build:server": "vite build --config vite.config.server.ts",
+    "build:production": "npm run db:generate && npm run build:client && npm run build:server",
     "start": "node dist/server/node-build.mjs",
+    "start:production": "NODE_ENV=production node dist/server/node-build.mjs",
     "test": "vitest --run",
     "format.fix": "prettier --write .",
     "typecheck": "tsc",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate || true"
   },
   "dependencies": {
     "@prisma/client": "^7.2.0",

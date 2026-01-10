@@ -18,6 +18,7 @@ import Communication from "@/components/admin/Communication";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import SettingsManagement from "@/components/admin/Settings";
 import CommitteeManagement from "@/components/admin/CommitteeManagement";
+import DevotionManagement from "@/components/admin/DevotionManagement";
 
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -167,7 +168,7 @@ export default function Admin() {
   // Create a simple user object for AdminLayout
   const adminUser = {
     id: "admin",
-    email: "admin@sypeministry.org",
+    email: "sypeministry@gmail.com",
     user_metadata: {
       full_name: "SYPE Ministry Admin",
     },
@@ -219,7 +220,7 @@ export default function Admin() {
 
           {/* Admin Features */}
           <Tabs defaultValue="analytics" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-5 lg:grid-cols-12 overflow-x-auto">
+            <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 lg:grid-cols-7 gap-1 overflow-x-auto">
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="members">Members</TabsTrigger>
               <TabsTrigger value="news">News</TabsTrigger>
@@ -229,6 +230,7 @@ export default function Admin() {
               <TabsTrigger value="faqs">FAQs</TabsTrigger>
               <TabsTrigger value="books">Books</TabsTrigger>
               <TabsTrigger value="media">Media</TabsTrigger>
+              <TabsTrigger value="devotions">Devotions</TabsTrigger>
               <TabsTrigger value="committee">Committee</TabsTrigger>
               <TabsTrigger value="communication">Communication</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -268,6 +270,10 @@ export default function Admin() {
 
             <TabsContent value="media">
               <MediaManagement />
+            </TabsContent>
+
+            <TabsContent value="devotions">
+              <DevotionManagement />
             </TabsContent>
 
             <TabsContent value="committee">

@@ -1,21 +1,68 @@
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Clock, Users, BookOpen, Heart, Calendar } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Clock, Users, BookOpen, Heart, Calendar, Newspaper, ChevronDown, ChevronUp, Image as ImageIcon } from "lucide-react";
+import { useState, useEffect } from "react";
+import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
+import { MediaFile } from "@/types/admin";
+import { NewsArticle } from "@/types/admin";
 
 export default function Devotions() {
+  const [posters, setPosters] = useState<MediaFile[]>([]);
+  const [news, setNews] = useState<NewsArticle[]>([]);
+  const [postersLoading, setPostersLoading] = useState(true);
+  const [newsLoading, setNewsLoading] = useState(true);
+  const [showAllNews, setShowAllNews] = useState(false);
+
+  useEffect(() => {
+    // Fetch devotion posters (images with category "devotions" or "posters")
+    fetch("/api/admin/media?category=devotions,posters&type=image")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          // Sort by upload date (newest first) and limit to recent ones
+          const sortedPosters = data.sort(
+            (a, b) => new Date(b.uploadDate || 0).getTime() - new Date(a.uploadDate || 0).getTime()
+          );
+          setPosters(sortedPosters);
+        }
+        setPostersLoading(false);
+      })
+      .catch(() => {
+        setPostersLoading(false);
+      });
+
+    // Fetch last 6 news articles
+    fetch("/api/admin/news?limit=6")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setNews(data.slice(0, 6)); // Last 6 news
+        }
+        setNewsLoading(false);
+      })
+      .catch(() => {
+        setNewsLoading(false);
+      });
+  }, []);
+
+  const displayedNews = showAllNews ? news : news.slice(0, 3);
+
   return (
     <Layout>
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary via-secondary to-primary py-16 md:py-20 text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="font-heading font-bold text-4xl md:text-5xl mb-4">
-            Daily Devotion Program
-          </h1>
-          <p className="text-lg opacity-90 max-w-2xl mx-auto">
-            Join us for weekly prayer and spiritual reflection guided by Jesus'
-            methods and Ellen G. White's teachings on Evangelism
-          </p>
+          <ScrollAnimation direction="fade" delay={0.2}>
+            <h1 className="font-heading font-bold text-4xl md:text-5xl mb-4">
+              Daily Devotion Program
+            </h1>
+            <p className="text-lg opacity-90 max-w-2xl mx-auto">
+              Join us every day for prayer and spiritual reflection guided by Jesus'
+              methods and Ellen G. White's teachings on Evangelism
+            </p>
+          </ScrollAnimation>
         </div>
       </section>
 
@@ -24,124 +71,297 @@ export default function Devotions() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-4xl mx-auto items-start">
             {/* Schedule Card */}
-            <div className="bg-gradient-to-br from-accent/20 to-accent/10 rounded-lg p-8 border border-accent/30">
-              <div className="flex items-center gap-2 mb-6">
-                <Calendar className="w-6 h-6 text-primary" />
-                <h2 className="font-heading font-bold text-2xl text-primary">
-                  Program Schedule
-                </h2>
+            <ScrollAnimation direction="left" delay={0.2}>
+              <div className="bg-gradient-to-br from-accent/20 to-accent/10 rounded-lg p-8 border border-accent/30">
+                <div className="flex items-center gap-2 mb-6">
+                  <Calendar className="w-6 h-6 text-primary" />
+                  <h2 className="font-heading font-bold text-2xl text-primary">
+                    Program Schedule
+                  </h2>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-start gap-4">
+                    <Clock className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="font-semibold text-primary">Time</p>
+                      <p className="text-foreground/70">
+                        Every day: 6:00 AM – 7:00 AM
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <Users className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="font-semibold text-primary">Platform</p>
+                      <p className="text-foreground/70">
+                        WhatsApp Community Group
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <BookOpen className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="font-semibold text-primary">Duration</p>
+                      <p className="text-foreground/70">
+                        1 hour of focused prayer
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <Heart className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                    <div>
+                        <p className="font-semibold text-primary">Leadership</p>
+                        <p className="text-foreground/70">
+                          Rotating member leaders (daily)
+                        </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-
-              <div className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <Clock className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="font-semibold text-primary">Time</p>
-                    <p className="text-foreground/70">
-                      Every day: 6:00 AM – 7:00 AM
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <Users className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="font-semibold text-primary">Platform</p>
-                    <p className="text-foreground/70">
-                      WhatsApp Community Group
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <BookOpen className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="font-semibold text-primary">Duration</p>
-                    <p className="text-foreground/70">
-                      1 hour of focused prayer
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <Heart className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="font-semibold text-primary">Leadership</p>
-                    <p className="text-foreground/70">
-                      Rotating member leaders (weekly)
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            </ScrollAnimation>
 
             {/* Program Format Card */}
-            <div className="bg-white rounded-lg p-8 border border-border shadow-sm">
-              <div className="flex items-center gap-2 mb-6">
-                <Heart className="w-6 h-6 text-primary" />
-                <h2 className="font-heading font-bold text-2xl text-primary">
-                  Program Format
-                </h2>
+            <ScrollAnimation direction="right" delay={0.2}>
+              <div className="bg-white rounded-lg p-8 border border-border shadow-sm">
+                <div className="flex items-center gap-2 mb-6">
+                  <Heart className="w-6 h-6 text-primary" />
+                  <h2 className="font-heading font-bold text-2xl text-primary">
+                    Program Format
+                  </h2>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-heading font-semibold text-primary mb-2">
+                      1. Opening Prayer
+                    </h3>
+                    <p className="text-foreground/70 text-sm">
+                      Start with an opening prayer, asking for God's guidance
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-heading font-semibold text-primary mb-2">
+                      2. Scripture Meditation
+                    </h3>
+                    <p className="text-foreground/70 text-sm">
+                      Reflect on Jesus' evangelism methods and biblical principles
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-heading font-semibold text-primary mb-2">
+                      3. Ellen G. White Insight
+                    </h3>
+                    <p className="text-foreground/70 text-sm">
+                      Discuss quotes and teachings from "Evangelism
+                      (Ivugabutumwa)"
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-heading font-semibold text-primary mb-2">
+                      4. Group Discussion
+                    </h3>
+                    <p className="text-foreground/70 text-sm">
+                      Share insights and how the principles apply to evangelism
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-heading font-semibold text-primary mb-2">
+                      5. Prayer Requests
+                    </h3>
+                    <p className="text-foreground/70 text-sm">
+                      Share and pray for personal and ministry prayer requests
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-heading font-semibold text-primary mb-2">
+                      6. Closing Prayer
+                    </h3>
+                    <p className="text-foreground/70 text-sm">
+                      End with unified prayer for the week ahead
+                    </p>
+                  </div>
+                </div>
               </div>
-
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-heading font-semibold text-primary mb-2">
-                    1. Opening Prayer
-                  </h3>
-                  <p className="text-foreground/70 text-sm">
-                    Start with an opening prayer, asking for God's guidance
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="font-heading font-semibold text-primary mb-2">
-                    2. Scripture Meditation
-                  </h3>
-                  <p className="text-foreground/70 text-sm">
-                    Reflect on Jesus' evangelism methods and biblical principles
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="font-heading font-semibold text-primary mb-2">
-                    3. Ellen G. White Insight
-                  </h3>
-                  <p className="text-foreground/70 text-sm">
-                    Discuss quotes and teachings from "Evangelism
-                    (Ivugabutumwa)"
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="font-heading font-semibold text-primary mb-2">
-                    4. Group Discussion
-                  </h3>
-                  <p className="text-foreground/70 text-sm">
-                    Share insights and how the principles apply to evangelism
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="font-heading font-semibold text-primary mb-2">
-                    5. Prayer Requests
-                  </h3>
-                  <p className="text-foreground/70 text-sm">
-                    Share and pray for personal and ministry prayer requests
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="font-heading font-semibold text-primary mb-2">
-                    6. Closing Prayer
-                  </h3>
-                  <p className="text-foreground/70 text-sm">
-                    End with unified prayer for the week ahead
-                  </p>
-                </div>
-              </div>
-            </div>
+            </ScrollAnimation>
           </div>
+        </div>
+      </section>
+
+      {/* Devotion Posters Section */}
+      <section className="py-16 md:py-24 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <ScrollAnimation direction="up" delay={0.2}>
+            <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary text-center mb-12">
+              Devotion Posters
+            </h2>
+            <p className="text-foreground/70 text-center max-w-2xl mx-auto mb-8">
+              Browse through devotion posters uploaded by our admin team. These posters contain daily devotion messages and inspiration.
+            </p>
+          </ScrollAnimation>
+
+          {postersLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div key={i} className="h-96 bg-muted animate-pulse rounded-lg" />
+              ))}
+            </div>
+          ) : posters.length === 0 ? (
+            <div className="text-center py-12">
+              <ImageIcon className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-40" />
+              <p className="text-foreground/70 mb-4">No devotion posters available yet.</p>
+              <p className="text-sm text-foreground/60">
+                Devotion posters will be uploaded by admin and displayed here.
+              </p>
+            </div>
+          ) : (
+            <StaggerContainer
+              detectScrollDirection
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+              staggerDelay={0.15}
+              direction="up"
+            >
+              {posters.map((poster) => (
+                <HoverAnimation key={poster.id} scale={1.02} y={-5}>
+                  <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300">
+                    <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+                      <img
+                        src={poster.url}
+                        alt={poster.name || "Devotion Poster"}
+                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                      />
+                    </div>
+                    <CardHeader>
+                      <CardTitle className="line-clamp-2 text-lg">{poster.name || "Devotion Poster"}</CardTitle>
+                      {poster.uploadDate && (
+                        <CardDescription className="flex items-center gap-2 text-xs mt-2">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(poster.uploadDate).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </CardDescription>
+                      )}
+                    </CardHeader>
+                    {poster.description && (
+                      <CardContent>
+                        <p className="text-sm text-foreground/70 line-clamp-3">
+                          {poster.description}
+                        </p>
+                      </CardContent>
+                    )}
+                  </Card>
+                </HoverAnimation>
+              ))}
+            </StaggerContainer>
+          )}
+        </div>
+      </section>
+
+      {/* Last 6 News Articles */}
+      <section className="py-16 md:py-24 bg-white">
+        <div className="container mx-auto px-4">
+          <ScrollAnimation direction="up" delay={0.2}>
+            <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary text-center mb-12">
+              Latest News (Last 6 Articles)
+            </h2>
+          </ScrollAnimation>
+
+          {newsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-80 bg-muted animate-pulse rounded-lg" />
+              ))}
+            </div>
+          ) : news.length === 0 ? (
+            <div className="text-center py-12">
+              <Newspaper className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-40" />
+              <p className="text-foreground/70 mb-4">No news articles available yet.</p>
+            </div>
+          ) : (
+            <>
+              <StaggerContainer
+                detectScrollDirection
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                staggerDelay={0.15}
+                direction="up"
+              >
+                {displayedNews.map((article) => (
+                  <HoverAnimation key={article.id} scale={1.02} y={-5}>
+                    <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300">
+                      {article.image && (
+                        <div className="relative h-48 overflow-hidden">
+                          <img
+                            src={article.image}
+                            alt={article.title}
+                            className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                          />
+                        </div>
+                      )}
+                      <CardHeader>
+                        <CardDescription className="flex items-center gap-2 text-xs mb-2">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(article.publishDate).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </CardDescription>
+                        <CardTitle className="line-clamp-2 text-lg">{article.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-foreground/70 line-clamp-3 mb-4">
+                          {article.excerpt}
+                        </p>
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                        >
+                          <Link to={`/news#${article.id}`} className="inline-flex items-center justify-center gap-2">
+                            Read More
+                            <ExternalLink className="w-3 h-3" />
+                          </Link>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </HoverAnimation>
+                ))}
+              </StaggerContainer>
+
+              {news.length > 3 && (
+                <div className="text-center mt-8">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAllNews(!showAllNews)}
+                    className="flex items-center gap-2"
+                  >
+                    {showAllNews ? (
+                      <>
+                        <ChevronUp className="w-4 h-4" />
+                        View Less
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-4 h-4" />
+                        View More ({news.length - 3} more)
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </section>
 
@@ -153,35 +373,41 @@ export default function Devotions() {
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg p-6 border border-border">
-              <h3 className="font-heading font-bold text-lg text-primary mb-3">
-                Jesus' Methods
-              </h3>
-              <p className="text-foreground/70">
-                Understanding and applying the compassionate, personal approach
-                Jesus used in reaching hearts and spreading the Gospel
-              </p>
-            </div>
+            <ScrollAnimation direction="up" delay={0.2}>
+              <div className="bg-white rounded-lg p-6 border border-border">
+                <h3 className="font-heading font-bold text-lg text-primary mb-3">
+                  Jesus' Methods
+                </h3>
+                <p className="text-foreground/70">
+                  Understanding and applying the compassionate, personal approach
+                  Jesus used in reaching hearts and spreading the Gospel
+                </p>
+              </div>
+            </ScrollAnimation>
 
-            <div className="bg-white rounded-lg p-6 border border-border">
-              <h3 className="font-heading font-bold text-lg text-primary mb-3">
-                Biblical Foundation
-              </h3>
-              <p className="text-foreground/70">
-                Grounding our evangelism in Scripture, drawing from the Great
-                Commission and apostolic witness
-              </p>
-            </div>
+            <ScrollAnimation direction="up" delay={0.3}>
+              <div className="bg-white rounded-lg p-6 border border-border">
+                <h3 className="font-heading font-bold text-lg text-primary mb-3">
+                  Biblical Foundation
+                </h3>
+                <p className="text-foreground/70">
+                  Grounding our evangelism in Scripture, drawing from the Great
+                  Commission and apostolic witness
+                </p>
+              </div>
+            </ScrollAnimation>
 
-            <div className="bg-white rounded-lg p-6 border border-border">
-              <h3 className="font-heading font-bold text-lg text-primary mb-3">
-                Ellen G. White Insights
-              </h3>
-              <p className="text-foreground/70">
-                Learning from "Evangelism (Ivugabutumwa)" and other inspired
-                writings on sharing faith effectively
-              </p>
-            </div>
+            <ScrollAnimation direction="up" delay={0.4}>
+              <div className="bg-white rounded-lg p-6 border border-border">
+                <h3 className="font-heading font-bold text-lg text-primary mb-3">
+                  Ellen G. White Insights
+                </h3>
+                <p className="text-foreground/70">
+                  Learning from "Evangelism (Ivugabutumwa)" and other inspired
+                  writings on sharing faith effectively
+                </p>
+              </div>
+            </ScrollAnimation>
           </div>
         </div>
       </section>
@@ -215,28 +441,36 @@ export default function Devotions() {
       {/* CTA Section */}
       <section id="join" className="py-16 md:py-24 bg-primary text-primary-foreground scroll-mt-20">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="font-heading font-bold text-3xl md:text-4xl mb-6">
-            Join Us This Sunday
-          </h2>
-          <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
-            Connect with other young SDA professionals in prayer and spiritual
-            growth every day at 6:00 AM.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              asChild
-              className="bg-accent text-accent-foreground hover:bg-accent/90 px-8 py-6 text-base font-semibold rounded-lg"
-            >
-              <Link to="/contact#join">Join WhatsApp Group</Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10 px-8 py-6 text-base font-semibold rounded-lg"
-            >
-              <Link to="/contact">Contact Us</Link>
-            </Button>
-          </div>
+          <ScrollAnimation direction="fade" delay={0.2}>
+            <h2 className="font-heading font-bold text-3xl md:text-4xl mb-6">
+              Join Us Today
+            </h2>
+            <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
+              Connect with other young SDA professionals in prayer and spiritual
+              growth every day at 6:00 AM.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button
+                asChild
+                className="bg-accent text-accent-foreground hover:bg-accent/90 px-8 py-6 text-base font-semibold rounded-lg"
+              >
+                <a
+                  href="https://chat.whatsapp.com/DIKintfrZjbARzYMQ1SQbN"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Join WhatsApp Community
+                </a>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="border-white text-black bg-white hover:bg-white/90 hover:text-black px-8 py-6 text-base font-semibold rounded-lg transition-all"
+              >
+                <Link to="/contact">Contact Us</Link>
+              </Button>
+            </div>
+          </ScrollAnimation>
         </div>
       </section>
     </Layout>

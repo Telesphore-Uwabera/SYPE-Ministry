@@ -3,7 +3,7 @@ import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Download, Calendar, User, Search as SearchIcon, Filter } from "lucide-react";
+import { BookOpen, Download, Calendar, User, Search as SearchIcon, Filter as FilterIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 import { Book } from "@/types/admin";
@@ -24,6 +24,7 @@ export default function Library() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [dateFilter, setDateFilter] = useState<"all" | "past" | "ongoing" | "future">("all");
 
   useEffect(() => {
     fetch("/api/admin/books")
@@ -39,16 +40,50 @@ export default function Library() {
       });
   }, []);
 
-  // Filter books by category and search query
-  const filteredBooks = books.filter((book) => {
-    const matchesCategory = activeCategory === "All" || book.category === activeCategory;
-    const matchesSearch =
-      searchQuery === "" ||
-      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      book.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      book.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  // Filter books by category, search query, and date
+  const getFilteredBooks = () => {
+    let filtered = [...books];
+
+    // Filter by date
+    if (dateFilter === "past") {
+      // Books published/uploaded more than 30 days ago
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      filtered = filtered.filter((book) => {
+        const bookDate = book.publishDate ? new Date(book.publishDate) : book.uploadDate ? new Date(book.uploadDate) : null;
+        return bookDate && bookDate < thirtyDaysAgo;
+      });
+    } else if (dateFilter === "ongoing") {
+      // Recently published/uploaded books (within last 30 days) or currently popular
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      filtered = filtered.filter((book) => {
+        const bookDate = book.publishDate ? new Date(book.publishDate) : book.uploadDate ? new Date(book.uploadDate) : null;
+        return bookDate && bookDate >= thirtyDaysAgo;
+      });
+    } else if (dateFilter === "future") {
+      // Books with future publish dates
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      filtered = filtered.filter((book) => {
+        const bookDate = book.publishDate ? new Date(book.publishDate) : null;
+        return bookDate && new Date(bookDate).setHours(0, 0, 0, 0) > today.getTime();
+      });
+    }
+
+    // Filter by category and search query
+    return filtered.filter((book) => {
+      const matchesCategory = activeCategory === "All" || book.category === activeCategory;
+      const matchesSearch =
+        searchQuery === "" ||
+        book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        book.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        book.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  };
+
+  const filteredBooks = getFilteredBooks();
 
   const renderBooks = () => {
     if (loading) {
@@ -121,15 +156,19 @@ export default function Library() {
                     {book.author}
                   </CardDescription>
                 )}
-                <CardDescription className="flex items-center gap-2 text-xs">
+                  <CardDescription className="flex items-center gap-2 text-xs">
                   <Calendar className="w-3 h-3" />
                   {book.publishDate
                     ? new Date(book.publishDate).toLocaleDateString("en-US", {
                         year: "numeric",
+                        month: "short",
+                        day: "numeric",
                       })
                     : book.uploadDate
                     ? new Date(book.uploadDate).toLocaleDateString("en-US", {
                         year: "numeric",
+                        month: "short",
+                        day: "numeric",
                       })
                     : "N/A"}
                 </CardDescription>
@@ -209,10 +248,30 @@ export default function Library() {
                   className="pl-10"
                 />
               </div>
-              <div className="flex items-center gap-2 text-sm text-foreground/70">
-                <Filter className="w-4 h-4" />
-                <span>{filteredBooks.length} book{filteredBooks.length !== 1 ? "s" : ""} found</span>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-sm text-foreground/70">
+                  <FilterIcon className="w-4 h-4" />
+                  <span>{filteredBooks.length} book{filteredBooks.length !== 1 ? "s" : ""} found</span>
+                </div>
               </div>
+            </div>
+          </ScrollAnimation>
+
+          {/* Date Filter Tabs */}
+          <ScrollAnimation direction="fade" delay={0.5}>
+            <div className="mb-8 flex flex-col sm:flex-row gap-4 items-center justify-between">
+              <div className="flex items-center gap-2 text-sm text-foreground/70">
+                <Calendar className="w-4 h-4" />
+                <span>Filter by date:</span>
+              </div>
+              <Tabs value={dateFilter} onValueChange={(value) => setDateFilter(value as "all" | "past" | "ongoing" | "future")} className="w-auto">
+                <TabsList className="grid grid-cols-4">
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="past">Past</TabsTrigger>
+                  <TabsTrigger value="ongoing">Recent</TabsTrigger>
+                  <TabsTrigger value="future">Future</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
           </ScrollAnimation>
 

@@ -67,8 +67,22 @@ export interface Donation {
   type: "one-time" | "monthly" | "project-based";
   projectId?: string;
   paymentMethod?: string;
+  paymentStatus?: "paid" | "unpaid" | "installment";
   receiptSent: boolean;
   notes?: string;
+}
+
+export interface Devotion {
+  id: string;
+  title: string;
+  date: string;
+  excerpt: string;
+  content?: string;
+  image?: string;
+  featuredVideoUrl?: string;
+  featuredVideoThumbnail?: string;
+  featuredVideoTitle?: string;
+  createdAt?: string;
 }
 
 export interface FAQ {
@@ -85,6 +99,7 @@ export interface MediaFile {
   type: "image" | "video" | "document";
   url: string;
   thumbnail?: string;
+  youtubeUrl?: string; // YouTube link for featured videos
   size: number;
   uploadDate: string;
   category?: string;

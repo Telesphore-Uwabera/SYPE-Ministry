@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Donation } from "@/types/admin";
-import { donationStore } from "@/lib/adminStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,7 +41,7 @@ export default function DonationManagement() {
   const [editingDonation, setEditingDonation] = useState<Donation | null>(null);
   const { toast } = useToast();
 
-  const [formData, setFormData] = useState<Omit<Donation, "id">>({
+  const [formData, setFormData] = useState<Partial<Omit<Donation, "id">>>({
     donorName: "",
     donorEmail: "",
     amount: 0,
@@ -50,61 +49,121 @@ export default function DonationManagement() {
     date: new Date().toISOString().split("T")[0],
     type: "one-time",
     paymentMethod: "",
+    paymentStatus: "unpaid",
     receiptSent: false,
     notes: "",
+    projectId: "",
   });
 
   useEffect(() => {
     loadDonations();
   }, []);
 
-  const loadDonations = () => {
-    setDonations(donationStore.getAll());
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingDonation) {
-      donationStore.update(editingDonation.id, formData);
+  const loadDonations = async () => {
+    try {
+      const response = await fetch("/api/admin/donations");
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setDonations(data);
+      }
+    } catch (error) {
+      console.error("Error loading donations:", error);
       toast({
-        title: "Donation updated",
-        description: "Donation record has been updated successfully.",
-      });
-    } else {
-      donationStore.create(formData);
-      toast({
-        title: "Donation recorded",
-        description: "New donation has been recorded successfully.",
+        title: "Error",
+        description: "Failed to load donations. Please try again.",
+        variant: "destructive",
       });
     }
-    setIsDialogOpen(false);
-    resetForm();
-    loadDonations();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingDonation) {
+        const response = await fetch(`/api/admin/donations/${editingDonation.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) throw new Error("Failed to update donation");
+
+        toast({
+          title: "Donation updated",
+          description: "Donation record has been updated successfully.",
+        });
+      } else {
+        const response = await fetch("/api/admin/donations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to create donation");
+        }
+
+        toast({
+          title: "Donation recorded",
+          description: "New donation has been recorded successfully.",
+        });
+      }
+      setIsDialogOpen(false);
+      resetForm();
+      loadDonations();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save donation. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEdit = (donation: Donation) => {
     setEditingDonation(donation);
+    // Handle date format (could be ISO string or date string)
+    const donationDate = typeof donation.date === "string" 
+      ? (donation.date.includes("T") ? donation.date.split("T")[0] : donation.date)
+      : new Date(donation.date).toISOString().split("T")[0];
+    
     setFormData({
       donorName: donation.donorName,
       donorEmail: donation.donorEmail,
       amount: donation.amount,
       currency: donation.currency,
-      date: donation.date,
+      date: donationDate,
       type: donation.type,
       paymentMethod: donation.paymentMethod || "",
-      receiptSent: donation.receiptSent,
+      paymentStatus: donation.paymentStatus || "unpaid",
+      receiptSent: donation.receiptSent || false,
       notes: donation.notes || "",
+      projectId: donation.projectId || "",
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    donationStore.delete(id);
-    toast({
-      title: "Donation deleted",
-      description: "Donation record has been deleted successfully.",
-    });
-    loadDonations();
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/admin/donations/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete donation");
+
+      toast({
+        title: "Donation deleted",
+        description: "Donation record has been deleted successfully.",
+      });
+      loadDonations();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete donation. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const resetForm = () => {
@@ -117,8 +176,10 @@ export default function DonationManagement() {
       date: new Date().toISOString().split("T")[0],
       type: "one-time",
       paymentMethod: "",
+      paymentStatus: "unpaid",
       receiptSent: false,
       notes: "",
+      projectId: "",
     });
   };
 
@@ -130,7 +191,7 @@ export default function DonationManagement() {
   const totalAmount = filteredDonations.reduce((sum, d) => sum + d.amount, 0);
 
   const exportToCSV = () => {
-    const headers = ["Date", "Donor Name", "Donor Email", "Amount", "Currency", "Type", "Payment Method", "Receipt Sent"];
+    const headers = ["Date", "Donor Name", "Donor Email", "Amount", "Currency", "Type", "Payment Method", "Payment Status", "Receipt Sent"];
     const rows = filteredDonations.map((d) => [
       d.date,
       d.donorName,
@@ -139,6 +200,7 @@ export default function DonationManagement() {
       d.currency,
       d.type,
       d.paymentMethod || "",
+      d.paymentStatus || "unpaid",
       d.receiptSent ? "Yes" : "No",
     ]);
     const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
@@ -268,11 +330,49 @@ export default function DonationManagement() {
                   </div>
                   <div>
                     <Label htmlFor="paymentMethod">Payment Method</Label>
+                    <Select
+                      value={formData.paymentMethod || ""}
+                      onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select payment method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="mtn">MTN Mobile Money</SelectItem>
+                        <SelectItem value="airtel">Airtel Money</SelectItem>
+                        <SelectItem value="bank">Bank Transfer</SelectItem>
+                        <SelectItem value="cash">Cash</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="paymentStatus">Payment Status *</Label>
+                    <Select
+                      value={formData.paymentStatus || "unpaid"}
+                      onValueChange={(value: "paid" | "unpaid" | "installment") =>
+                        setFormData({ ...formData, paymentStatus: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unpaid">Unpaid</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                        <SelectItem value="installment">Installment Payment</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="projectId">Project ID (Optional)</Label>
                     <Input
-                      id="paymentMethod"
-                      value={formData.paymentMethod}
-                      onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                      placeholder="e.g., Mobile Money, Bank Transfer"
+                      id="projectId"
+                      value={formData.projectId || ""}
+                      onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+                      placeholder="Project ID"
                     />
                   </div>
                 </div>
@@ -363,6 +463,7 @@ export default function DonationManagement() {
                   <TableHead>Donor Email</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Payment Status</TableHead>
                   <TableHead>Receipt</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -370,7 +471,7 @@ export default function DonationManagement() {
               <TableBody>
                 {filteredDonations.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-foreground/50">
+                    <TableCell colSpan={8} className="text-center py-8 text-foreground/50">
                       No donations found
                     </TableCell>
                   </TableRow>
@@ -385,6 +486,15 @@ export default function DonationManagement() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">{donation.type}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {donation.paymentStatus === "paid" ? (
+                          <Badge className="bg-green-500">Paid</Badge>
+                        ) : donation.paymentStatus === "installment" ? (
+                          <Badge className="bg-yellow-500">Installment</Badge>
+                        ) : (
+                          <Badge className="bg-red-500">Unpaid</Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         {donation.receiptSent ? (

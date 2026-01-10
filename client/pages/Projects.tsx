@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Play, FileText, Image as ImageIcon, Video, CheckCircle2, Clock, TrendingUp, Award } from "lucide-react";
+import { Play, FileText, Image as ImageIcon, Video, CheckCircle2, Clock, TrendingUp, Award, Filter } from "lucide-react";
 import { motion } from "framer-motion";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 import { useEffect, useState } from "react";
@@ -13,6 +13,7 @@ import { Project } from "@/types/admin";
 export default function Projects() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dateFilter, setDateFilter] = useState<"all" | "past" | "ongoing" | "future">("all");
 
   useEffect(() => {
     fetchProjects();
@@ -88,9 +89,52 @@ export default function Projects() {
     );
   };
 
-  const featuredProjects = projects.filter(p => p.featured);
-  const ongoingProjects = projects.filter(p => p.status === "ongoing");
-  const completedProjects = projects.filter(p => p.status === "completed");
+  // Filter projects by date
+  const getFilteredProjects = () => {
+    let filtered = [...projects];
+    
+    if (dateFilter === "past") {
+      // Projects with endDate in the past or completed status
+      filtered = filtered.filter((p) => {
+        if (p.status === "completed") return true;
+        if (p.endDate) {
+          return new Date(p.endDate) < new Date();
+        }
+        return false;
+      });
+    } else if (dateFilter === "ongoing") {
+      // Projects that are currently ongoing (startDate <= today <= endDate OR status = ongoing)
+      filtered = filtered.filter((p) => {
+        if (p.status === "ongoing") return true;
+        if (p.startDate && p.endDate) {
+          const today = new Date();
+          const start = new Date(p.startDate);
+          const end = new Date(p.endDate);
+          return today >= start && today <= end;
+        }
+        if (p.startDate) {
+          return new Date(p.startDate) <= new Date();
+        }
+        return false;
+      });
+    } else if (dateFilter === "future") {
+      // Projects with startDate in the future or planned status
+      filtered = filtered.filter((p) => {
+        if (p.status === "planned") return true;
+        if (p.startDate) {
+          return new Date(p.startDate) > new Date();
+        }
+        return false;
+      });
+    }
+    
+    return filtered;
+  };
+
+  const filteredProjects = getFilteredProjects();
+  const featuredProjects = filteredProjects.filter(p => p.featured);
+  const ongoingProjects = filteredProjects.filter(p => p.status === "ongoing");
+  const completedProjects = filteredProjects.filter(p => p.status === "completed");
 
   // Calculate unique categories
   const uniqueCategories = new Set(projects.map(p => p.category)).size;
@@ -297,6 +341,23 @@ export default function Projects() {
             </p>
           </div>
 
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+              <div className="flex items-center gap-2 text-sm text-foreground/70">
+                <Filter className="w-4 h-4" />
+                <span>Filter by date:</span>
+              </div>
+              <Tabs value={dateFilter} onValueChange={(value) => setDateFilter(value as "all" | "past" | "ongoing" | "future")} className="w-auto">
+                <TabsList className="grid grid-cols-4">
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="past">Past</TabsTrigger>
+                  <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
+                  <TabsTrigger value="future">Future</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
+
           <Tabs defaultValue="all" className="w-full">
             <TabsList className="grid w-full grid-cols-5 mb-8">
               <TabsTrigger value="all">All</TabsTrigger>
@@ -308,7 +369,7 @@ export default function Projects() {
 
             <TabsContent value="all" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {projects.map((project, idx) => (
+            {filteredProjects.map((project, idx) => (
                   <motion.div
                 key={idx}
                     initial={{ opacity: 0, y: 20 }}
@@ -361,7 +422,7 @@ export default function Projects() {
 
             <TabsContent value="ongoing" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {ongoingProjects.map((project, idx) => (
+                {filteredProjects.filter(p => p.status === "ongoing").map((project, idx) => (
                   <motion.div
                     key={idx}
                     initial={{ opacity: 0, y: 20 }}
@@ -407,7 +468,7 @@ export default function Projects() {
 
             <TabsContent value="completed" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {completedProjects.map((project, idx) => (
+                {filteredProjects.filter(p => p.status === "completed").map((project, idx) => (
                   <motion.div
                     key={idx}
                     initial={{ opacity: 0, y: 20 }}
@@ -453,7 +514,7 @@ export default function Projects() {
 
             <TabsContent value="documentary" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {projects.filter(p => p.category === "Documentary").map((project, idx) => (
+                {filteredProjects.filter(p => p.category === "Documentary").map((project, idx) => (
                   <motion.div
                     key={idx}
                     initial={{ opacity: 0, y: 20 }}
@@ -499,7 +560,7 @@ export default function Projects() {
 
             <TabsContent value="posters" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {projects.filter(p => p.category === "Posters").map((project, idx) => (
+                {filteredProjects.filter(p => p.category === "Posters").map((project, idx) => (
                   <motion.div
                     key={idx}
                     initial={{ opacity: 0, y: 20 }}

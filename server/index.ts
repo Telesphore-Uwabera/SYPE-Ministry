@@ -5,6 +5,7 @@ import path from "path";
 import { handleDemo } from "./routes/demo";
 import * as adminRoutes from "./routes/admin";
 import * as uploadRoutes from "./routes/upload";
+import * as mediaUploadRoutes from "./routes/mediaUpload";
 import * as youtubeRoutes from "./routes/youtube";
 
 export function createServer() {
@@ -17,6 +18,7 @@ export function createServer() {
 
   // Serve static files from public directory
   app.use("/images", express.static(path.join(process.cwd(), "public", "images")));
+  app.use("/media", express.static(path.join(process.cwd(), "public", "media")));
   app.use(express.static(path.join(process.cwd(), "public")));
 
   // Example API routes
@@ -30,6 +32,11 @@ export function createServer() {
   // Image Upload Routes
   app.post("/api/upload/image", uploadRoutes.uploadImage);
   app.post("/api/upload/images", uploadRoutes.uploadImages);
+
+  // Media Upload Routes (Images, Videos, Documents)
+  app.post("/api/upload/media", mediaUploadRoutes.uploadMedia);
+  app.post("/api/upload/media/multiple", mediaUploadRoutes.uploadMultipleMedia);
+  app.post("/api/upload/thumbnail", mediaUploadRoutes.uploadThumbnail);
 
   // Admin API Routes - Members
   app.get("/api/admin/members", adminRoutes.getMembers);
@@ -107,6 +114,16 @@ export function createServer() {
 
   // Public API Routes - Committee Members (for About page)
   app.get("/api/committee", adminRoutes.getCommitteeMembers);
+
+  // Admin API Routes - Devotions
+  app.get("/api/admin/devotions", adminRoutes.getDevotions);
+  app.get("/api/admin/devotions/:id", adminRoutes.getDevotion);
+  app.post("/api/admin/devotions", adminRoutes.createDevotion);
+  app.put("/api/admin/devotions/:id", adminRoutes.updateDevotion);
+  app.delete("/api/admin/devotions/:id", adminRoutes.deleteDevotion);
+
+  // Public API Routes - Devotions (for Devotions page)
+  app.get("/api/devotions", adminRoutes.getDevotions);
 
   // Admin API Routes - Analytics
   app.get("/api/admin/analytics", adminRoutes.getAnalytics);

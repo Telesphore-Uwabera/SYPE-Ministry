@@ -1,5 +1,5 @@
 import { RequestHandler, Request, Response } from "express";
-import { Member, NewsArticle, Project, Event, Donation, FAQ, MediaFile, EmailCampaign, Book, EmailSubscriber, CommitteeMember } from "../../client/types/admin";
+import { Member, NewsArticle, Project, Event, Donation, FAQ, MediaFile, EmailCampaign, Book, EmailSubscriber, CommitteeMember, Devotion } from "../../client/types/admin";
 
 // In-memory storage (replace with database in production)
 let members: Member[] = [];
@@ -13,6 +13,7 @@ let campaigns: EmailCampaign[] = [];
 let books: Book[] = [];
 let subscribers: EmailSubscriber[] = [];
 let committeeMembers: CommitteeMember[] = [];
+let devotions: Devotion[] = [];
 
 // Helper function to generate ID
 const generateId = () => Date.now().toString();
@@ -217,10 +218,27 @@ export const getDonation: RequestHandler = (req, res) => {
 };
 
 export const createDonation: RequestHandler = (req, res) => {
+  const { donorName, donorEmail, amount, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent } = req.body;
+  
+  if (!donorName || !donorEmail || !amount || !type) {
+    return res.status(400).json({ error: "Donor name, email, amount, and type are required" });
+  }
+  
   const newDonation: Donation = {
     id: generateId(),
-    ...req.body,
+    donorName,
+    donorEmail,
+    amount: parseFloat(amount) || 0,
+    currency: currency || "RWF",
+    date: date ? (new Date(date).toISOString()) : new Date().toISOString(),
+    type: type as "one-time" | "monthly" | "project-based",
+    paymentMethod: paymentMethod || undefined,
+    paymentStatus: paymentStatus || "unpaid",
+    projectId: projectId || undefined,
+    receiptSent: receiptSent || false,
+    notes: notes || undefined,
   };
+  
   donations.push(newDonation);
   res.status(201).json(newDonation);
 };
@@ -231,7 +249,8 @@ export const updateDonation: RequestHandler = (req, res) => {
   if (index === -1) {
     return res.status(404).json({ error: "Donation not found" });
   }
-  donations[index] = { ...donations[index], ...req.body };
+  // Update donation with new data, preserving paymentStatus
+  donations[index] = { ...donations[index], ...req.body, paymentStatus: req.body.paymentStatus || donations[index].paymentStatus || "unpaid" };
   res.json(donations[index]);
 };
 
@@ -294,7 +313,7 @@ export const getMedia: RequestHandler = (req, res) => {
   
   // Filter by category if provided
   const category = req.query.category as string | undefined;
-  if (category) {
+  if (category && category !== "all") {
     const categories = category.split(',').map(c => c.trim().toLowerCase());
     result = result.filter((m) => {
       const fileCategory = m.category?.toLowerCase() || "";
@@ -304,7 +323,7 @@ export const getMedia: RequestHandler = (req, res) => {
   
   // Filter by type if provided
   const type = req.query.type as string | undefined;
-  if (type) {
+  if (type && type !== "all") {
     result = result.filter((m) => m.type === type);
   }
   
@@ -328,11 +347,26 @@ export const getMediaFile: RequestHandler = (req, res) => {
 };
 
 export const createMedia: RequestHandler = (req, res) => {
+  const { name, type, url, size, category, description, tags, thumbnail, youtubeUrl } = req.body;
+  
+  if (!name || !type || !url || !size) {
+    return res.status(400).json({ error: "Name, type, url, and size are required" });
+  }
+  
   const newFile: MediaFile = {
     id: generateId(),
+    name,
+    type: type as "image" | "video" | "document",
+    url,
+    size: parseInt(size) || 0,
     uploadDate: new Date().toISOString(),
-    ...req.body,
+    category: category || undefined,
+    description: description || undefined,
+    tags: tags || [],
+    thumbnail: thumbnail || undefined,
+    youtubeUrl: youtubeUrl || undefined,
   };
+  
   media.push(newFile);
   res.status(201).json(newFile);
 };
@@ -609,6 +643,105 @@ export const deleteCommitteeMember: RequestHandler = (req, res) => {
   res.status(204).send();
 };
 
+// Devotions API
+export const getDevotions: RequestHandler = (req, res) => {
+  let result = [...devotions];
+  
+  // Filter by date if provided
+  const dateFilter = req.query.dateFilter as string | undefined;
+  if (dateFilter === "last7days") {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0); // Normalize to start of day
+    result = result.filter((d) => {
+      const devotionDate = new Date(d.date);
+      devotionDate.setHours(0, 0, 0, 0);
+      return devotionDate >= sevenDaysAgo;
+    });
+  }
+  
+  // Also support days parameter for backward compatibility
+  const days = req.query.days ? parseInt(req.query.days as string) : undefined;
+  if (days && !dateFilter) {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    cutoffDate.setHours(0, 0, 0, 0);
+    result = result.filter((d) => {
+      const devotionDate = new Date(d.date);
+      devotionDate.setHours(0, 0, 0, 0);
+      return devotionDate >= cutoffDate;
+    });
+  }
+  
+  // Sort by date (newest first)
+  result.sort((a, b) => {
+    const dateA = new Date(a.date || 0).getTime();
+    const dateB = new Date(b.date || 0).getTime();
+    return dateB - dateA;
+  });
+  
+  // Limit results if provided
+  const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+  if (limit && limit > 0) {
+    result = result.slice(0, limit);
+  }
+  
+  res.json(result);
+};
+
+export const getDevotion: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const devotion = devotions.find((d) => d.id === id);
+  if (!devotion) {
+    return res.status(404).json({ error: "Devotion not found" });
+  }
+  res.json(devotion);
+};
+
+export const createDevotion: RequestHandler = (req, res) => {
+  const { title, date, excerpt, content, image, featuredVideoUrl, featuredVideoThumbnail, featuredVideoTitle } = req.body;
+  
+  if (!title || !date || !excerpt) {
+    return res.status(400).json({ error: "Title, date, and excerpt are required" });
+  }
+  
+  const newDevotion: Devotion = {
+    id: generateId(),
+    title,
+    date: date ? (new Date(date).toISOString().split("T")[0]) : new Date().toISOString().split("T")[0],
+    excerpt,
+    content: content || undefined,
+    image: image || undefined,
+    featuredVideoUrl: featuredVideoUrl || undefined,
+    featuredVideoThumbnail: featuredVideoThumbnail || undefined,
+    featuredVideoTitle: featuredVideoTitle || undefined,
+    createdAt: new Date().toISOString(),
+  };
+  
+  devotions.push(newDevotion);
+  res.status(201).json(newDevotion);
+};
+
+export const updateDevotion: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const index = devotions.findIndex((d) => d.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: "Devotion not found" });
+  }
+  devotions[index] = { ...devotions[index], ...req.body };
+  res.json(devotions[index]);
+};
+
+export const deleteDevotion: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const index = devotions.findIndex((d) => d.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: "Devotion not found" });
+  }
+  devotions.splice(index, 1);
+  res.status(204).send();
+};
+
 // Analytics API
 export const getAnalytics: RequestHandler = (req, res) => {
   const analytics = {
@@ -626,6 +759,7 @@ export const getAnalytics: RequestHandler = (req, res) => {
     activeSubscribers: subscribers.filter((s) => s.status === "active").length,
     totalCommitteeMembers: committeeMembers.length,
     activeCommitteeMembers: committeeMembers.filter((m) => m.active !== false).length,
+    totalDevotions: devotions.length,
   };
   res.json(analytics);
 };

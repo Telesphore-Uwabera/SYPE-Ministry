@@ -2,8 +2,13 @@ import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Heart, Globe, DollarSign, Target, Users, Zap, MessageCircle } from "lucide-react";
+import DonationForm from "@/components/DonationForm";
+import { useState } from "react";
+import ScrollAnimation from "@/components/ScrollAnimation";
 
 export default function Donations() {
+  const [showForm, setShowForm] = useState(false);
+
   const donationOptions = [
     {
       title: "One-Time Donation",
@@ -49,7 +54,7 @@ export default function Donations() {
   return (
     <Layout>
       {/* Hero Section */}
-      <section id="donate" className="bg-gradient-to-r from-primary via-secondary to-primary py-16 md:py-20 text-primary-foreground scroll-mt-20">
+      <section className="bg-gradient-to-r from-primary via-secondary to-primary py-16 md:py-20 text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
           <h1 className="font-heading font-bold text-4xl md:text-5xl mb-4">
             Support the Mission
@@ -209,30 +214,45 @@ export default function Donations() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 md:py-24 bg-primary text-primary-foreground">
+      <section id="donate" className="py-16 md:py-24 bg-primary text-primary-foreground scroll-mt-20">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="font-heading font-bold text-3xl md:text-4xl mb-6">
-            Be a Partner in Evangelism
-          </h2>
-          <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
-            Your financial contribution is a partnership in spreading the Gospel
-            and preparing people for Christ's soon return.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              asChild
-              className="bg-accent text-accent-foreground hover:bg-accent/90 px-8 py-6 text-base font-semibold rounded-lg"
-            >
-              <Link to="/donations#donate">Make a Donation</Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="border-black text-black bg-white hover:bg-black hover:text-white px-8 py-6 text-base font-semibold rounded-lg transition-all"
-            >
-              <Link to="/contact">Contact for Details</Link>
-            </Button>
-          </div>
+          <ScrollAnimation direction="fade" delay={0.2}>
+            <h2 className="font-heading font-bold text-3xl md:text-4xl mb-6">
+              Be a Partner in Evangelism
+            </h2>
+            <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
+              Your financial contribution is a partnership in spreading the Gospel
+              and preparing people for Christ's soon return.
+            </p>
+            {!showForm ? (
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button
+                  onClick={() => setShowForm(true)}
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 px-8 py-6 text-base font-semibold rounded-lg"
+                >
+                  Make a Donation
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="border-white/20 text-white bg-white/10 hover:bg-white/20 px-8 py-6 text-base font-semibold rounded-lg transition-all"
+                >
+                  <Link to="/contact">Contact for Details</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="max-w-3xl mx-auto">
+                <DonationForm onSuccess={() => setShowForm(false)} />
+                <Button
+                  variant="outline"
+                  onClick={() => setShowForm(false)}
+                  className="mt-4 border-white/20 text-white bg-white/10 hover:bg-white/20"
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
+          </ScrollAnimation>
         </div>
       </section>
 
@@ -247,18 +267,30 @@ export default function Donations() {
             our evangelical initiatives
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="mailto:sype@example.com"
-              className="inline-flex items-center text-primary font-semibold hover:text-primary/80 transition-colors"
+            <Button
+              asChild
+              variant="outline"
+              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6"
             >
-              Email Us
-            </a>
-            <a
-              href="tel:+250700000000"
-              className="inline-flex items-center text-primary font-semibold hover:text-primary/80 transition-colors"
+              <a href="mailto:sypeministry@gmail.com" className="inline-flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Email Us
+              </a>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6"
             >
-              Call Us
-            </a>
+              <a href="tel:+250780430990" className="inline-flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                Call Us
+              </a>
+            </Button>
           </div>
         </div>
       </section>

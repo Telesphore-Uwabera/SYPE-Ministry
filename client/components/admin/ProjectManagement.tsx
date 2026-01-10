@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Project } from "@/types/admin";
-import { projectStore } from "@/lib/adminStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,7 +42,7 @@ export default function ProjectManagement() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const { toast } = useToast();
 
-  const [formData, setFormData] = useState<Omit<Project, "id">>({
+  const [formData, setFormData] = useState<Partial<Omit<Project, "id">>>({
     name: "",
     category: "Documentary",
     topic: "",
@@ -51,34 +50,77 @@ export default function ProjectManagement() {
     distribution: "",
     status: "planned",
     year: new Date().getFullYear().toString(),
+    featured: false,
+    teamMembers: [],
+    startDate: undefined,
+    endDate: undefined,
+    budget: undefined,
   });
 
   useEffect(() => {
     loadProjects();
   }, []);
 
-  const loadProjects = () => {
-    setProjects(projectStore.getAll());
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingProject) {
-      projectStore.update(editingProject.id, formData);
+  const loadProjects = async () => {
+    try {
+      const response = await fetch("/api/admin/projects");
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setProjects(data);
+      }
+    } catch (error) {
+      console.error("Error loading projects:", error);
       toast({
-        title: "Project updated",
-        description: "Project has been updated successfully.",
-      });
-    } else {
-      projectStore.create(formData);
-      toast({
-        title: "Project created",
-        description: "New project has been created successfully.",
+        title: "Error",
+        description: "Failed to load projects. Please try again.",
+        variant: "destructive",
       });
     }
-    setIsDialogOpen(false);
-    resetForm();
-    loadProjects();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingProject) {
+        const response = await fetch(`/api/admin/projects/${editingProject.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) throw new Error("Failed to update project");
+
+        toast({
+          title: "Project updated",
+          description: "Project has been updated successfully.",
+        });
+      } else {
+        const response = await fetch("/api/admin/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to create project");
+        }
+
+        toast({
+          title: "Project created",
+          description: "New project has been created successfully.",
+        });
+      }
+      setIsDialogOpen(false);
+      resetForm();
+      loadProjects();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save project. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEdit = (project: Project) => {
@@ -91,17 +133,35 @@ export default function ProjectManagement() {
       distribution: project.distribution,
       status: project.status,
       year: project.year,
+      featured: project.featured,
+      teamMembers: project.teamMembers || [],
+      startDate: project.startDate || "",
+      endDate: project.endDate || "",
+      budget: project.budget,
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    projectStore.delete(id);
-    toast({
-      title: "Project deleted",
-      description: "Project has been deleted successfully.",
-    });
-    loadProjects();
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/admin/projects/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete project");
+
+      toast({
+        title: "Project deleted",
+        description: "Project has been deleted successfully.",
+      });
+      loadProjects();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete project. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const resetForm = () => {
@@ -114,14 +174,36 @@ export default function ProjectManagement() {
       distribution: "",
       status: "planned",
       year: new Date().getFullYear().toString(),
+      featured: false,
+      teamMembers: [],
+      startDate: undefined,
+      endDate: undefined,
+      budget: undefined,
     });
   };
 
   const filteredProjects = projects.filter((project) => {
     const matchesSearch =
+      searchTerm === "" ||
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.topic.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === "all" || project.status === filterStatus;
+      project.topic.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    let matchesStatus = true;
+    if (filterStatus !== "all") {
+      if (filterStatus === "past") {
+        // Projects with endDate in the past or completed status
+        matchesStatus = project.status === "completed" || 
+          (project.endDate && new Date(project.endDate) < new Date());
+      } else if (filterStatus === "future") {
+        // Projects with startDate in the future or planned status
+        matchesStatus = project.status === "planned" || 
+          (project.startDate && new Date(project.startDate) > new Date());
+      } else {
+        matchesStatus = project.status === filterStatus;
+      }
+    }
+    
     return matchesSearch && matchesStatus;
   });
 
@@ -247,10 +329,58 @@ export default function ProjectManagement() {
                   <Label htmlFor="year">Year *</Label>
                   <Input
                     id="year"
+                    type="number"
                     value={formData.year}
                     onChange={(e) => setFormData({ ...formData, year: e.target.value })}
                     required
+                    min="2020"
+                    max="2100"
                   />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="startDate">Start Date (Optional)</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={formData.startDate || ""}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="endDate">End Date (Optional)</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={formData.endDate || ""}
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="budget">Budget (RWF) (Optional)</Label>
+                  <Input
+                    id="budget"
+                    type="number"
+                    value={formData.budget || ""}
+                    onChange={(e) => setFormData({ ...formData, budget: e.target.value ? parseFloat(e.target.value) : undefined })}
+                    min="0"
+                    step="1000"
+                  />
+                </div>
+                <div className="flex items-center space-x-2 pt-8">
+                  <input
+                    type="checkbox"
+                    id="featured"
+                    checked={formData.featured || false}
+                    onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+                    className="rounded border-border"
+                  />
+                  <Label htmlFor="featured" className="font-normal cursor-pointer">
+                    Featured Project (displayed on homepage)
+                  </Label>
                 </div>
               </div>
               <DialogFooter>
@@ -287,10 +417,12 @@ export default function ProjectManagement() {
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="all">All Projects</SelectItem>
                 <SelectItem value="planned">Planned</SelectItem>
                 <SelectItem value="ongoing">Ongoing</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="past">Past Projects</SelectItem>
+                <SelectItem value="future">Future Projects</SelectItem>
               </SelectContent>
             </Select>
           </div>

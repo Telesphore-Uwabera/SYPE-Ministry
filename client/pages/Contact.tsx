@@ -322,17 +322,41 @@ export default function Contact() {
                       </p>
                     </div>
                     <div className="pt-4 border-t border-border">
-                      <h3 className="font-semibold text-primary mb-3">Quick Links</h3>
-                      <div className="flex flex-wrap gap-2">
-                        <Button asChild variant="outline" size="sm">
-                          <a href="/membership">Join Ministry</a>
-                        </Button>
-                        <Button asChild variant="outline" size="sm">
-                          <a href="/donations">Support Us</a>
-                        </Button>
-                        <Button asChild variant="outline" size="sm">
-                          <a href="/faqs">View FAQs</a>
-                        </Button>
+                      <h3 className="font-semibold text-primary mb-3">Quick Actions</h3>
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap gap-2">
+                          <Button asChild variant="outline" size="sm">
+                            <a href="/membership">Join Ministry</a>
+                          </Button>
+                          <Button asChild variant="outline" size="sm">
+                            <a href="/donations">Support Us</a>
+                          </Button>
+                          <Button asChild variant="outline" size="sm">
+                            <a href="/faqs">View FAQs</a>
+                          </Button>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                          <Button
+                            asChild
+                            variant="default"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center gap-2"
+                          >
+                            <a href="mailto:sypeministry@gmail.com" className="inline-flex items-center gap-2">
+                              <Mail className="w-4 h-4" />
+                              Email Us
+                            </a>
+                          </Button>
+                          <Button
+                            asChild
+                            variant="default"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center gap-2"
+                          >
+                            <a href="tel:+250780430990" className="inline-flex items-center gap-2">
+                              <Phone className="w-4 h-4" />
+                              Call Us
+                            </a>
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>

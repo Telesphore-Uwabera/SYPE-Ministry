@@ -1,0 +1,457 @@
+import { useState, useEffect, useRef } from "react";
+import { Devotion } from "@/types/admin";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { BookOpen, Plus, Search, Edit, Trash2, Calendar, Image as ImageIcon, Video, ExternalLink } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+
+export default function DevotionManagement() {
+  const [devotions, setDevotions] = useState<Devotion[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingDevotion, setEditingDevotion] = useState<Devotion | null>(null);
+  const { toast } = useToast();
+
+  const [formData, setFormData] = useState<Partial<Omit<Devotion, "id" | "createdAt">>>({
+    title: "",
+    date: new Date().toISOString().split("T")[0],
+    excerpt: "",
+    content: "",
+    image: "",
+    featuredVideoUrl: "",
+    featuredVideoThumbnail: "",
+    featuredVideoTitle: "",
+  });
+
+  useEffect(() => {
+    loadDevotions();
+  }, []);
+
+  const loadDevotions = async () => {
+    try {
+      const response = await fetch("/api/admin/devotions");
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setDevotions(data);
+      }
+    } catch (error) {
+      console.error("Error loading devotions:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load devotions. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingDevotion) {
+        const response = await fetch(`/api/admin/devotions/${editingDevotion.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) throw new Error("Failed to update devotion");
+
+        toast({
+          title: "Devotion updated",
+          description: "Devotion has been updated successfully.",
+        });
+      } else {
+        const response = await fetch("/api/admin/devotions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to create devotion");
+        }
+
+        toast({
+          title: "Devotion created",
+          description: "New devotion has been created successfully.",
+        });
+      }
+      setIsDialogOpen(false);
+      resetForm();
+      loadDevotions();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save devotion. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEdit = (devotion: Devotion) => {
+    setEditingDevotion(devotion);
+    setFormData({
+      title: devotion.title,
+      date: devotion.date.split("T")[0] || devotion.date,
+      excerpt: devotion.excerpt,
+      content: devotion.content || "",
+      image: devotion.image || "",
+      featuredVideoUrl: devotion.featuredVideoUrl || "",
+      featuredVideoThumbnail: devotion.featuredVideoThumbnail || "",
+      featuredVideoTitle: devotion.featuredVideoTitle || "",
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/admin/devotions/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete devotion");
+
+      toast({
+        title: "Devotion deleted",
+        description: "Devotion has been deleted successfully.",
+      });
+      loadDevotions();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete devotion. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setEditingDevotion(null);
+    setFormData({
+      title: "",
+      date: new Date().toISOString().split("T")[0],
+      excerpt: "",
+      content: "",
+      image: "",
+      featuredVideoUrl: "",
+      featuredVideoThumbnail: "",
+      featuredVideoTitle: "",
+    });
+  };
+
+  const filteredDevotions = devotions.filter((devotion) => {
+    const matchesSearch =
+      searchTerm === "" ||
+      devotion.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      devotion.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      devotion.content?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <BookOpen className="w-6 h-6 text-primary" />
+          <div>
+            <h2 className="text-2xl font-bold">Devotion Management</h2>
+            <p className="text-foreground/70">Manage daily devotions displayed on the Devotions page</p>
+          </div>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}>
+          <DialogTrigger asChild>
+            <Button onClick={resetForm}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Devotion
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingDevotion ? "Edit Devotion" : "Create New Devotion"}</DialogTitle>
+              <DialogDescription>
+                {editingDevotion ? "Update devotion information" : "Create a new daily devotion"}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title *</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    required
+                    placeholder="Devotion title"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="date">Date *</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="excerpt">Excerpt *</Label>
+                <Textarea
+                  id="excerpt"
+                  value={formData.excerpt}
+                  onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+                  required
+                  placeholder="Brief excerpt/summary..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="content">Full Content (Optional)</Label>
+                <Textarea
+                  id="content"
+                  value={formData.content || ""}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  placeholder="Full devotion content..."
+                  rows={6}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="image">Devotion Image (Optional)</Label>
+                <p className="text-xs text-foreground/60 mb-2">
+                  Upload image with category "devotions" in Media Management, then paste the URL here.
+                </p>
+                <Input
+                  id="image"
+                  type="url"
+                  value={formData.image || ""}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  placeholder="/images/devotions/image.jpg or full URL"
+                />
+                <p className="text-xs text-foreground/60">
+                  Or use Media Management to upload images with category "devotions" and paste the URL here.
+                </p>
+              </div>
+
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold text-primary">Featured Video (Optional)</h3>
+                <p className="text-xs text-foreground/60 mb-2">
+                  Add a featured video that will be displayed on the Devotions page with a link to YouTube.
+                </p>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="featuredVideoTitle">Video Title</Label>
+                  <Input
+                    id="featuredVideoTitle"
+                    value={formData.featuredVideoTitle || ""}
+                    onChange={(e) => setFormData({ ...formData, featuredVideoTitle: e.target.value })}
+                    placeholder="Featured video title"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="featuredVideoUrl">YouTube Video URL *</Label>
+                  <Input
+                    id="featuredVideoUrl"
+                    type="url"
+                    value={formData.featuredVideoUrl || ""}
+                    onChange={(e) => setFormData({ ...formData, featuredVideoUrl: e.target.value })}
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    required={!!formData.featuredVideoTitle}
+                  />
+                  <p className="text-xs text-foreground/60">
+                    Full YouTube video URL. This will be displayed as a featured video with link to watch on YouTube.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="featuredVideoThumbnail">Video Thumbnail URL (Optional)</Label>
+                  <Input
+                    id="featuredVideoThumbnail"
+                    type="url"
+                    value={formData.featuredVideoThumbnail || ""}
+                    onChange={(e) => setFormData({ ...formData, featuredVideoThumbnail: e.target.value })}
+                    placeholder="https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg"
+                  />
+                  <p className="text-xs text-foreground/60">
+                    YouTube thumbnail URL. If not provided, YouTube default thumbnail will be used.
+                  </p>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => {
+                  setIsDialogOpen(false);
+                  resetForm();
+                }}>
+                  Cancel
+                </Button>
+                <Button type="submit">{editingDevotion ? "Update" : "Create"} Devotion</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Search */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground/50 w-4 h-4" />
+            <Input
+              placeholder="Search devotions by title or excerpt..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Devotions Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Devotions ({filteredDevotions.length})</CardTitle>
+          <CardDescription>All daily devotions displayed on the Devotions page (last 7 days shown)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Excerpt</TableHead>
+                  <TableHead>Image</TableHead>
+                  <TableHead>Featured Video</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredDevotions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-foreground/50">
+                      No devotions found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredDevotions.map((devotion) => (
+                    <TableRow key={devotion.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          {new Date(devotion.date).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">{devotion.title}</TableCell>
+                      <TableCell className="max-w-xs">
+                        <p className="text-sm text-foreground/70 line-clamp-2">
+                          {devotion.excerpt}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        {devotion.image ? (
+                          <div className="w-16 h-16 rounded overflow-hidden border">
+                            <img src={devotion.image} alt={devotion.title} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">No image</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {devotion.featuredVideoUrl ? (
+                          <div className="flex items-center gap-2">
+                            <Video className="w-4 h-4 text-primary" />
+                            <a
+                              href={devotion.featuredVideoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline text-sm flex items-center gap-1"
+                            >
+                              {devotion.featuredVideoTitle || "Featured Video"}
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">No video</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(devotion)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Devotion</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete "{devotion.title}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(devotion.id)}
+                                  className="bg-destructive text-destructive-foreground"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

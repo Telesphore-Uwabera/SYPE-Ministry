@@ -13,21 +13,13 @@ import {
   MessageCircle,
   Clock,
   Calendar,
+  ExternalLink,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 import { useEffect, useState } from "react";
-import { NewsArticle } from "@/types/admin";
+import { NewsArticle, Devotion } from "@/types/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-// Devotion interface
-interface Devotion {
-  id: string;
-  title: string;
-  date: string;
-  excerpt: string;
-  image?: string;
-}
 
 // YouTube Video interface
 interface YouTubeVideo {
@@ -122,22 +114,14 @@ function LatestDevotionsCards() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch devotions from API (using news with category "devotion" for now)
-    fetch("/api/admin/news?limit=10")
+    // Fetch last 3 devotions from API
+    fetch("/api/devotions?days=7")
       .then((res) => res.json())
       .then((data) => {
-        // Filter for devotions or use latest 3 news if no devotions category exists
+        // Get latest 3 devotions
         const devotionsData = (Array.isArray(data) ? data : [])
-          .filter((item: NewsArticle) => item.category?.toLowerCase() === "devotion")
-          .sort((a: NewsArticle, b: NewsArticle) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime())
-          .slice(0, 3)
-          .map((item: NewsArticle) => ({
-            id: item.id,
-            title: item.title,
-            date: item.publishDate,
-            excerpt: item.excerpt,
-            image: item.image,
-          }));
+          .sort((a: Devotion, b: Devotion) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          .slice(0, 3);
         setDevotions(devotionsData);
         setLoading(false);
       })
@@ -193,7 +177,37 @@ function LatestDevotionsCards() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-foreground/70 line-clamp-3">{devotion.excerpt}</p>
+                <p className="text-sm text-foreground/70 line-clamp-3 mb-4">{devotion.excerpt}</p>
+                {devotion.featuredVideoUrl && (
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="w-full mb-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                  >
+                    <a
+                      href={devotion.featuredVideoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2"
+                    >
+                      <Play className="w-3 h-3" />
+                      Watch Video
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </Button>
+                )}
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                >
+                  <Link to="/devotions" className="inline-flex items-center justify-center gap-2">
+                    Read More
+                    <BookOpen className="w-3 h-3" />
+                  </Link>
+                </Button>
               </CardContent>
             </Card>
           </Link>

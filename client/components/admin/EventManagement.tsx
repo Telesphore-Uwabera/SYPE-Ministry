@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Event } from "@/types/admin";
-import { eventStore } from "@/lib/adminStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,28 +58,66 @@ export default function EventManagement() {
     loadEvents();
   }, []);
 
-  const loadEvents = () => {
-    setEvents(eventStore.getAll());
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingEvent) {
-      eventStore.update(editingEvent.id, formData);
+  const loadEvents = async () => {
+    try {
+      const response = await fetch("/api/admin/events");
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setEvents(data);
+      }
+    } catch (error) {
+      console.error("Error loading events:", error);
       toast({
-        title: "Event updated",
-        description: "Event has been updated successfully.",
-      });
-    } else {
-      eventStore.create(formData);
-      toast({
-        title: "Event created",
-        description: "New event has been created successfully.",
+        title: "Error",
+        description: "Failed to load events. Please try again.",
+        variant: "destructive",
       });
     }
-    setIsDialogOpen(false);
-    resetForm();
-    loadEvents();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingEvent) {
+        const response = await fetch(`/api/admin/events/${editingEvent.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) throw new Error("Failed to update event");
+
+        toast({
+          title: "Event updated",
+          description: "Event has been updated successfully.",
+        });
+      } else {
+        const response = await fetch("/api/admin/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to create event");
+        }
+
+        toast({
+          title: "Event created",
+          description: "New event has been created successfully.",
+        });
+      }
+      setIsDialogOpen(false);
+      resetForm();
+      loadEvents();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save event. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEdit = (event: Event) => {
@@ -92,20 +129,34 @@ export default function EventManagement() {
       time: event.time,
       location: event.location,
       category: event.category,
-      rsvpRequired: event.rsvpRequired,
+      rsvpRequired: event.rsvpRequired || false,
       maxAttendees: event.maxAttendees,
       status: event.status,
+      attendees: event.attendees || [],
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    eventStore.delete(id);
-    toast({
-      title: "Event deleted",
-      description: "Event has been deleted successfully.",
-    });
-    loadEvents();
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/admin/events/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete event");
+
+      toast({
+        title: "Event deleted",
+        description: "Event has been deleted successfully.",
+      });
+      loadEvents();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete event. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const resetForm = () => {

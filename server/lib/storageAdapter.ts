@@ -62,10 +62,15 @@ async function uploadToSupabase(
   }
 
   // Upload to Supabase Storage
+  // With memory storage, file.buffer should always be available
+  if (!file.buffer) {
+    throw new Error("File buffer is required for upload. Make sure multer is configured with memory storage.");
+  }
+
   const result = await uploadFile(
     bucket,
     filePath,
-    file.buffer || Buffer.from(file.path), // Use buffer if available, otherwise read from path
+    file.buffer,
     {
       contentType: file.mimetype,
       upsert: false,

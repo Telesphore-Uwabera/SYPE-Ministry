@@ -9,18 +9,11 @@ const port = process.env.PORT || 3000;
 const __dirname = import.meta.dirname;
 const distPath = path.join(__dirname, "../client");
 
-// Serve static files
-app.use(express.static(distPath));
+// Serve static files (for uploaded images/media)
+app.use("/images", express.static(path.join(process.cwd(), "public", "images")));
+app.use("/media", express.static(path.join(process.cwd(), "public", "media")));
 
-// Handle React Router - serve index.html for all non-API routes
-app.get("/*", (req, res) => {
-  // Don't serve index.html for API routes
-  if (req.path.startsWith("/api/") || req.path.startsWith("/health")) {
-    return res.status(404).json({ error: "API endpoint not found" });
-  }
-
-  res.sendFile(path.join(distPath, "index.html"));
-});
+// Note: Frontend is served separately on Netlify, so we don't need catch-all route
 
 const server = app.listen(port, () => {
   console.log(`🚀 SYPE Ministry server running on port ${port}`);

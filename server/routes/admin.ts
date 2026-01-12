@@ -14,6 +14,19 @@ let books: Book[] = [];
 let subscribers: EmailSubscriber[] = [];
 let committeeMembers: CommitteeMember[] = [];
 let devotions: Devotion[] = [];
+let contactSubmissions: Array<{
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: string;
+  readAt?: string;
+  repliedAt?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}> = [];
 
 // Helper function to generate ID
 const generateId = () => Date.now().toString();
@@ -742,6 +755,71 @@ export const deleteDevotion: RequestHandler = (req, res) => {
   res.status(204).send();
 };
 
+// Contact Submissions API
+export const getContactSubmissions: RequestHandler = (req, res) => {
+  res.json(contactSubmissions);
+};
+
+export const getContactSubmission: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const submission = contactSubmissions.find((c) => c.id === id);
+  if (!submission) {
+    return res.status(404).json({ error: "Contact submission not found" });
+  }
+  res.json(submission);
+};
+
+export const createContactSubmission: RequestHandler = (req, res) => {
+  const { name, email, subject, message } = req.body;
+  
+  if (!name || !email || !subject || !message) {
+    return res.status(400).json({ error: "Name, email, subject, and message are required" });
+  }
+  
+  const newSubmission = {
+    id: generateId(),
+    name,
+    email,
+    subject,
+    message,
+    status: "new",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  
+  contactSubmissions.push(newSubmission);
+  res.status(201).json(newSubmission);
+};
+
+export const updateContactSubmission: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const index = contactSubmissions.findIndex((c) => c.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: "Contact submission not found" });
+  }
+  
+  const updates = req.body;
+  if (updates.status === "read" && !contactSubmissions[index].readAt) {
+    updates.readAt = new Date().toISOString();
+  }
+  if (updates.status === "replied" && !contactSubmissions[index].repliedAt) {
+    updates.repliedAt = new Date().toISOString();
+  }
+  
+  contactSubmissions[index] = { ...contactSubmissions[index], ...updates, updatedAt: new Date().toISOString() };
+  res.json(contactSubmissions[index]);
+};
+
+export const deleteContactSubmission: RequestHandler = (req, res) => {
+  const { id } = req.params;
+  const index = contactSubmissions.findIndex((c) => c.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: "Contact submission not found" });
+  }
+  contactSubmissions.splice(index, 1);
+  res.status(204).send();
+};
+
 // Analytics API
 export const getAnalytics: RequestHandler = (req, res) => {
   const analytics = {
@@ -760,6 +838,8 @@ export const getAnalytics: RequestHandler = (req, res) => {
     totalCommitteeMembers: committeeMembers.length,
     activeCommitteeMembers: committeeMembers.filter((m) => m.active !== false).length,
     totalDevotions: devotions.length,
+    totalContactSubmissions: contactSubmissions.length,
+    newContactSubmissions: contactSubmissions.filter((c) => c.status === "new").length,
   };
   res.json(analytics);
 };

@@ -147,6 +147,15 @@ export function createServer() {
   // Admin API Routes - Analytics
   app.get("/api/admin/analytics", adminRoutes.getAnalytics);
 
+  // Contact Submissions API (Public - for form submission)
+  app.post("/api/contact", adminRoutes.createContactSubmission);
+
+  // Admin API Routes - Contact Submissions
+  app.get("/api/admin/contact", adminRoutes.getContactSubmissions);
+  app.get("/api/admin/contact/:id", adminRoutes.getContactSubmission);
+  app.put("/api/admin/contact/:id", adminRoutes.updateContactSubmission);
+  app.delete("/api/admin/contact/:id", adminRoutes.deleteContactSubmission);
+
   // YouTube API Routes
   app.get("/api/youtube/latest", youtubeRoutes.getLatestVideos);
   app.get("/api/youtube/videos", youtubeRoutes.getLatestVideos);

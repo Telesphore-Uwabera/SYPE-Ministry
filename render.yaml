@@ -3,7 +3,7 @@ services:
     name: sype-ministry-api
     env: node
     plan: starter
-    buildCommand: npm install && npm run build:server && npx prisma generate
+    buildCommand: npm install --include=dev && npm run build:server && npx prisma generate
     startCommand: node dist/server/node-build.mjs
     envVars:
       - key: NODE_ENV

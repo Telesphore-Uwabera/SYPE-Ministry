@@ -27,17 +27,36 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Plus, Search, Edit, Trash2, Download, Users, UserCheck, UserX } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Mail, Plus, Search, Edit, Trash2, Download, Users, UserCheck, UserX, MessageSquare } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { EmailSubscriber } from "@/types/admin";
+import { Textarea } from "@/components/ui/textarea";
+
+interface ContactSubmission {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: string;
+  readAt?: string;
+  repliedAt?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function Communication() {
   const [subscribers, setSubscribers] = useState<EmailSubscriber[]>([]);
+  const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSubscriber, setEditingSubscriber] = useState<EmailSubscriber | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<ContactSubmission | null>(null);
+  const [submissionNotes, setSubmissionNotes] = useState("");
   const { toast } = useToast();
 
   const [formData, setFormData] = useState<Omit<EmailSubscriber, "id" | "subscribedAt">>({
@@ -50,7 +69,62 @@ export default function Communication() {
 
   useEffect(() => {
     loadSubscribers();
+    loadContactSubmissions();
   }, []);
+
+  const loadContactSubmissions = async () => {
+    try {
+      const response = await fetch("/api/admin/contact");
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setContactSubmissions(data);
+      }
+    } catch (error) {
+      console.error("Error loading contact submissions:", error);
+    }
+  };
+
+  const handleUpdateSubmission = async (id: string, updates: Partial<ContactSubmission>) => {
+    try {
+      const response = await fetch(`/api/admin/contact/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (!response.ok) throw new Error("Failed to update submission");
+      loadContactSubmissions();
+      toast({
+        title: "Success",
+        description: "Contact submission updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update submission.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteSubmission = async (id: string) => {
+    try {
+      const response = await fetch(`/api/admin/contact/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete submission");
+      loadContactSubmissions();
+      toast({
+        title: "Success",
+        description: "Contact submission deleted successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete submission.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const loadSubscribers = async () => {
     try {
@@ -415,6 +489,220 @@ export default function Communication() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Contact Submissions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5" />
+            Contact Submissions
+          </CardTitle>
+          <CardDescription>View and manage contact form submissions</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Search by name, email, or subject..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="read">Read</SelectItem>
+                  <SelectItem value="replied">Replied</SelectItem>
+                  <SelectItem value="archived">Archived</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Subject</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {contactSubmissions
+                  .filter((sub) => {
+                    const matchesSearch = 
+                      sub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      sub.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      sub.subject.toLowerCase().includes(searchTerm.toLowerCase());
+                    const matchesStatus = filterStatus === "all" || sub.status === filterStatus;
+                    return matchesSearch && matchesStatus;
+                  })
+                  .map((submission) => (
+                    <TableRow key={submission.id}>
+                      <TableCell className="font-medium">{submission.name}</TableCell>
+                      <TableCell>{submission.email}</TableCell>
+                      <TableCell>{submission.subject}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            submission.status === "new"
+                              ? "default"
+                              : submission.status === "read"
+                              ? "secondary"
+                              : submission.status === "replied"
+                              ? "outline"
+                              : "destructive"
+                          }
+                        >
+                          {submission.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(submission.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedSubmission(submission);
+                              setSubmissionNotes(submission.notes || "");
+                              if (submission.status === "new") {
+                                handleUpdateSubmission(submission.id, { status: "read" });
+                              }
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Contact Submission</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this contact submission? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteSubmission(submission.id)}>
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                {contactSubmissions.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      No contact submissions yet
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* View/Edit Submission Dialog */}
+      <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Contact Submission Details</DialogTitle>
+            <DialogDescription>View and manage this contact submission</DialogDescription>
+          </DialogHeader>
+          {selectedSubmission && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Name</Label>
+                  <Input value={selectedSubmission.name} readOnly />
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input value={selectedSubmission.email} readOnly />
+                </div>
+              </div>
+              <div>
+                <Label>Subject</Label>
+                <Input value={selectedSubmission.subject} readOnly />
+              </div>
+              <div>
+                <Label>Message</Label>
+                <Textarea value={selectedSubmission.message} readOnly rows={6} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Status</Label>
+                  <Select
+                    value={selectedSubmission.status}
+                    onValueChange={(value) =>
+                      handleUpdateSubmission(selectedSubmission.id, { status: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new">New</SelectItem>
+                      <SelectItem value="read">Read</SelectItem>
+                      <SelectItem value="replied">Replied</SelectItem>
+                      <SelectItem value="archived">Archived</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Submitted</Label>
+                  <Input
+                    value={new Date(selectedSubmission.createdAt).toLocaleString()}
+                    readOnly
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Notes</Label>
+                <Textarea
+                  value={submissionNotes}
+                  onChange={(e) => setSubmissionNotes(e.target.value)}
+                  placeholder="Add internal notes about this submission..."
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setSelectedSubmission(null)}
+            >
+              Close
+            </Button>
+            <Button
+              onClick={() => {
+                handleUpdateSubmission(selectedSubmission!.id, { notes: submissionNotes });
+                setSelectedSubmission(null);
+              }}
+            >
+              Save Notes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Email Campaigns */}
       <Card>

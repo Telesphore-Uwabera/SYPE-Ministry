@@ -1,4 +1,6 @@
 import "./global.css";
+// Import API config early to set up fetch override
+import "@/lib/apiConfig";
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";

@@ -12,9 +12,11 @@ export default defineConfig(({ mode }) => ({
       allow: [".", "./client", "./shared"],
       deny: [".env", ".env.*", "*.{crt,pem}", "**/.git/**", "server/**"],
     },
+    // In development, API is handled by Express plugin below
+    // In production, use VITE_API_BASE_URL environment variable
   },
   build: {
-    outDir: "dist/spa",
+    outDir: "dist/client",
   },
   plugins: [react(), expressPlugin()],
   resolve: {

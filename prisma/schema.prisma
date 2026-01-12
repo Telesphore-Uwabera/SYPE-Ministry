@@ -91,6 +91,7 @@ model Donation {
   type          String    // "one-time" | "monthly" | "project-based"
   projectId     String?
   paymentMethod String?
+  paymentStatus String    @default("unpaid") // "paid" | "unpaid" | "installment"
   receiptSent   Boolean   @default(false)
   notes         String?   @db.Text
   createdAt     DateTime  @default(now())
@@ -140,4 +141,20 @@ model EmailCampaign {
   updatedAt  DateTime  @updatedAt
 
   @@map("email_campaigns")
+}
+
+model Devotion {
+  id                    String    @id @default(uuid())
+  title                 String
+  date                  DateTime
+  excerpt               String    @db.Text
+  content               String?   @db.Text
+  image                 String?   // URL to image in Supabase Storage
+  featuredVideoUrl      String?
+  featuredVideoThumbnail String?
+  featuredVideoTitle    String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("devotions")
 }

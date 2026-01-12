@@ -11,10 +11,29 @@ import * as youtubeRoutes from "./routes/youtube";
 export function createServer() {
   const app = express();
 
-  // Middleware
-  app.use(cors());
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  // Middleware - CORS Configuration
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim())
+    : process.env.NODE_ENV === "production"
+    ? [] // In production, specify allowed origins
+    : ["http://localhost:5173", "http://localhost:8080", "http://localhost:3000"];
+
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
+      credentials: true,
+    })
+  );
+  app.use(express.json({ limit: "10mb" }));
+  app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
   // Serve static files from public directory
   app.use("/images", express.static(path.join(process.cwd(), "public", "images")));
@@ -131,6 +150,20 @@ export function createServer() {
   // YouTube API Routes
   app.get("/api/youtube/latest", youtubeRoutes.getLatestVideos);
   app.get("/api/youtube/videos", youtubeRoutes.getLatestVideos);
+
+  // Health check endpoint
+  app.get("/health", (_req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // Error handling middleware
+  app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error("Error:", err);
+    res.status(500).json({
+      error: "Internal server error",
+      message: process.env.NODE_ENV === "development" ? err.message : "Something went wrong",
+    });
+  });
 
   return app;
 }

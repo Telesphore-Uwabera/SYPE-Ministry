@@ -6,6 +6,7 @@ import {
   Shield,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { buildApiUrl } from "@/lib/apiConfig";
 import MemberManagement from "@/components/admin/MemberManagement";
 import NewsManagement from "@/components/admin/NewsManagement";
 import ProjectManagement from "@/components/admin/ProjectManagement";
@@ -53,7 +54,7 @@ export default function Admin() {
 
   const loadAnalytics = async () => {
     try {
-      const response = await fetch("/api/admin/analytics");
+      const response = await fetch(buildApiUrl("/api/admin/analytics"));
       const data = await response.json();
       if (data) {
         setAnalytics(data);

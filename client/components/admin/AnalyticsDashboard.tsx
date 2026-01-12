@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Analytics } from "@/types/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, Users, BookOpen, DollarSign, Calendar, Newspaper } from "lucide-react";
+import { buildApiUrl } from "@/lib/apiConfig";
 
 export default function AnalyticsDashboard() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -12,7 +13,7 @@ export default function AnalyticsDashboard() {
 
   const loadAnalytics = async () => {
     try {
-      const response = await fetch("/api/admin/analytics");
+      const response = await fetch(buildApiUrl("/api/admin/analytics"));
       const data = await response.json();
       if (data) {
         setAnalytics(data);

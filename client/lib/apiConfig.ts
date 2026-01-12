@@ -52,3 +52,14 @@ export const apiFetch = async (
     },
   });
 };
+
+// Override global fetch to use API base URL automatically
+// This ensures all fetch("/api/...") calls use the correct backend URL
+const originalFetch = window.fetch;
+window.fetch = function(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  // Only intercept relative API URLs
+  if (typeof input === 'string' && input.startsWith('/api/')) {
+    input = buildApiUrl(input);
+  }
+  return originalFetch.call(this, input, init);
+};

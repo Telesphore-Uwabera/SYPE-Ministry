@@ -61,7 +61,7 @@ export default function Devotions() {
                   </h2>
                 </div>
 
-                <div className="space-y-9 flex-grow">
+                <div className="space-y-12 flex-grow">
                   <div className="flex items-start gap-4">
                     <Clock className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                     <div>

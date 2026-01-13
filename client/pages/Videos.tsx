@@ -20,6 +20,10 @@ interface YouTubeVideo {
 export default function Videos() {
   const [activeTab, setActiveTab] = useState("sermons");
   
+  // Latest Videos (YouTube - no category filter)
+  const [latestVideos, setLatestVideos] = useState<YouTubeVideo[]>([]);
+  const [latestVideosLoading, setLatestVideosLoading] = useState(true);
+  
   // Sermons & Teachings (YouTube)
   const [sermons, setSermons] = useState<YouTubeVideo[]>([]);
   const [sermonsLoading, setSermonsLoading] = useState(true);
@@ -35,6 +39,21 @@ export default function Videos() {
   // Graphics & Posters (Admin-uploaded media)
   const [graphics, setGraphics] = useState<MediaFile[]>([]);
   const [graphicsLoading, setGraphicsLoading] = useState(true);
+
+  // Fetch Latest Videos from YouTube (no category filter)
+  useEffect(() => {
+    fetch("/api/youtube/latest?limit=3")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setLatestVideos(data);
+        }
+        setLatestVideosLoading(false);
+      })
+      .catch(() => {
+        setLatestVideosLoading(false);
+      });
+  }, []);
 
   // Fetch Sermons & Teachings from YouTube
   useEffect(() => {
@@ -366,6 +385,40 @@ export default function Videos() {
                 Subscribe on YouTube
               </a>
             </Button>
+          </ScrollAnimation>
+        </div>
+      </section>
+
+      {/* Latest Videos Section */}
+      <section className="py-16 md:py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <ScrollAnimation direction="fade" delay={0.3}>
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="font-heading font-bold text-2xl md:text-3xl text-primary mb-2">
+                  Latest Videos
+                </h2>
+                <p className="text-foreground/70">
+                  Watch our most recent uploads from our YouTube channel
+                </p>
+              </div>
+              <Button
+                asChild
+                variant="outline"
+                className="border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+              >
+                <a
+                  href="https://www.youtube.com/@sypeministry5276"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2"
+                >
+                  View All →
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </Button>
+            </div>
+            {renderYouTubeVideos(latestVideos, latestVideosLoading)}
           </ScrollAnimation>
         </div>
       </section>

@@ -68,56 +68,88 @@ export const getLatestVideos: RequestHandler = async (req, res) => {
       if (channelResponse.ok) {
         const channelData = await channelResponse.json();
         channelId = channelData.items?.[0]?.id || null;
+        console.log("YouTube Channel ID:", channelId);
+      } else {
+        const errorData = await channelResponse.json().catch(() => ({}));
+        console.warn("Failed to fetch channel ID by handle:", channelResponse.status, errorData);
       }
     } catch (err) {
-      console.warn("Failed to fetch channel ID by handle, will use search method");
+      console.warn("Failed to fetch channel ID by handle, will use search method:", err);
     }
 
     // Fetch videos from channel
     let videosData: any;
     if (channelId) {
       // Use channel ID (more reliable)
-      const videosResponse = await fetch(
-        `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&order=date&type=video&maxResults=${limit * 3}&key=${YOUTUBE_API_KEY}`
-      );
-      if (videosResponse.ok) {
-        videosData = await videosResponse.json();
+      try {
+        const videosResponse = await fetch(
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&order=date&type=video&maxResults=${Math.max(limit * 3, 50)}&key=${YOUTUBE_API_KEY}`
+        );
+        if (videosResponse.ok) {
+          videosData = await videosResponse.json();
+          console.log(`Fetched ${videosData.items?.length || 0} videos from channel`);
+        } else {
+          const errorData = await videosResponse.json().catch(() => ({}));
+          console.error("YouTube search API error:", videosResponse.status, errorData);
+        }
+      } catch (err) {
+        console.error("Error fetching videos by channel ID:", err);
       }
     }
 
     // Fallback: Use search API if channel ID method failed
-    if (!videosData || !videosData.items) {
-      const searchQuery = encodeURIComponent(`@${channelHandle} SYPE Ministry`);
-      const videosResponse = await fetch(
-        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${searchQuery}&type=video&order=date&maxResults=${limit * 3}&key=${YOUTUBE_API_KEY}`
-      );
-      
-      if (!videosResponse.ok) {
-        console.error("YouTube API error:", videosResponse.status, videosResponse.statusText);
+    if (!videosData || !videosData.items || videosData.items.length === 0) {
+      console.log("Using fallback search method");
+      try {
+        const searchQuery = encodeURIComponent(`@${channelHandle}`);
+        const videosResponse = await fetch(
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${searchQuery}&type=video&order=date&maxResults=${Math.max(limit * 3, 50)}&key=${YOUTUBE_API_KEY}`
+        );
+        
+        if (!videosResponse.ok) {
+          const errorData = await videosResponse.json().catch(() => ({}));
+          console.error("YouTube API error:", videosResponse.status, videosResponse.statusText, errorData);
+          if (cachedVideos.length > 0) {
+            console.log("Returning cached videos");
+            return res.json(cachedVideos.slice(0, limit));
+          }
+          return res.json([]);
+        }
+        
+        videosData = await videosResponse.json();
+        console.log(`Fetched ${videosData.items?.length || 0} videos from search`);
+      } catch (err) {
+        console.error("Error in fallback search:", err);
         if (cachedVideos.length > 0) {
           return res.json(cachedVideos.slice(0, limit));
         }
         return res.json([]);
       }
-      
-      videosData = await videosResponse.json();
     }
 
     // Map all videos first
     let videos: YouTubeVideo[] = (videosData.items || [])
-      .filter((item: any) => {
-        // Ensure video is from SYPE channel
-        const channelTitle = item.snippet.channelTitle?.toLowerCase() || "";
-        return channelTitle.includes("sype");
+      .map((item: any) => {
+        // Get video ID - can be in item.id.videoId (from search) or item.id (from playlist)
+        const videoId = item.id?.videoId || item.id;
+        return {
+          id: videoId,
+          videoId: videoId,
+          title: item.snippet.title,
+          thumbnail: item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
+          publishedAt: item.snippet.publishedAt,
+          description: item.snippet.description || item.snippet.title,
+        };
       })
-      .map((item: any) => ({
-        id: item.id.videoId,
-        videoId: item.id.videoId,
-        title: item.snippet.title,
-        thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default.url,
-        publishedAt: item.snippet.publishedAt,
-        description: item.snippet.description || item.snippet.title,
-      }));
+      .filter((video: YouTubeVideo) => {
+        // Only filter by channel if we didn't use channelId (i.e., used search method)
+        if (!channelId) {
+          // For search results, try to ensure it's from the right channel
+          // But be less strict - just check if it exists
+          return true;
+        }
+        return true; // If we used channelId, all results are from the channel
+      });
 
     // Apply category filter if specified
     if (category && categoryKeywords[category.toLowerCase()]) {

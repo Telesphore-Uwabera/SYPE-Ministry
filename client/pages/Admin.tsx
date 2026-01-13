@@ -4,9 +4,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import {
   Shield,
+  BarChart3,
+  Users,
+  Newspaper,
+  FolderKanban,
+  Calendar,
+  DollarSign,
+  HelpCircle,
+  BookOpen,
+  Image,
+  BookMarked,
+  UsersRound,
+  Mail,
+  Settings,
+  Menu,
 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildApiUrl } from "@/lib/apiConfig";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import MemberManagement from "@/components/admin/MemberManagement";
 import NewsManagement from "@/components/admin/NewsManagement";
 import ProjectManagement from "@/components/admin/ProjectManagement";
@@ -22,6 +36,7 @@ import CommitteeManagement from "@/components/admin/CommitteeManagement";
 import DevotionManagement from "@/components/admin/DevotionManagement";
 
 export default function Admin() {
+  const [activeSection, setActiveSection] = useState("analytics");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -175,16 +190,115 @@ export default function Admin() {
     },
   };
 
+  // Sidebar menu items
+  const menuItems = [
+    { id: "analytics", label: "Analytics", icon: BarChart3 },
+    { id: "members", label: "Members", icon: Users },
+    { id: "news", label: "News", icon: Newspaper },
+    { id: "projects", label: "Projects", icon: FolderKanban },
+    { id: "events", label: "Events", icon: Calendar },
+    { id: "donations", label: "Donations", icon: DollarSign },
+    { id: "faqs", label: "FAQs", icon: HelpCircle },
+    { id: "books", label: "Books", icon: BookOpen },
+    { id: "media", label: "Media", icon: Image },
+    { id: "devotions", label: "Devotions", icon: BookMarked },
+    { id: "committee", label: "Committee", icon: UsersRound },
+    { id: "communication", label: "Communication", icon: Mail },
+    { id: "settings", label: "Settings", icon: Settings },
+  ];
+
+  // Sidebar component
+  const sidebar = (
+    <div className="flex flex-col h-full">
+      {/* Sidebar Header */}
+      <div className="p-4 border-b">
+        <h2 className="font-heading font-bold text-lg text-primary">Navigation</h2>
+      </div>
+
+      {/* Sidebar Menu */}
+      <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveSection(item.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeSection === item.id
+                  ? "bg-primary text-primary-foreground"
+                  : "text-foreground/70 hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+    </div>
+  );
+
+  // Mobile sidebar (sheet)
+  const mobileSidebar = (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="md:hidden">
+          <Menu className="w-5 h-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-64 p-0">
+        {sidebar}
+      </SheetContent>
+    </Sheet>
+  );
+
+  // Render content based on active section
+  const renderContent = () => {
+    switch (activeSection) {
+      case "analytics":
+        return <AnalyticsDashboard />;
+      case "members":
+        return <MemberManagement />;
+      case "news":
+        return <NewsManagement />;
+      case "projects":
+        return <ProjectManagement />;
+      case "events":
+        return <EventManagement />;
+      case "donations":
+        return <DonationManagement />;
+      case "faqs":
+        return <FAQManagement />;
+      case "books":
+        return <BookManagement />;
+      case "media":
+        return <MediaManagement />;
+      case "devotions":
+        return <DevotionManagement />;
+      case "committee":
+        return <CommitteeManagement />;
+      case "communication":
+        return <Communication />;
+      case "settings":
+        return <SettingsManagement />;
+      default:
+        return <AnalyticsDashboard />;
+    }
+  };
+
   return (
-    <AdminLayout user={adminUser} onLogout={handleLogout}>
+    <AdminLayout user={adminUser} onLogout={handleLogout} sidebar={sidebar}>
       <div className="min-h-screen bg-gradient-to-br from-muted/50 to-background py-12">
         <div className="container mx-auto px-4">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="mb-4">
-              <h1 className="font-heading font-bold text-4xl text-primary mb-2">
-                Admin Dashboard
-              </h1>
+          {/* Header with Mobile Menu */}
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                {mobileSidebar}
+                <h1 className="font-heading font-bold text-4xl text-primary">
+                  Admin Dashboard
+                </h1>
+              </div>
               <p className="text-foreground/70">
                 Manage SYPE Ministry website content and operations
               </p>
@@ -219,77 +333,10 @@ export default function Admin() {
             </Card>
           </div>
 
-          {/* Admin Features */}
-          <Tabs defaultValue="analytics" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 lg:grid-cols-7 gap-1 overflow-x-auto">
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="members">Members</TabsTrigger>
-              <TabsTrigger value="news">News</TabsTrigger>
-              <TabsTrigger value="projects">Projects</TabsTrigger>
-              <TabsTrigger value="events">Events</TabsTrigger>
-              <TabsTrigger value="donations">Donations</TabsTrigger>
-              <TabsTrigger value="faqs">FAQs</TabsTrigger>
-              <TabsTrigger value="books">Books</TabsTrigger>
-              <TabsTrigger value="media">Media</TabsTrigger>
-              <TabsTrigger value="devotions">Devotions</TabsTrigger>
-              <TabsTrigger value="committee">Committee</TabsTrigger>
-              <TabsTrigger value="communication">Communication</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="analytics">
-              <AnalyticsDashboard />
-            </TabsContent>
-
-            <TabsContent value="members">
-              <MemberManagement />
-            </TabsContent>
-
-            <TabsContent value="news">
-              <NewsManagement />
-            </TabsContent>
-
-            <TabsContent value="projects">
-              <ProjectManagement />
-            </TabsContent>
-
-            <TabsContent value="events">
-              <EventManagement />
-            </TabsContent>
-
-            <TabsContent value="donations">
-              <DonationManagement />
-            </TabsContent>
-
-            <TabsContent value="faqs">
-              <FAQManagement />
-            </TabsContent>
-
-            <TabsContent value="books">
-              <BookManagement />
-            </TabsContent>
-
-            <TabsContent value="media">
-              <MediaManagement />
-            </TabsContent>
-
-            <TabsContent value="devotions">
-              <DevotionManagement />
-            </TabsContent>
-
-            <TabsContent value="committee">
-              <CommitteeManagement />
-            </TabsContent>
-
-            <TabsContent value="communication">
-              <Communication />
-            </TabsContent>
-
-            <TabsContent value="settings">
-              <SettingsManagement />
-            </TabsContent>
-          </Tabs>
-
+          {/* Admin Features Content */}
+          <div className="space-y-4">
+            {renderContent()}
+          </div>
         </div>
       </div>
     </AdminLayout>

@@ -1,28 +1,42 @@
 // Supabase Client Configuration
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.SUPABASE_URL || "";
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "";
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
-if (!supabaseUrl || !supabaseAnonKey) {
+// Only create clients if environment variables are set
+// This prevents errors during Vite config loading when .env might not be loaded yet
+let supabase: SupabaseClient | null = null;
+let supabaseAdmin: SupabaseClient | null = null;
+
+if (supabaseUrl && supabaseAnonKey) {
+  try {
+    supabase = createClient(supabaseUrl, supabaseAnonKey);
+  } catch (error) {
+    console.warn("⚠️  Failed to create Supabase client:", error);
+  }
+} else {
   console.warn(
     "⚠️  Supabase environment variables are not set. Please configure SUPABASE_URL and SUPABASE_ANON_KEY in your .env file"
   );
 }
 
-// Client for public operations (uses anon key)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Admin client for server-side operations (uses service role key)
-export const supabaseAdmin = supabaseServiceKey
-  ? createClient(supabaseUrl, supabaseServiceKey, {
+if (supabaseServiceKey && supabaseUrl) {
+  try {
+    supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
       },
-    })
-  : null;
+    });
+  } catch (error) {
+    console.warn("⚠️  Failed to create Supabase admin client:", error);
+  }
+}
+
+// Export clients (may be null if env vars not set)
+export { supabase, supabaseAdmin };
 
 // Storage bucket names
 export const STORAGE_BUCKETS = {
@@ -82,6 +96,9 @@ export async function deleteFile(bucket: string, path: string) {
 
 // Helper function to get public URL
 export function getPublicUrl(bucket: string, path: string): string {
+  if (!supabase) {
+    throw new Error("Supabase client not configured");
+  }
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return data.publicUrl;
 }

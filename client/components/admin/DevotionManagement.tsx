@@ -69,6 +69,17 @@ export default function DevotionManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.image) {
+      toast({
+        title: "Validation Error",
+        description: "Devotion image is required. Please select an image from the media gallery.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       if (editingDevotion) {
         const response = await fetch(`/api/admin/devotions/${editingDevotion.id}`, {
@@ -247,9 +258,9 @@ export default function DevotionManagement() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="image">Devotion Image (Optional)</Label>
+                <Label htmlFor="image">Devotion Image *</Label>
                 <p className="text-xs text-foreground/60 mb-2">
-                  Select an image from the media gallery (images with category "devotions").
+                  Select an image from the media gallery (images with category "devotions"). This is required.
                 </p>
                 <div className="space-y-2">
                   <MediaSelector
@@ -281,6 +292,9 @@ export default function DevotionManagement() {
                         Remove Image
                       </Button>
                     </div>
+                  )}
+                  {!formData.image && (
+                    <p className="text-sm text-destructive">Please select a devotion image</p>
                   )}
                 </div>
               </div>

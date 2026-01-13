@@ -1,7 +1,6 @@
 import { defineConfig, Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { createServer } from "./server";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -32,6 +31,9 @@ function expressPlugin(): Plugin {
     name: "express-plugin",
     apply: "serve", // Only apply during development (serve mode)
     configureServer(server) {
+      // Lazy-load server only when actually needed (during dev serve)
+      // This prevents Prisma from initializing during build
+      const { createServer } = require("./server");
       const app = createServer();
 
       // Add Express app as middleware to Vite dev server

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Devotion } from "@/types/admin";
+import { Devotion, MediaFile } from "@/types/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { BookOpen, Plus, Search, Edit, Trash2, Calendar, Image as ImageIcon, Video, ExternalLink } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import MediaSelector from "./MediaSelector";
 
 export default function DevotionManagement() {
   const [devotions, setDevotions] = useState<Devotion[]>([]);
@@ -248,18 +249,40 @@ export default function DevotionManagement() {
               <div className="space-y-2">
                 <Label htmlFor="image">Devotion Image (Optional)</Label>
                 <p className="text-xs text-foreground/60 mb-2">
-                  Upload image with category "devotions" in Media Management, then paste the URL here.
+                  Select an image from the media gallery (images with category "devotions").
                 </p>
-                <Input
-                  id="image"
-                  type="url"
-                  value={formData.image || ""}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  placeholder="/images/devotions/image.jpg or full URL"
-                />
-                <p className="text-xs text-foreground/60">
-                  Or use Media Management to upload images with category "devotions" and paste the URL here.
-                </p>
+                <div className="space-y-2">
+                  <MediaSelector
+                    category="devotions"
+                    type="image"
+                    onSelect={(media: MediaFile) => {
+                      setFormData({ ...formData, image: media?.url || "" });
+                    }}
+                    selectedUrl={formData.image || ""}
+                    title="Select Devotion Image"
+                    description="Choose an image from the devotions media gallery. Upload images with category 'devotions' in Media Management first."
+                  />
+                  {formData.image && (
+                    <div className="mt-2">
+                      <div className="w-32 h-32 rounded overflow-hidden border">
+                        <img
+                          src={formData.image}
+                          alt="Selected devotion image"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => setFormData({ ...formData, image: "" })}
+                      >
+                        Remove Image
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-4 border-t pt-4">

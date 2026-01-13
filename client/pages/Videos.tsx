@@ -162,15 +162,15 @@ export default function Videos() {
         direction="up"
       >
         {videos.map((video) => (
-          <HoverAnimation key={video.id} scale={1.02} y={-8}>
+          <HoverAnimation key={video.id} scale={1.02} y={-8} className="h-full">
             <a
               href={`https://www.youtube.com/watch?v=${video.videoId}`}
               target="_blank"
               rel="noopener noreferrer"
               className="block h-full"
             >
-              <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group">
-                <div className="relative h-48 overflow-hidden">
+              <Card className="h-full flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group">
+                <div className="relative h-48 overflow-hidden flex-shrink-0">
                   <img
                     src={video.thumbnail}
                     alt={video.title}
@@ -186,7 +186,7 @@ export default function Videos() {
                     YouTube
                   </div>
                 </div>
-                <CardHeader>
+                <CardHeader className="flex-shrink-0">
                   <CardTitle className="line-clamp-2 text-base">{video.title}</CardTitle>
                   <CardDescription className="flex items-center gap-2 text-xs">
                     <Calendar className="w-3 h-3" />
@@ -197,11 +197,11 @@ export default function Videos() {
                     })}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-foreground/70 line-clamp-3 mb-4">
+                <CardContent className="flex-grow flex flex-col">
+                  <p className="text-sm text-foreground/70 line-clamp-3 mb-4 flex-grow">
                     {video.description}
                   </p>
-                  <div className="flex items-center gap-2 text-accent text-sm font-semibold">
+                  <div className="flex items-center gap-2 text-accent text-sm font-semibold mt-auto">
                     Watch on YouTube
                     <ExternalLink className="w-3 h-3" />
                   </div>
@@ -254,10 +254,10 @@ export default function Videos() {
         direction="up"
       >
         {files.map((file) => (
-          <HoverAnimation key={file.id} scale={1.02} y={-8}>
+          <HoverAnimation key={file.id} scale={1.02} y={-8} className="h-full">
             {isVideo ? (
-              <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group">
-                <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
+              <Card className="h-full flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group">
+                <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20 flex-shrink-0">
                   {file.thumbnail ? (
                     <img
                       src={file.thumbnail}
@@ -275,7 +275,7 @@ export default function Videos() {
                     </div>
                   </div>
                 </div>
-                <CardHeader>
+                <CardHeader className="flex-shrink-0">
                   <CardTitle className="line-clamp-2 text-base">{file.name}</CardTitle>
                   <CardDescription className="flex items-center gap-2 text-xs">
                     <Calendar className="w-3 h-3" />
@@ -286,15 +286,15 @@ export default function Videos() {
                     })}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-foreground/70 line-clamp-3 mb-4">
+                <CardContent className="flex-grow flex flex-col">
+                  <p className="text-sm text-foreground/70 line-clamp-3 mb-4 flex-grow">
                     {file.description || file.name}
                   </p>
                   <Button
                     asChild
                     variant="outline"
                     size="sm"
-                    className="w-full"
+                    className="w-full mt-auto"
                   >
                     <a
                       href={file.url}
@@ -309,8 +309,8 @@ export default function Videos() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group">
-                <div className="relative h-48 overflow-hidden">
+              <Card className="h-full flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group">
+                <div className="relative h-48 overflow-hidden flex-shrink-0">
                   <img
                     src={file.url}
                     alt={file.name}
@@ -318,7 +318,7 @@ export default function Videos() {
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
                 </div>
-                <CardHeader>
+                <CardHeader className="flex-shrink-0">
                   <CardTitle className="line-clamp-2 text-base">{file.name}</CardTitle>
                   <CardDescription className="flex items-center gap-2 text-xs">
                     <Calendar className="w-3 h-3" />
@@ -329,15 +329,15 @@ export default function Videos() {
                     })}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-foreground/70 line-clamp-3 mb-4">
+                <CardContent className="flex-grow flex flex-col">
+                  <p className="text-sm text-foreground/70 line-clamp-3 mb-4 flex-grow">
                     {file.description || file.name}
                   </p>
                   <Button
                     asChild
                     variant="outline"
                     size="sm"
-                    className="w-full"
+                    className="w-full mt-auto"
                   >
                     <a
                       href={file.url}

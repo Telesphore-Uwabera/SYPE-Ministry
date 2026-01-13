@@ -174,3 +174,43 @@ model ContactSubmission {
 
   @@map("contact_submissions")
 }
+
+model Book {
+  id          String    @id @default(uuid())
+  title       String
+  author      String?
+  category    String    // "Health" | "Genzura" | "Ellen G. White Books" | "Bible" | "Inyandiko" | "Integuza" | "Others"
+  description String?   @db.Text
+  coverImage  String?   // URL to cover image in Supabase Storage
+  fileUrl     String?   // URL to PDF/document in Supabase Storage
+  isbn        String?
+  publisher   String?
+  publishDate DateTime?
+  language    String?
+  pages       Int?
+  tags        String[]  // Array of tags
+  featured    Boolean   @default(false)
+  downloads   Int       @default(0)
+  uploadDate  DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("books")
+}
+
+model CommitteeMember {
+  id       String   @id @default(uuid())
+  position String
+  name     String
+  church   String
+  phone    String
+  category String   // "leadership" | "team" | "auditor" | "asa_representatives" | "board_chancellors"
+  image    String?  // URL to image in Supabase Storage
+  email    String?
+  order    Int      @default(0)
+  active   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("committee_members")
+}

@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 import { CommitteeMember } from "@/types/admin";
+import { buildApiUrl } from "@/lib/apiConfig";
 
 export default function About() {
   const [committeeMembers, setCommitteeMembers] = useState<CommitteeMember[]>([]);
@@ -19,7 +20,7 @@ export default function About() {
 
   const loadCommitteeMembers = async () => {
     try {
-      const response = await fetch("/api/committee?active=true");
+      const response = await fetch(buildApiUrl("/api/committee?active=true"));
       const data = await response.json();
       if (Array.isArray(data)) {
         setCommitteeMembers(data);

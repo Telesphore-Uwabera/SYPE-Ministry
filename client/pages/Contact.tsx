@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
+import { buildApiUrl } from "@/lib/apiConfig";
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -26,7 +27,7 @@ export default function Contact() {
     setSubmitStatus("idle");
 
     try {
-      const response = await fetch("/api/contact", {
+      const response = await fetch(buildApiUrl("/api/contact"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

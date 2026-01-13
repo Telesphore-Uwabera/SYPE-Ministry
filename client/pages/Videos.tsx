@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Play, Calendar, ExternalLink, Youtube } from "lucide-react";
 import { motion } from "framer-motion";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
+import { buildApiUrl } from "@/lib/apiConfig";
 
 interface YouTubeVideo {
   id: string;
@@ -22,7 +23,7 @@ export default function Videos() {
 
   // Fetch Latest Videos from YouTube (no category filter)
   useEffect(() => {
-    fetch("/api/youtube/latest?limit=6")
+    fetch(buildApiUrl("/api/youtube/latest?limit=6"))
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {

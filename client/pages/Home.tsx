@@ -122,7 +122,7 @@ function LatestDevotionsCards() {
 
   useEffect(() => {
     // Fetch last 3 devotions from API
-    fetch("/api/devotions?days=7")
+    fetch(buildApiUrl("/api/devotions?days=7"))
       .then((res) => res.json())
       .then((data) => {
         // Get latest 3 devotions

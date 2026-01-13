@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 import { Book } from "@/types/admin";
 import { Input } from "@/components/ui/input";
+import { buildApiUrl } from "@/lib/apiConfig";
 
 const BOOK_CATEGORIES: Book["category"][] = [
   "Bible",
@@ -27,15 +28,21 @@ export default function Library() {
   const [dateFilter, setDateFilter] = useState<"all" | "past" | "ongoing" | "future">("all");
 
   useEffect(() => {
-    fetch("/api/admin/books")
-      .then((res) => res.json())
+    fetch(buildApiUrl("/api/admin/books"))
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
         if (Array.isArray(data)) {
           setBooks(data);
         }
         setLoading(false);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error("Error fetching books:", error);
         setLoading(false);
       });
   }, []);

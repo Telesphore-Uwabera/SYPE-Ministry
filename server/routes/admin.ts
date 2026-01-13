@@ -2,32 +2,15 @@ import { RequestHandler, Request, Response } from "express";
 import { Member, NewsArticle, Project, Event, Donation, FAQ, MediaFile, EmailCampaign, Book, EmailSubscriber, CommitteeMember, Devotion } from "../../client/types/admin";
 import { prisma } from "../lib/prisma";
 
-// In-memory storage (replace with database in production)
-let members: Member[] = [];
-let news: NewsArticle[] = [];
-let projects: Project[] = [];
-let events: Event[] = [];
-let donations: Donation[] = [];
-let faqs: FAQ[] = [];
-let media: MediaFile[] = [];
-let campaigns: EmailCampaign[] = [];
-let books: Book[] = [];
-let subscribers: EmailSubscriber[] = [];
-let committeeMembers: CommitteeMember[] = [];
-// Devotions are now stored in database via Prisma
-let contactSubmissions: Array<{
-  id: string;
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-  status: string;
-  readAt?: string;
-  repliedAt?: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-}> = [];
+// In-memory storage (being migrated to database)
+// All data is now stored in database via Prisma for persistence
+let members: Member[] = []; // TODO: Migrate to database
+let events: Event[] = []; // TODO: Migrate to database
+let donations: Donation[] = []; // TODO: Migrate to database
+let media: MediaFile[] = []; // TODO: Migrate to database
+let campaigns: EmailCampaign[] = []; // TODO: Migrate to database
+let subscribers: EmailSubscriber[] = []; // TODO: Migrate to database
+// Devotions, News, Projects, Books, Committee, Contact Submissions, FAQs are now in database
 
 // Helper function to generate ID
 const generateId = () => Date.now().toString();
@@ -76,100 +59,341 @@ export const deleteMember: RequestHandler = (req, res) => {
 };
 
 // News API
-export const getNews: RequestHandler = (req, res) => {
-  const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
-  let result = [...news].sort((a, b) => {
-    const dateA = new Date(a.publishDate || 0).getTime();
-    const dateB = new Date(b.publishDate || 0).getTime();
-    return dateB - dateA; // Sort by newest first
-  });
-  if (limit && limit > 0) {
-    result = result.slice(0, limit);
+export const getNews: RequestHandler = async (req, res) => {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+    
+    const result = await prisma.newsArticle.findMany({
+      orderBy: { publishDate: "desc" },
+      take: limit,
+    });
+    
+    // Convert Prisma format to API format
+    const formattedResult = result.map((article) => ({
+      id: article.id,
+      title: article.title,
+      author: article.author,
+      publishDate: article.publishDate.toISOString(),
+      excerpt: article.excerpt,
+      body: article.body,
+      image: article.image || undefined,
+      featured: article.featured,
+      category: article.category || undefined,
+      tags: article.tags || [],
+      views: article.views,
+      createdAt: article.createdAt.toISOString(),
+    }));
+    
+    res.json(formattedResult);
+  } catch (error: any) {
+    console.error("Error fetching news:", error);
+    res.status(500).json({ error: "Failed to fetch news" });
   }
-  res.json(result);
 };
 
-export const getNewsArticle: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const article = news.find((n) => n.id === id);
-  if (!article) {
-    return res.status(404).json({ error: "Article not found" });
+export const getNewsArticle: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const article = await prisma.newsArticle.findUnique({
+      where: { id },
+    });
+    
+    if (!article) {
+      return res.status(404).json({ error: "Article not found" });
+    }
+    
+    res.json({
+      id: article.id,
+      title: article.title,
+      author: article.author,
+      publishDate: article.publishDate.toISOString(),
+      excerpt: article.excerpt,
+      body: article.body,
+      image: article.image || undefined,
+      featured: article.featured,
+      category: article.category || undefined,
+      tags: article.tags || [],
+      views: article.views,
+      createdAt: article.createdAt.toISOString(),
+    });
+  } catch (error: any) {
+    console.error("Error fetching news article:", error);
+    res.status(500).json({ error: "Failed to fetch news article" });
   }
-  res.json(article);
 };
 
-export const createNews: RequestHandler = (req, res) => {
-  const newArticle: NewsArticle = {
-    id: generateId(),
-    views: 0,
-    publishDate: req.body.publishDate || new Date().toISOString(),
-    ...req.body,
-  };
-  news.push(newArticle);
-  res.status(201).json(newArticle);
+export const createNews: RequestHandler = async (req, res) => {
+  try {
+    const { title, author, publishDate, excerpt, body, image, featured, category, tags } = req.body;
+    
+    if (!title || !author || !excerpt || !body) {
+      return res.status(400).json({ error: "Title, author, excerpt, and body are required" });
+    }
+    
+    const newArticle = await prisma.newsArticle.create({
+      data: {
+        title,
+        author,
+        publishDate: publishDate ? new Date(publishDate) : new Date(),
+        excerpt,
+        body,
+        image: image || null,
+        featured: featured || false,
+        category: category || null,
+        tags: tags || [],
+        views: 0,
+      },
+    });
+    
+    res.status(201).json({
+      id: newArticle.id,
+      title: newArticle.title,
+      author: newArticle.author,
+      publishDate: newArticle.publishDate.toISOString(),
+      excerpt: newArticle.excerpt,
+      body: newArticle.body,
+      image: newArticle.image || undefined,
+      featured: newArticle.featured,
+      category: newArticle.category || undefined,
+      tags: newArticle.tags || [],
+      views: newArticle.views,
+      createdAt: newArticle.createdAt.toISOString(),
+    });
+  } catch (error: any) {
+    console.error("Error creating news article:", error);
+    res.status(500).json({ error: "Failed to create news article" });
+  }
 };
 
-export const updateNews: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = news.findIndex((n) => n.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Article not found" });
+export const updateNews: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, author, publishDate, excerpt, body, image, featured, category, tags, views } = req.body;
+    
+    const updateData: any = {};
+    if (title !== undefined) updateData.title = title;
+    if (author !== undefined) updateData.author = author;
+    if (publishDate !== undefined) updateData.publishDate = new Date(publishDate);
+    if (excerpt !== undefined) updateData.excerpt = excerpt;
+    if (body !== undefined) updateData.body = body;
+    if (image !== undefined) updateData.image = image || null;
+    if (featured !== undefined) updateData.featured = featured;
+    if (category !== undefined) updateData.category = category || null;
+    if (tags !== undefined) updateData.tags = tags || [];
+    if (views !== undefined) updateData.views = views;
+    
+    const updatedArticle = await prisma.newsArticle.update({
+      where: { id },
+      data: updateData,
+    });
+    
+    res.json({
+      id: updatedArticle.id,
+      title: updatedArticle.title,
+      author: updatedArticle.author,
+      publishDate: updatedArticle.publishDate.toISOString(),
+      excerpt: updatedArticle.excerpt,
+      body: updatedArticle.body,
+      image: updatedArticle.image || undefined,
+      featured: updatedArticle.featured,
+      category: updatedArticle.category || undefined,
+      tags: updatedArticle.tags || [],
+      views: updatedArticle.views,
+      createdAt: updatedArticle.createdAt.toISOString(),
+    });
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Article not found" });
+    }
+    console.error("Error updating news article:", error);
+    res.status(500).json({ error: "Failed to update news article" });
   }
-  news[index] = { ...news[index], ...req.body };
-  res.json(news[index]);
 };
 
-export const deleteNews: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = news.findIndex((n) => n.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Article not found" });
+export const deleteNews: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.newsArticle.delete({
+      where: { id },
+    });
+    res.status(204).send();
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Article not found" });
+    }
+    console.error("Error deleting news article:", error);
+    res.status(500).json({ error: "Failed to delete news article" });
   }
-  news.splice(index, 1);
-  res.status(204).send();
 };
 
 // Projects API
-export const getProjects: RequestHandler = (req, res) => {
-  res.json(projects);
-};
-
-export const getProject: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const project = projects.find((p) => p.id === id);
-  if (!project) {
-    return res.status(404).json({ error: "Project not found" });
+export const getProjects: RequestHandler = async (req, res) => {
+  try {
+    const result = await prisma.project.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+    
+    const formattedResult = result.map((project) => ({
+      id: project.id,
+      name: project.name,
+      category: project.category,
+      topic: project.topic,
+      description: project.description,
+      distribution: project.distribution,
+      status: project.status,
+      year: project.year,
+      teamMembers: project.teamMembers || [],
+      startDate: project.startDate?.toISOString().split("T")[0] || undefined,
+      endDate: project.endDate?.toISOString().split("T")[0] || undefined,
+      budget: project.budget || undefined,
+      createdAt: project.createdAt.toISOString(),
+    }));
+    
+    res.json(formattedResult);
+  } catch (error: any) {
+    console.error("Error fetching projects:", error);
+    res.status(500).json({ error: "Failed to fetch projects" });
   }
-  res.json(project);
 };
 
-export const createProject: RequestHandler = (req, res) => {
-  const newProject: Project = {
-    id: generateId(),
-    ...req.body,
-  };
-  projects.push(newProject);
-  res.status(201).json(newProject);
-};
-
-export const updateProject: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = projects.findIndex((p) => p.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Project not found" });
+export const getProject: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const project = await prisma.project.findUnique({
+      where: { id },
+    });
+    
+    if (!project) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+    
+    res.json({
+      id: project.id,
+      name: project.name,
+      category: project.category,
+      topic: project.topic,
+      description: project.description,
+      distribution: project.distribution,
+      status: project.status,
+      year: project.year,
+      teamMembers: project.teamMembers || [],
+      startDate: project.startDate?.toISOString().split("T")[0] || undefined,
+      endDate: project.endDate?.toISOString().split("T")[0] || undefined,
+      budget: project.budget || undefined,
+      createdAt: project.createdAt.toISOString(),
+    });
+  } catch (error: any) {
+    console.error("Error fetching project:", error);
+    res.status(500).json({ error: "Failed to fetch project" });
   }
-  projects[index] = { ...projects[index], ...req.body };
-  res.json(projects[index]);
 };
 
-export const deleteProject: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = projects.findIndex((p) => p.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Project not found" });
+export const createProject: RequestHandler = async (req, res) => {
+  try {
+    const { name, category, topic, description, distribution, status, year, teamMembers, startDate, endDate, budget } = req.body;
+    
+    if (!name || !category || !topic || !description || !distribution || !status || !year) {
+      return res.status(400).json({ error: "Name, category, topic, description, distribution, status, and year are required" });
+    }
+    
+    const newProject = await prisma.project.create({
+      data: {
+        name,
+        category,
+        topic,
+        description,
+        distribution,
+        status,
+        year,
+        teamMembers: teamMembers || [],
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        budget: budget || null,
+      },
+    });
+    
+    res.status(201).json({
+      id: newProject.id,
+      name: newProject.name,
+      category: newProject.category,
+      topic: newProject.topic,
+      description: newProject.description,
+      distribution: newProject.distribution,
+      status: newProject.status,
+      year: newProject.year,
+      teamMembers: newProject.teamMembers || [],
+      startDate: newProject.startDate?.toISOString().split("T")[0] || undefined,
+      endDate: newProject.endDate?.toISOString().split("T")[0] || undefined,
+      budget: newProject.budget || undefined,
+      createdAt: newProject.createdAt.toISOString(),
+    });
+  } catch (error: any) {
+    console.error("Error creating project:", error);
+    res.status(500).json({ error: "Failed to create project" });
   }
-  projects.splice(index, 1);
-  res.status(204).send();
+};
+
+export const updateProject: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, category, topic, description, distribution, status, year, teamMembers, startDate, endDate, budget } = req.body;
+    
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (category !== undefined) updateData.category = category;
+    if (topic !== undefined) updateData.topic = topic;
+    if (description !== undefined) updateData.description = description;
+    if (distribution !== undefined) updateData.distribution = distribution;
+    if (status !== undefined) updateData.status = status;
+    if (year !== undefined) updateData.year = year;
+    if (teamMembers !== undefined) updateData.teamMembers = teamMembers || [];
+    if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : null;
+    if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : null;
+    if (budget !== undefined) updateData.budget = budget || null;
+    
+    const updatedProject = await prisma.project.update({
+      where: { id },
+      data: updateData,
+    });
+    
+    res.json({
+      id: updatedProject.id,
+      name: updatedProject.name,
+      category: updatedProject.category,
+      topic: updatedProject.topic,
+      description: updatedProject.description,
+      distribution: updatedProject.distribution,
+      status: updatedProject.status,
+      year: updatedProject.year,
+      teamMembers: updatedProject.teamMembers || [],
+      startDate: updatedProject.startDate?.toISOString().split("T")[0] || undefined,
+      endDate: updatedProject.endDate?.toISOString().split("T")[0] || undefined,
+      budget: updatedProject.budget || undefined,
+      createdAt: updatedProject.createdAt.toISOString(),
+    });
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Project not found" });
+    }
+    console.error("Error updating project:", error);
+    res.status(500).json({ error: "Failed to update project" });
+  }
+};
+
+export const deleteProject: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.project.delete({
+      where: { id },
+    });
+    res.status(204).send();
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Project not found" });
+    }
+    console.error("Error deleting project:", error);
+    res.status(500).json({ error: "Failed to delete project" });
+  }
 };
 
 // Events API
@@ -279,46 +503,131 @@ export const deleteDonation: RequestHandler = (req, res) => {
 };
 
 // FAQs API
-export const getFAQs: RequestHandler = (req, res) => {
-  res.json(faqs);
-};
-
-export const getFAQ: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const faq = faqs.find((f) => f.id === id);
-  if (!faq) {
-    return res.status(404).json({ error: "FAQ not found" });
+export const getFAQs: RequestHandler = async (req, res) => {
+  try {
+    const result = await prisma.fAQ.findMany({
+      orderBy: [{ category: "asc" }, { order: "asc" }],
+    });
+    
+    const formattedResult = result.map((faq) => ({
+      id: faq.id,
+      category: faq.category,
+      question: faq.question,
+      answer: faq.answer,
+      order: faq.order,
+      createdAt: faq.createdAt.toISOString(),
+    }));
+    
+    res.json(formattedResult);
+  } catch (error: any) {
+    console.error("Error fetching FAQs:", error);
+    res.status(500).json({ error: "Failed to fetch FAQs" });
   }
-  res.json(faq);
 };
 
-export const createFAQ: RequestHandler = (req, res) => {
-  const newFAQ: FAQ = {
-    id: generateId(),
-    ...req.body,
-  };
-  faqs.push(newFAQ);
-  res.status(201).json(newFAQ);
-};
-
-export const updateFAQ: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = faqs.findIndex((f) => f.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "FAQ not found" });
+export const getFAQ: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const faq = await prisma.fAQ.findUnique({
+      where: { id },
+    });
+    
+    if (!faq) {
+      return res.status(404).json({ error: "FAQ not found" });
+    }
+    
+    res.json({
+      id: faq.id,
+      category: faq.category,
+      question: faq.question,
+      answer: faq.answer,
+      order: faq.order,
+      createdAt: faq.createdAt.toISOString(),
+    });
+  } catch (error: any) {
+    console.error("Error fetching FAQ:", error);
+    res.status(500).json({ error: "Failed to fetch FAQ" });
   }
-  faqs[index] = { ...faqs[index], ...req.body };
-  res.json(faqs[index]);
 };
 
-export const deleteFAQ: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = faqs.findIndex((f) => f.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "FAQ not found" });
+export const createFAQ: RequestHandler = async (req, res) => {
+  try {
+    const { category, question, answer, order } = req.body;
+    
+    if (!category || !question || !answer) {
+      return res.status(400).json({ error: "Category, question, and answer are required" });
+    }
+    
+    const newFAQ = await prisma.fAQ.create({
+      data: {
+        category,
+        question,
+        answer,
+        order: order || 0,
+      },
+    });
+    
+    res.status(201).json({
+      id: newFAQ.id,
+      category: newFAQ.category,
+      question: newFAQ.question,
+      answer: newFAQ.answer,
+      order: newFAQ.order,
+      createdAt: newFAQ.createdAt.toISOString(),
+    });
+  } catch (error: any) {
+    console.error("Error creating FAQ:", error);
+    res.status(500).json({ error: "Failed to create FAQ" });
   }
-  faqs.splice(index, 1);
-  res.status(204).send();
+};
+
+export const updateFAQ: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { category, question, answer, order } = req.body;
+    
+    const updateData: any = {};
+    if (category !== undefined) updateData.category = category;
+    if (question !== undefined) updateData.question = question;
+    if (answer !== undefined) updateData.answer = answer;
+    if (order !== undefined) updateData.order = order;
+    
+    const updatedFAQ = await prisma.fAQ.update({
+      where: { id },
+      data: updateData,
+    });
+    
+    res.json({
+      id: updatedFAQ.id,
+      category: updatedFAQ.category,
+      question: updatedFAQ.question,
+      answer: updatedFAQ.answer,
+      order: updatedFAQ.order,
+      createdAt: updatedFAQ.createdAt.toISOString(),
+    });
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "FAQ not found" });
+    }
+    console.error("Error updating FAQ:", error);
+    res.status(500).json({ error: "Failed to update FAQ" });
+  }
+};
+
+export const deleteFAQ: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.fAQ.delete({
+      where: { id },
+    });
+    res.status(204).send();
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "FAQ not found" });
+    }
+    console.error("Error deleting FAQ:", error);
+    res.status(500).json({ error: "Failed to delete FAQ" });
+  }
 };
 
 // Media API
@@ -406,74 +715,221 @@ export const deleteMedia: RequestHandler = (req, res) => {
 };
 
 // Books API
-export const getBooks: RequestHandler = (req, res) => {
-  let result = [...books];
-  
-  // Filter by category if provided
-  const category = req.query.category as string | undefined;
-  if (category && category !== "All") {
-    result = result.filter((b) => b.category === category);
+export const getBooks: RequestHandler = async (req, res) => {
+  try {
+    const category = req.query.category as string | undefined;
+    
+    let where: any = {};
+    if (category && category !== "All") {
+      where.category = category;
+    }
+    
+    const result = await prisma.book.findMany({
+      where,
+      orderBy: { uploadDate: "desc" },
+    });
+    
+    const formattedResult = result.map((book) => ({
+      id: book.id,
+      title: book.title,
+      author: book.author || undefined,
+      category: book.category,
+      description: book.description || undefined,
+      coverImage: book.coverImage || undefined,
+      fileUrl: book.fileUrl || undefined,
+      isbn: book.isbn || undefined,
+      publisher: book.publisher || undefined,
+      publishDate: book.publishDate?.toISOString().split("T")[0] || undefined,
+      language: book.language || undefined,
+      pages: book.pages || undefined,
+      tags: book.tags || [],
+      featured: book.featured,
+      downloads: book.downloads,
+      uploadDate: book.uploadDate.toISOString(),
+    }));
+    
+    res.json(formattedResult);
+  } catch (error: any) {
+    console.error("Error fetching books:", error);
+    res.status(500).json({ error: "Failed to fetch books" });
   }
-  
-  // Sort by upload date (newest first)
-  result.sort((a, b) => {
-    const dateA = new Date(a.uploadDate || 0).getTime();
-    const dateB = new Date(b.uploadDate || 0).getTime();
-    return dateB - dateA;
-  });
-  
-  res.json(result);
 };
 
-export const getBook: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const book = books.find((b) => b.id === id);
-  if (!book) {
-    return res.status(404).json({ error: "Book not found" });
+export const getBook: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const book = await prisma.book.findUnique({
+      where: { id },
+    });
+    
+    if (!book) {
+      return res.status(404).json({ error: "Book not found" });
+    }
+    
+    res.json({
+      id: book.id,
+      title: book.title,
+      author: book.author || undefined,
+      category: book.category,
+      description: book.description || undefined,
+      coverImage: book.coverImage || undefined,
+      fileUrl: book.fileUrl || undefined,
+      isbn: book.isbn || undefined,
+      publisher: book.publisher || undefined,
+      publishDate: book.publishDate?.toISOString().split("T")[0] || undefined,
+      language: book.language || undefined,
+      pages: book.pages || undefined,
+      tags: book.tags || [],
+      featured: book.featured,
+      downloads: book.downloads,
+      uploadDate: book.uploadDate.toISOString(),
+    });
+  } catch (error: any) {
+    console.error("Error fetching book:", error);
+    res.status(500).json({ error: "Failed to fetch book" });
   }
-  res.json(book);
 };
 
-export const createBook: RequestHandler = (req, res) => {
-  const newBook: Book = {
-    id: generateId(),
-    uploadDate: new Date().toISOString(),
-    downloads: 0,
-    featured: false,
-    ...req.body,
-  };
-  books.push(newBook);
-  res.status(201).json(newBook);
+export const createBook: RequestHandler = async (req, res) => {
+  try {
+    const { title, author, category, description, coverImage, fileUrl, isbn, publisher, publishDate, language, pages, tags, featured } = req.body;
+    
+    if (!title || !category) {
+      return res.status(400).json({ error: "Title and category are required" });
+    }
+    
+    const newBook = await prisma.book.create({
+      data: {
+        title,
+        author: author || null,
+        category,
+        description: description || null,
+        coverImage: coverImage || null,
+        fileUrl: fileUrl || null,
+        isbn: isbn || null,
+        publisher: publisher || null,
+        publishDate: publishDate ? new Date(publishDate) : null,
+        language: language || null,
+        pages: pages || null,
+        tags: tags || [],
+        featured: featured || false,
+        downloads: 0,
+      },
+    });
+    
+    res.status(201).json({
+      id: newBook.id,
+      title: newBook.title,
+      author: newBook.author || undefined,
+      category: newBook.category,
+      description: newBook.description || undefined,
+      coverImage: newBook.coverImage || undefined,
+      fileUrl: newBook.fileUrl || undefined,
+      isbn: newBook.isbn || undefined,
+      publisher: newBook.publisher || undefined,
+      publishDate: newBook.publishDate?.toISOString().split("T")[0] || undefined,
+      language: newBook.language || undefined,
+      pages: newBook.pages || undefined,
+      tags: newBook.tags || [],
+      featured: newBook.featured,
+      downloads: newBook.downloads,
+      uploadDate: newBook.uploadDate.toISOString(),
+    });
+  } catch (error: any) {
+    console.error("Error creating book:", error);
+    res.status(500).json({ error: "Failed to create book" });
+  }
 };
 
-export const updateBook: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = books.findIndex((b) => b.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Book not found" });
+export const updateBook: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, author, category, description, coverImage, fileUrl, isbn, publisher, publishDate, language, pages, tags, featured } = req.body;
+    
+    const updateData: any = {};
+    if (title !== undefined) updateData.title = title;
+    if (author !== undefined) updateData.author = author || null;
+    if (category !== undefined) updateData.category = category;
+    if (description !== undefined) updateData.description = description || null;
+    if (coverImage !== undefined) updateData.coverImage = coverImage || null;
+    if (fileUrl !== undefined) updateData.fileUrl = fileUrl || null;
+    if (isbn !== undefined) updateData.isbn = isbn || null;
+    if (publisher !== undefined) updateData.publisher = publisher || null;
+    if (publishDate !== undefined) updateData.publishDate = publishDate ? new Date(publishDate) : null;
+    if (language !== undefined) updateData.language = language || null;
+    if (pages !== undefined) updateData.pages = pages || null;
+    if (tags !== undefined) updateData.tags = tags || [];
+    if (featured !== undefined) updateData.featured = featured;
+    
+    const updatedBook = await prisma.book.update({
+      where: { id },
+      data: updateData,
+    });
+    
+    res.json({
+      id: updatedBook.id,
+      title: updatedBook.title,
+      author: updatedBook.author || undefined,
+      category: updatedBook.category,
+      description: updatedBook.description || undefined,
+      coverImage: updatedBook.coverImage || undefined,
+      fileUrl: updatedBook.fileUrl || undefined,
+      isbn: updatedBook.isbn || undefined,
+      publisher: updatedBook.publisher || undefined,
+      publishDate: updatedBook.publishDate?.toISOString().split("T")[0] || undefined,
+      language: updatedBook.language || undefined,
+      pages: updatedBook.pages || undefined,
+      tags: updatedBook.tags || [],
+      featured: updatedBook.featured,
+      downloads: updatedBook.downloads,
+      uploadDate: updatedBook.uploadDate.toISOString(),
+    });
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Book not found" });
+    }
+    console.error("Error updating book:", error);
+    res.status(500).json({ error: "Failed to update book" });
   }
-  books[index] = { ...books[index], ...req.body };
-  res.json(books[index]);
 };
 
-export const deleteBook: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = books.findIndex((b) => b.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Book not found" });
+export const deleteBook: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.book.delete({
+      where: { id },
+    });
+    res.status(204).send();
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Book not found" });
+    }
+    console.error("Error deleting book:", error);
+    res.status(500).json({ error: "Failed to delete book" });
   }
-  books.splice(index, 1);
-  res.status(204).send();
 };
 
-export const trackBookDownload: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const book = books.find((b) => b.id === id);
-  if (!book) {
-    return res.status(404).json({ error: "Book not found" });
+export const trackBookDownload: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const book = await prisma.book.findUnique({
+      where: { id },
+    });
+    
+    if (!book) {
+      return res.status(404).json({ error: "Book not found" });
+    }
+    
+    const updatedBook = await prisma.book.update({
+      where: { id },
+      data: { downloads: book.downloads + 1 },
+    });
+    
+    res.json({ downloads: updatedBook.downloads });
+  } catch (error: any) {
+    console.error("Error tracking book download:", error);
+    res.status(500).json({ error: "Failed to track book download" });
   }
-  book.downloads = (book.downloads || 0) + 1;
-  res.json({ downloads: book.downloads });
 };
 
 // Email Subscribers API
@@ -578,83 +1034,181 @@ export const unsubscribe: RequestHandler = (req, res) => {
 };
 
 // Committee Members API
-export const getCommitteeMembers: RequestHandler = (req, res) => {
-  let result = [...committeeMembers];
-  
-  // Filter by category if provided
-  const category = req.query.category as string | undefined;
-  if (category) {
-    result = result.filter((m) => m.category === category);
+export const getCommitteeMembers: RequestHandler = async (req, res) => {
+  try {
+    const category = req.query.category as string | undefined;
+    const active = req.query.active !== "false";
+    
+    let where: any = {};
+    if (category) {
+      where.category = category;
+    }
+    if (active) {
+      where.active = true;
+    }
+    
+    const result = await prisma.committeeMember.findMany({
+      where,
+      orderBy: [
+        { category: "asc" },
+        { order: "asc" },
+      ],
+    });
+    
+    const formattedResult = result.map((member) => ({
+      id: member.id,
+      position: member.position,
+      name: member.name,
+      church: member.church,
+      phone: member.phone,
+      category: member.category,
+      image: member.image || undefined,
+      email: member.email || undefined,
+      order: member.order,
+      active: member.active,
+    }));
+    
+    res.json(formattedResult);
+  } catch (error: any) {
+    console.error("Error fetching committee members:", error);
+    res.status(500).json({ error: "Failed to fetch committee members" });
   }
-  
-  // Filter by active status if provided (default: show only active)
-  const active = req.query.active !== "false";
-  if (active) {
-    result = result.filter((m) => m.active !== false);
-  }
-  
-  // Sort by category, then by order
-  result.sort((a, b) => {
-    const categoryOrder = { leadership: 1, team: 2, auditor: 3, asa_representatives: 4, board_chancellors: 5 };
-    const categoryDiff = (categoryOrder[a.category] || 99) - (categoryOrder[b.category] || 99);
-    if (categoryDiff !== 0) return categoryDiff;
-    return a.order - b.order;
-  });
-  
-  res.json(result);
 };
 
-export const getCommitteeMember: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const member = committeeMembers.find((m) => m.id === id);
-  if (!member) {
-    return res.status(404).json({ error: "Committee member not found" });
+export const getCommitteeMember: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const member = await prisma.committeeMember.findUnique({
+      where: { id },
+    });
+    
+    if (!member) {
+      return res.status(404).json({ error: "Committee member not found" });
+    }
+    
+    res.json({
+      id: member.id,
+      position: member.position,
+      name: member.name,
+      church: member.church,
+      phone: member.phone,
+      category: member.category,
+      image: member.image || undefined,
+      email: member.email || undefined,
+      order: member.order,
+      active: member.active,
+    });
+  } catch (error: any) {
+    console.error("Error fetching committee member:", error);
+    res.status(500).json({ error: "Failed to fetch committee member" });
   }
-  res.json(member);
 };
 
-export const createCommitteeMember: RequestHandler = (req, res) => {
-  const { position, name, church, phone, category, image, email, order, active } = req.body;
-  
-  if (!position || !name || !church || !phone || !category) {
-    return res.status(400).json({ error: "Position, name, church, phone, and category are required" });
+export const createCommitteeMember: RequestHandler = async (req, res) => {
+  try {
+    const { position, name, church, phone, category, image, email, order, active } = req.body;
+    
+    if (!position || !name || !church || !phone || !category) {
+      return res.status(400).json({ error: "Position, name, church, phone, and category are required" });
+    }
+    
+    // Get count for order if not provided
+    let memberOrder = order;
+    if (memberOrder === undefined) {
+      const count = await prisma.committeeMember.count({
+        where: { category },
+      });
+      memberOrder = count + 1;
+    }
+    
+    const newMember = await prisma.committeeMember.create({
+      data: {
+        position,
+        name,
+        church,
+        phone,
+        category: category as "leadership" | "team" | "auditor" | "asa_representatives" | "board_chancellors",
+        image: image || null,
+        email: email || null,
+        order: memberOrder,
+        active: active !== undefined ? active : true,
+      },
+    });
+    
+    res.status(201).json({
+      id: newMember.id,
+      position: newMember.position,
+      name: newMember.name,
+      church: newMember.church,
+      phone: newMember.phone,
+      category: newMember.category,
+      image: newMember.image || undefined,
+      email: newMember.email || undefined,
+      order: newMember.order,
+      active: newMember.active,
+    });
+  } catch (error: any) {
+    console.error("Error creating committee member:", error);
+    res.status(500).json({ error: "Failed to create committee member" });
   }
-  
-  const newMember: CommitteeMember = {
-    id: generateId(),
-    position,
-    name,
-    church,
-    phone,
-    category: category as "leadership" | "team" | "auditor" | "asa_representatives" | "board_chancellors",
-    image: image || undefined,
-    email: email || undefined,
-    order: order ?? (committeeMembers.filter(m => m.category === category).length + 1),
-    active: active !== undefined ? active : true,
-  };
-  
-  committeeMembers.push(newMember);
-  res.status(201).json(newMember);
 };
 
-export const updateCommitteeMember: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = committeeMembers.findIndex((m) => m.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Committee member not found" });
+export const updateCommitteeMember: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { position, name, church, phone, category, image, email, order, active } = req.body;
+    
+    const updateData: any = {};
+    if (position !== undefined) updateData.position = position;
+    if (name !== undefined) updateData.name = name;
+    if (church !== undefined) updateData.church = church;
+    if (phone !== undefined) updateData.phone = phone;
+    if (category !== undefined) updateData.category = category;
+    if (image !== undefined) updateData.image = image || null;
+    if (email !== undefined) updateData.email = email || null;
+    if (order !== undefined) updateData.order = order;
+    if (active !== undefined) updateData.active = active;
+    
+    const updatedMember = await prisma.committeeMember.update({
+      where: { id },
+      data: updateData,
+    });
+    
+    res.json({
+      id: updatedMember.id,
+      position: updatedMember.position,
+      name: updatedMember.name,
+      church: updatedMember.church,
+      phone: updatedMember.phone,
+      category: updatedMember.category,
+      image: updatedMember.image || undefined,
+      email: updatedMember.email || undefined,
+      order: updatedMember.order,
+      active: updatedMember.active,
+    });
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Committee member not found" });
+    }
+    console.error("Error updating committee member:", error);
+    res.status(500).json({ error: "Failed to update committee member" });
   }
-  committeeMembers[index] = { ...committeeMembers[index], ...req.body };
-  res.json(committeeMembers[index]);
 };
 
-export const deleteCommitteeMember: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = committeeMembers.findIndex((m) => m.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Committee member not found" });
+export const deleteCommitteeMember: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.committeeMember.delete({
+      where: { id },
+    });
+    res.status(204).send();
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Committee member not found" });
+    }
+    console.error("Error deleting committee member:", error);
+    res.status(500).json({ error: "Failed to delete committee member" });
   }
-  committeeMembers.splice(index, 1);
-  res.status(204).send();
 };
 
 // Devotions API
@@ -832,90 +1386,236 @@ export const deleteDevotion: RequestHandler = async (req, res) => {
 };
 
 // Contact Submissions API
-export const getContactSubmissions: RequestHandler = (req, res) => {
-  res.json(contactSubmissions);
+export const getContactSubmissions: RequestHandler = async (req, res) => {
+  try {
+    const status = req.query.status as string | undefined;
+    
+    let where: any = {};
+    if (status) {
+      where.status = status;
+    }
+    
+    const result = await prisma.contactSubmission.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+    });
+    
+    const formattedResult = result.map((submission) => ({
+      id: submission.id,
+      name: submission.name,
+      email: submission.email,
+      subject: submission.subject,
+      message: submission.message,
+      status: submission.status,
+      readAt: submission.readAt?.toISOString() || undefined,
+      repliedAt: submission.repliedAt?.toISOString() || undefined,
+      notes: submission.notes || undefined,
+      createdAt: submission.createdAt.toISOString(),
+      updatedAt: submission.updatedAt.toISOString(),
+    }));
+    
+    res.json(formattedResult);
+  } catch (error: any) {
+    console.error("Error fetching contact submissions:", error);
+    res.status(500).json({ error: "Failed to fetch contact submissions" });
+  }
 };
 
-export const getContactSubmission: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const submission = contactSubmissions.find((c) => c.id === id);
-  if (!submission) {
-    return res.status(404).json({ error: "Contact submission not found" });
+export const getContactSubmission: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const submission = await prisma.contactSubmission.findUnique({
+      where: { id },
+    });
+    
+    if (!submission) {
+      return res.status(404).json({ error: "Contact submission not found" });
+    }
+    
+    res.json({
+      id: submission.id,
+      name: submission.name,
+      email: submission.email,
+      subject: submission.subject,
+      message: submission.message,
+      status: submission.status,
+      readAt: submission.readAt?.toISOString() || undefined,
+      repliedAt: submission.repliedAt?.toISOString() || undefined,
+      notes: submission.notes || undefined,
+      createdAt: submission.createdAt.toISOString(),
+      updatedAt: submission.updatedAt.toISOString(),
+    });
+  } catch (error: any) {
+    console.error("Error fetching contact submission:", error);
+    res.status(500).json({ error: "Failed to fetch contact submission" });
   }
-  res.json(submission);
 };
 
-export const createContactSubmission: RequestHandler = (req, res) => {
-  const { name, email, subject, message } = req.body;
-  
-  if (!name || !email || !subject || !message) {
-    return res.status(400).json({ error: "Name, email, subject, and message are required" });
+export const createContactSubmission: RequestHandler = async (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body;
+    
+    if (!name || !email || !subject || !message) {
+      return res.status(400).json({ error: "Name, email, subject, and message are required" });
+    }
+    
+    const newSubmission = await prisma.contactSubmission.create({
+      data: {
+        name,
+        email,
+        subject,
+        message,
+        status: "new",
+      },
+    });
+    
+    res.status(201).json({
+      id: newSubmission.id,
+      name: newSubmission.name,
+      email: newSubmission.email,
+      subject: newSubmission.subject,
+      message: newSubmission.message,
+      status: newSubmission.status,
+      readAt: newSubmission.readAt?.toISOString() || undefined,
+      repliedAt: newSubmission.repliedAt?.toISOString() || undefined,
+      notes: newSubmission.notes || undefined,
+      createdAt: newSubmission.createdAt.toISOString(),
+      updatedAt: newSubmission.updatedAt.toISOString(),
+    });
+  } catch (error: any) {
+    console.error("Error creating contact submission:", error);
+    res.status(500).json({ error: "Failed to create contact submission" });
   }
-  
-  const newSubmission = {
-    id: generateId(),
-    name,
-    email,
-    subject,
-    message,
-    status: "new",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  
-  contactSubmissions.push(newSubmission);
-  res.status(201).json(newSubmission);
 };
 
-export const updateContactSubmission: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = contactSubmissions.findIndex((c) => c.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Contact submission not found" });
+export const updateContactSubmission: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, notes } = req.body;
+    
+    // Get current submission to check status transitions
+    const current = await prisma.contactSubmission.findUnique({
+      where: { id },
+    });
+    
+    if (!current) {
+      return res.status(404).json({ error: "Contact submission not found" });
+    }
+    
+    const updateData: any = {};
+    if (status !== undefined) {
+      updateData.status = status;
+      if (status === "read" && !current.readAt) {
+        updateData.readAt = new Date();
+      }
+      if (status === "replied" && !current.repliedAt) {
+        updateData.repliedAt = new Date();
+      }
+    }
+    if (notes !== undefined) updateData.notes = notes || null;
+    
+    const updatedSubmission = await prisma.contactSubmission.update({
+      where: { id },
+      data: updateData,
+    });
+    
+    res.json({
+      id: updatedSubmission.id,
+      name: updatedSubmission.name,
+      email: updatedSubmission.email,
+      subject: updatedSubmission.subject,
+      message: updatedSubmission.message,
+      status: updatedSubmission.status,
+      readAt: updatedSubmission.readAt?.toISOString() || undefined,
+      repliedAt: updatedSubmission.repliedAt?.toISOString() || undefined,
+      notes: updatedSubmission.notes || undefined,
+      createdAt: updatedSubmission.createdAt.toISOString(),
+      updatedAt: updatedSubmission.updatedAt.toISOString(),
+    });
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Contact submission not found" });
+    }
+    console.error("Error updating contact submission:", error);
+    res.status(500).json({ error: "Failed to update contact submission" });
   }
-  
-  const updates = req.body;
-  if (updates.status === "read" && !contactSubmissions[index].readAt) {
-    updates.readAt = new Date().toISOString();
-  }
-  if (updates.status === "replied" && !contactSubmissions[index].repliedAt) {
-    updates.repliedAt = new Date().toISOString();
-  }
-  
-  contactSubmissions[index] = { ...contactSubmissions[index], ...updates, updatedAt: new Date().toISOString() };
-  res.json(contactSubmissions[index]);
 };
 
-export const deleteContactSubmission: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = contactSubmissions.findIndex((c) => c.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Contact submission not found" });
+export const deleteContactSubmission: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.contactSubmission.delete({
+      where: { id },
+    });
+    res.status(204).send();
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Contact submission not found" });
+    }
+    console.error("Error deleting contact submission:", error);
+    res.status(500).json({ error: "Failed to delete contact submission" });
   }
-  contactSubmissions.splice(index, 1);
-  res.status(204).send();
 };
 
 // Analytics API
-export const getAnalytics: RequestHandler = (req, res) => {
-  const analytics = {
-    totalMembers: members.length,
-    activeMembers: members.filter((m) => m.status === "Active").length,
-    totalProjects: projects.length,
-    activeProjects: projects.filter((p) => p.status === "ongoing").length,
-    totalDonations: donations.length,
-    totalDonationAmount: donations.reduce((sum, d) => sum + d.amount, 0),
-    totalEvents: events.length,
-    upcomingEvents: events.filter((e) => e.status === "upcoming").length,
-    totalNewsArticles: news.length,
-    totalBooks: books.length,
-    totalSubscribers: subscribers.length,
-    activeSubscribers: subscribers.filter((s) => s.status === "active").length,
-    totalCommitteeMembers: committeeMembers.length,
-    activeCommitteeMembers: committeeMembers.filter((m) => m.active !== false).length,
-    totalDevotions: devotions.length,
-    totalContactSubmissions: contactSubmissions.length,
-    newContactSubmissions: contactSubmissions.filter((c) => c.status === "new").length,
-  };
-  res.json(analytics);
+export const getAnalytics: RequestHandler = async (req, res) => {
+  try {
+    // Get counts from database for migrated models
+    const [
+      totalProjects,
+      activeProjects,
+      totalNewsArticles,
+      totalBooks,
+      totalCommitteeMembers,
+      activeCommitteeMembers,
+      totalDevotions,
+      totalContactSubmissions,
+      newContactSubmissions,
+    ] = await Promise.all([
+      prisma.project.count(),
+      prisma.project.count({ where: { status: "ongoing" } }),
+      prisma.newsArticle.count(),
+      prisma.book.count(),
+      prisma.committeeMember.count(),
+      prisma.committeeMember.count({ where: { active: true } }),
+      prisma.devotion.count(),
+      prisma.contactSubmission.count(),
+      prisma.contactSubmission.count({ where: { status: "new" } }),
+    ]);
+    
+    // Get counts from in-memory arrays for models not yet migrated
+    const totalMembers = members.length;
+    const activeMembers = members.filter((m) => m.status === "Active").length;
+    const totalDonations = donations.length;
+    const totalDonationAmount = donations.reduce((sum, d) => sum + d.amount, 0);
+    const totalEvents = events.length;
+    const upcomingEvents = events.filter((e) => e.status === "upcoming").length;
+    const totalSubscribers = subscribers.length;
+    const activeSubscribers = subscribers.filter((s) => s.status === "active").length;
+    
+    const analytics = {
+      totalMembers,
+      activeMembers,
+      totalProjects,
+      activeProjects,
+      totalDonations,
+      totalDonationAmount,
+      totalEvents,
+      upcomingEvents,
+      totalNewsArticles,
+      totalBooks,
+      totalSubscribers,
+      activeSubscribers,
+      totalCommitteeMembers,
+      activeCommitteeMembers,
+      totalDevotions,
+      totalContactSubmissions,
+      newContactSubmissions,
+    };
+    
+    res.json(analytics);
+  } catch (error: any) {
+    console.error("Error fetching analytics:", error);
+    res.status(500).json({ error: "Failed to fetch analytics" });
+  }
 };

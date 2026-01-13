@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 import { useEffect, useState } from "react";
 import { Project } from "@/types/admin";
+import { buildApiUrl } from "@/lib/apiConfig";
 
 export default function Projects() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -21,7 +22,7 @@ export default function Projects() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch("/api/admin/projects");
+      const response = await fetch(buildApiUrl("/api/admin/projects"));
       const data = await response.json();
       if (Array.isArray(data)) {
         setProjects(data);

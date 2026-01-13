@@ -3,6 +3,8 @@
 
 generator client {
   provider = "prisma-client-js"
+  // Note: Prisma 7.x supports both prisma-client-js and prisma-client
+  // Using prisma-client-js for compatibility
 }
 
 datasource db {

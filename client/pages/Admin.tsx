@@ -35,6 +35,7 @@ import DevotionManagement from "@/components/admin/DevotionManagement";
 
 export default function Admin() {
   const [activeSection, setActiveSection] = useState("analytics");
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -226,7 +227,11 @@ export default function Admin() {
           return (
             <button
               key={item.id}
-              onClick={() => setActiveSection(item.id)}
+              onClick={() => {
+                setActiveSection(item.id);
+                // Close mobile sidebar when a link is clicked
+                setIsMobileSidebarOpen(false);
+              }}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeSection === item.id
                   ? "bg-primary text-primary-foreground"
@@ -244,7 +249,7 @@ export default function Admin() {
 
   // Mobile sidebar (sheet)
   const mobileSidebar = (
-    <Sheet>
+    <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="md:hidden">
           <Menu className="w-5 h-5" />

@@ -22,7 +22,7 @@ export default function Videos() {
 
   // Fetch Latest Videos from YouTube (no category filter)
   useEffect(() => {
-    fetch("/api/youtube/latest?limit=3")
+    fetch("/api/youtube/latest?limit=6")
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {

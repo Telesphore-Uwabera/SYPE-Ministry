@@ -56,38 +56,71 @@ export const getLatestVideos: RequestHandler = async (req, res) => {
     }
 
     // Channel handle: @sypeministry5276
-    // First, try to get channel ID using channels.list API with handle
     const channelHandle = "sypeministry5276"; // Without @ for API calls
     
-    // Try to get channel ID first
+    // Step 1: Get channel ID using channels.list API with handle
     let channelId: string | null = null;
+    let uploadsPlaylistId: string | null = null;
+    
     try {
       const channelResponse = await fetch(
-        `https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${channelHandle}&key=${YOUTUBE_API_KEY}`
+        `https://www.googleapis.com/youtube/v3/channels?part=id,contentDetails&forHandle=${channelHandle}&key=${YOUTUBE_API_KEY}`
       );
       if (channelResponse.ok) {
         const channelData = await channelResponse.json();
-        channelId = channelData.items?.[0]?.id || null;
-        console.log("YouTube Channel ID:", channelId);
+        if (channelData.items && channelData.items.length > 0) {
+          channelId = channelData.items[0].id;
+          uploadsPlaylistId = channelData.items[0].contentDetails?.relatedPlaylists?.uploads;
+          console.log("YouTube Channel ID:", channelId);
+          console.log("Uploads Playlist ID:", uploadsPlaylistId);
+        }
       } else {
         const errorData = await channelResponse.json().catch(() => ({}));
         console.warn("Failed to fetch channel ID by handle:", channelResponse.status, errorData);
       }
     } catch (err) {
-      console.warn("Failed to fetch channel ID by handle, will use search method:", err);
+      console.warn("Failed to fetch channel ID by handle:", err);
     }
 
-    // Fetch videos from channel
+    // Step 2: Fetch videos from channel using the most reliable method
     let videosData: any;
-    if (channelId) {
-      // Use channel ID (more reliable)
+    
+    // Method 1: Use uploads playlist (most reliable for getting all channel videos)
+    if (uploadsPlaylistId) {
+      try {
+        const playlistResponse = await fetch(
+          `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=${limit}&order=date&key=${YOUTUBE_API_KEY}`
+        );
+        if (playlistResponse.ok) {
+          const playlistData = await playlistResponse.json();
+          if (playlistData.items && playlistData.items.length > 0) {
+            // Transform playlist items to match our video format
+            videosData = {
+              items: playlistData.items.map((item: any) => ({
+                id: { videoId: item.snippet.resourceId.videoId },
+                snippet: item.snippet
+              }))
+            };
+            console.log(`Fetched ${videosData.items.length} videos from uploads playlist`);
+          }
+        } else {
+          const errorData = await playlistResponse.json().catch(() => ({}));
+          console.warn("Failed to fetch from uploads playlist:", playlistResponse.status, errorData);
+        }
+      } catch (err) {
+        console.warn("Error fetching from uploads playlist:", err);
+      }
+    }
+
+    // Method 2: Use search API with channelId (fallback if playlist method failed)
+    if ((!videosData || !videosData.items || videosData.items.length === 0) && channelId) {
       try {
         const videosResponse = await fetch(
-          `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&order=date&type=video&maxResults=${Math.max(limit * 3, 50)}&key=${YOUTUBE_API_KEY}`
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&order=date&type=video&maxResults=${limit}&key=${YOUTUBE_API_KEY}`
         );
         if (videosResponse.ok) {
           videosData = await videosResponse.json();
-          console.log(`Fetched ${videosData.items?.length || 0} videos from channel`);
+          console.log(`Fetched ${videosData.items?.length || 0} videos from channel search`);
         } else {
           const errorData = await videosResponse.json().catch(() => ({}));
           console.error("YouTube search API error:", videosResponse.status, errorData);
@@ -97,13 +130,13 @@ export const getLatestVideos: RequestHandler = async (req, res) => {
       }
     }
 
-    // Fallback: Use search API if channel ID method failed
+    // Method 3: Fallback to search by handle (last resort)
     if (!videosData || !videosData.items || videosData.items.length === 0) {
-      console.log("Using fallback search method");
+      console.log("Using fallback search method by handle");
       try {
         const searchQuery = encodeURIComponent(`@${channelHandle}`);
         const videosResponse = await fetch(
-          `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${searchQuery}&type=video&order=date&maxResults=${Math.max(limit * 3, 50)}&key=${YOUTUBE_API_KEY}`
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${searchQuery}&type=video&order=date&maxResults=${limit}&key=${YOUTUBE_API_KEY}`
         );
         
         if (!videosResponse.ok) {

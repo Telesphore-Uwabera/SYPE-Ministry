@@ -40,8 +40,9 @@ export const getLatestVideos: RequestHandler = async (req, res) => {
       return res.json([]);
     }
 
-    // Return cached data if it's still fresh (only if no category filter)
-    if (!category && cachedVideos.length > 0 && now - cacheTimestamp < CACHE_DURATION) {
+    // Return cached data if it's still fresh (only if no category filter and cache has enough videos)
+    // Only use cache if it has at least as many videos as requested
+    if (!category && cachedVideos.length > 0 && cachedVideos.length >= limit && now - cacheTimestamp < CACHE_DURATION) {
       // Apply category filter to cached data if needed
       if (category && categoryKeywords[category.toLowerCase()]) {
         const keywords = categoryKeywords[category.toLowerCase()];

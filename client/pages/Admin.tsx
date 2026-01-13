@@ -232,14 +232,14 @@ export default function Admin() {
                 // Close mobile sidebar when a link is clicked
                 setIsMobileSidebarOpen(false);
               }}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
                 activeSection === item.id
                   ? "bg-primary text-primary-foreground"
                   : "text-foreground/70 hover:bg-muted hover:text-foreground"
               }`}
             >
-              <Icon className="w-4 h-4" />
-              <span>{item.label}</span>
+              <Icon className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{item.label}</span>
             </button>
           );
         })}

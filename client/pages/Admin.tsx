@@ -209,6 +209,13 @@ export default function Admin() {
     <div className="flex flex-col h-full">
       {/* Sidebar Header */}
       <div className="p-4 border-b">
+        <div className="flex items-center gap-3 mb-3">
+          <img
+            src="/Sype logo.png"
+            alt="SYPE Ministry Logo"
+            className="w-10 h-10 object-contain"
+          />
+        </div>
         <h2 className="font-heading font-bold text-lg text-primary">Navigation</h2>
       </div>
 

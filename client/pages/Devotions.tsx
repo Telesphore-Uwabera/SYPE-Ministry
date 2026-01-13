@@ -61,11 +61,11 @@ export default function Devotions() {
                   </h2>
                 </div>
 
-                <div className="space-y-4 flex-grow">
+                <div className="space-y-6 flex-grow">
                   <div className="flex items-start gap-4">
                     <Clock className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                     <div>
-                      <p className="font-semibold text-primary">Time</p>
+                      <p className="font-semibold text-primary mb-1">Time</p>
                       <p className="text-foreground/70">
                         Every day: 6:00 AM – 7:00 AM
                       </p>
@@ -75,7 +75,7 @@ export default function Devotions() {
                   <div className="flex items-start gap-4">
                     <Users className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                     <div>
-                      <p className="font-semibold text-primary">Platform</p>
+                      <p className="font-semibold text-primary mb-1">Platform</p>
                       <p className="text-foreground/70">
                         WhatsApp Community Group
                       </p>
@@ -85,7 +85,7 @@ export default function Devotions() {
                   <div className="flex items-start gap-4">
                     <BookOpen className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                     <div>
-                      <p className="font-semibold text-primary">Duration</p>
+                      <p className="font-semibold text-primary mb-1">Duration</p>
                       <p className="text-foreground/70">
                         1 hour of focused prayer
                       </p>
@@ -95,7 +95,7 @@ export default function Devotions() {
                   <div className="flex items-start gap-4">
                     <Heart className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                     <div>
-                        <p className="font-semibold text-primary">Leadership</p>
+                        <p className="font-semibold text-primary mb-1">Leadership</p>
                         <p className="text-foreground/70">
                           Rotating member leaders (daily)
                         </p>

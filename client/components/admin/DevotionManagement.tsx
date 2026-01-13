@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Plus, Search, Edit, Trash2, Calendar, Image as ImageIcon, Video, ExternalLink } from "lucide-react";
+import { BookOpen, Plus, Search, Edit, Trash2, Calendar, Image as ImageIcon } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import MediaSelector from "./MediaSelector";
@@ -41,9 +41,6 @@ export default function DevotionManagement() {
     excerpt: "",
     content: "",
     image: "",
-    featuredVideoUrl: "",
-    featuredVideoThumbnail: "",
-    featuredVideoTitle: "",
   });
 
   useEffect(() => {
@@ -131,9 +128,6 @@ export default function DevotionManagement() {
       excerpt: devotion.excerpt,
       content: devotion.content || "",
       image: devotion.image || "",
-      featuredVideoUrl: devotion.featuredVideoUrl || "",
-      featuredVideoThumbnail: devotion.featuredVideoThumbnail || "",
-      featuredVideoTitle: devotion.featuredVideoTitle || "",
     });
     setIsDialogOpen(true);
   };
@@ -168,9 +162,6 @@ export default function DevotionManagement() {
       excerpt: "",
       content: "",
       image: "",
-      featuredVideoUrl: "",
-      featuredVideoThumbnail: "",
-      featuredVideoTitle: "",
     });
   };
 
@@ -299,77 +290,6 @@ export default function DevotionManagement() {
                 </div>
               </div>
 
-              <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold text-primary">Featured Video (Optional)</h3>
-                <p className="text-xs text-foreground/60 mb-2">
-                  Add a featured video that will be displayed on the Devotions page with a link to YouTube.
-                </p>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="featuredVideoTitle">Video Title</Label>
-                  <Input
-                    id="featuredVideoTitle"
-                    value={formData.featuredVideoTitle || ""}
-                    onChange={(e) => setFormData({ ...formData, featuredVideoTitle: e.target.value })}
-                    placeholder="Featured video title"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="featuredVideoUrl">YouTube Video URL *</Label>
-                  <Input
-                    id="featuredVideoUrl"
-                    type="url"
-                    value={formData.featuredVideoUrl || ""}
-                    onChange={(e) => setFormData({ ...formData, featuredVideoUrl: e.target.value })}
-                    placeholder="https://www.youtube.com/watch?v=..."
-                    required={!!formData.featuredVideoTitle}
-                  />
-                  <p className="text-xs text-foreground/60">
-                    Full YouTube video URL. This will be displayed as a featured video with link to watch on YouTube.
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="featuredVideoThumbnail">Video Thumbnail (Optional)</Label>
-                  <p className="text-xs text-foreground/60 mb-2">
-                    Select a thumbnail image from the media gallery. If not provided, YouTube default thumbnail will be used.
-                  </p>
-                  <div className="space-y-2">
-                    <MediaSelector
-                      category="all"
-                      type="image"
-                      onSelect={(media: MediaFile) => {
-                        setFormData({ ...formData, featuredVideoThumbnail: media?.url || "" });
-                      }}
-                      selectedUrl={formData.featuredVideoThumbnail || ""}
-                      title="Select Video Thumbnail"
-                      description="Choose a thumbnail image from the media gallery"
-                    />
-                    {formData.featuredVideoThumbnail && (
-                      <div className="mt-2">
-                        <div className="w-32 h-32 rounded overflow-hidden border">
-                          <img
-                            src={formData.featuredVideoThumbnail}
-                            alt="Selected video thumbnail"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="mt-2"
-                          onClick={() => setFormData({ ...formData, featuredVideoThumbnail: "" })}
-                        >
-                          Remove Thumbnail
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => {
                   setIsDialogOpen(false);
@@ -414,14 +334,13 @@ export default function DevotionManagement() {
                   <TableHead>Title</TableHead>
                   <TableHead>Excerpt</TableHead>
                   <TableHead>Image</TableHead>
-                  <TableHead>Featured Video</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredDevotions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-foreground/50">
+                    <TableCell colSpan={5} className="text-center py-8 text-foreground/50">
                       No devotions found
                     </TableCell>
                   </TableRow>
@@ -451,24 +370,6 @@ export default function DevotionManagement() {
                           </div>
                         ) : (
                           <span className="text-muted-foreground text-sm">No image</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {devotion.featuredVideoUrl ? (
-                          <div className="flex items-center gap-2">
-                            <Video className="w-4 h-4 text-primary" />
-                            <a
-                              href={devotion.featuredVideoUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline text-sm flex items-center gap-1"
-                            >
-                              {devotion.featuredVideoTitle || "Featured Video"}
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">No video</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">

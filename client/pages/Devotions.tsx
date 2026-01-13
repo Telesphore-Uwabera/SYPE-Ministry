@@ -50,10 +50,10 @@ export default function Devotions() {
       {/* Program Details */}
       <section className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-4xl mx-auto items-start">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-4xl mx-auto items-stretch">
             {/* Schedule Card */}
             <ScrollAnimation direction="left" delay={0.2}>
-              <div className="bg-gradient-to-br from-accent/20 to-accent/10 rounded-lg p-8 border border-accent/30">
+              <div className="bg-gradient-to-br from-accent/20 to-accent/10 rounded-lg p-8 border border-accent/30 h-full flex flex-col">
                 <div className="flex items-center gap-2 mb-6">
                   <Calendar className="w-6 h-6 text-primary" />
                   <h2 className="font-heading font-bold text-2xl text-primary">
@@ -61,7 +61,7 @@ export default function Devotions() {
                   </h2>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 flex-grow">
                   <div className="flex items-start gap-4">
                     <Clock className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                     <div>
@@ -107,7 +107,7 @@ export default function Devotions() {
 
             {/* Program Format Card */}
             <ScrollAnimation direction="right" delay={0.2}>
-              <div className="bg-white rounded-lg p-8 border border-border shadow-sm">
+              <div className="bg-white rounded-lg p-8 border border-border shadow-sm h-full flex flex-col">
                 <div className="flex items-center gap-2 mb-6">
                   <Heart className="w-6 h-6 text-primary" />
                   <h2 className="font-heading font-bold text-2xl text-primary">
@@ -115,7 +115,7 @@ export default function Devotions() {
                   </h2>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 flex-grow">
                   <div>
                     <h3 className="font-heading font-semibold text-primary mb-2">
                       1. Opening Prayer

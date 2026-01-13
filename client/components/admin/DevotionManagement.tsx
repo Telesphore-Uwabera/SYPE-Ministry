@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { Devotion, MediaFile } from "@/types/admin";
+import { useState, useEffect } from "react";
+import { Devotion } from "@/types/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { BookOpen, Plus, Search, Edit, Trash2, Calendar, Image as ImageIcon } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import MediaSelector from "./MediaSelector";
+import ImageUpload from "./ImageUpload";
 
 export default function DevotionManagement() {
   const [devotions, setDevotions] = useState<Devotion[]>([]);
@@ -249,45 +249,19 @@ export default function DevotionManagement() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="image">Devotion Image *</Label>
+                <Label>Devotion Image *</Label>
                 <p className="text-xs text-foreground/60 mb-2">
-                  Select an image from the media gallery (images with category "devotions"). This is required.
+                  Upload an image for this devotion. This is required.
                 </p>
-                <div className="space-y-2">
-                  <MediaSelector
-                    category="devotions"
-                    type="image"
-                    onSelect={(media: MediaFile) => {
-                      setFormData({ ...formData, image: media?.url || "" });
-                    }}
-                    selectedUrl={formData.image || ""}
-                    title="Select Devotion Image"
-                    description="Choose an image from the devotions media gallery. Upload images with category 'devotions' in Media Management first."
-                  />
-                  {formData.image && (
-                    <div className="mt-2">
-                      <div className="w-32 h-32 rounded overflow-hidden border">
-                        <img
-                          src={formData.image}
-                          alt="Selected devotion image"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="mt-2"
-                        onClick={() => setFormData({ ...formData, image: "" })}
-                      >
-                        Remove Image
-                      </Button>
-                    </div>
-                  )}
-                  {!formData.image && (
-                    <p className="text-sm text-destructive">Please select a devotion image</p>
-                  )}
-                </div>
+                <ImageUpload
+                  value={formData.image}
+                  onChange={(url) => setFormData({ ...formData, image: url })}
+                  category="devotions"
+                  label="Upload Devotion Image"
+                />
+                {!formData.image && (
+                  <p className="text-sm text-destructive">Please upload a devotion image</p>
+                )}
               </div>
 
               <DialogFooter>

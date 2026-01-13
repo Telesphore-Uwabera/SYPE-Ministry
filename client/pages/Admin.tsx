@@ -12,7 +12,6 @@ import {
   DollarSign,
   HelpCircle,
   BookOpen,
-  Image,
   BookMarked,
   UsersRound,
   Mail,
@@ -27,7 +26,6 @@ import ProjectManagement from "@/components/admin/ProjectManagement";
 import EventManagement from "@/components/admin/EventManagement";
 import DonationManagement from "@/components/admin/DonationManagement";
 import FAQManagement from "@/components/admin/FAQManagement";
-import MediaManagement from "@/components/admin/MediaManagement";
 import BookManagement from "@/components/admin/BookManagement";
 import Communication from "@/components/admin/Communication";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
@@ -200,7 +198,6 @@ export default function Admin() {
     { id: "donations", label: "Donations", icon: DollarSign },
     { id: "faqs", label: "FAQs", icon: HelpCircle },
     { id: "books", label: "Books", icon: BookOpen },
-    { id: "media", label: "Media", icon: Image },
     { id: "devotions", label: "Devotions", icon: BookMarked },
     { id: "committee", label: "Committee", icon: UsersRound },
     { id: "communication", label: "Communication", icon: Mail },
@@ -271,8 +268,6 @@ export default function Admin() {
         return <FAQManagement />;
       case "books":
         return <BookManagement />;
-      case "media":
-        return <MediaManagement />;
       case "devotions":
         return <DevotionManagement />;
       case "committee":

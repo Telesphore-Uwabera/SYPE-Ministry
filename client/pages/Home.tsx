@@ -272,15 +272,15 @@ function LatestVideosCards() {
   return (
     <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
       {videos.map((video) => (
-        <HoverAnimation key={video.id} scale={1.02} y={-8}>
+        <HoverAnimation key={video.id} scale={1.02} y={-8} className="h-full">
           <a
             href={`https://www.youtube.com/watch?v=${video.videoId}`}
             target="_blank"
             rel="noopener noreferrer"
             className="block h-full"
           >
-            <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer">
-              <div className="relative h-48 overflow-hidden group">
+            <Card className="h-full flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer">
+              <div className="relative h-48 overflow-hidden group flex-shrink-0">
                 <img
                   src={video.thumbnail}
                   alt={video.title}
@@ -290,14 +290,14 @@ function LatestVideosCards() {
                   <Play className="w-16 h-16 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </div>
-              <CardHeader>
+              <CardHeader className="flex-shrink-0">
                 <CardTitle className="line-clamp-2">{video.title}</CardTitle>
                 <CardDescription className="flex items-center gap-2 text-xs">
                   <Calendar className="w-3 h-3" />
                   {new Date(video.publishedAt).toLocaleDateString()}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-grow">
                 <p className="text-sm text-foreground/70 line-clamp-3">{video.description}</p>
               </CardContent>
             </Card>

@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 import { NewsArticle } from "@/types/admin";
 import { Input } from "@/components/ui/input";
+import { buildApiUrl } from "@/lib/apiConfig";
 
 export default function News() {
   const [news, setNews] = useState<NewsArticle[]>([]);
@@ -14,8 +15,13 @@ export default function News() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetch("/api/admin/news")
-      .then((res) => res.json())
+    fetch(buildApiUrl("/api/admin/news"))
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
         if (Array.isArray(data)) {
           // Sort by publishDate (newest first)
@@ -26,7 +32,8 @@ export default function News() {
         }
         setLoading(false);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error("Error fetching news:", error);
         setLoading(false);
       });
   }, []);

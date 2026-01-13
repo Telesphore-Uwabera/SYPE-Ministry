@@ -317,17 +317,42 @@ export default function DevotionManagement() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="featuredVideoThumbnail">Video Thumbnail URL (Optional)</Label>
-                  <Input
-                    id="featuredVideoThumbnail"
-                    type="url"
-                    value={formData.featuredVideoThumbnail || ""}
-                    onChange={(e) => setFormData({ ...formData, featuredVideoThumbnail: e.target.value })}
-                    placeholder="https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg"
-                  />
-                  <p className="text-xs text-foreground/60">
-                    YouTube thumbnail URL. If not provided, YouTube default thumbnail will be used.
+                  <Label htmlFor="featuredVideoThumbnail">Video Thumbnail (Optional)</Label>
+                  <p className="text-xs text-foreground/60 mb-2">
+                    Select a thumbnail image from the media gallery. If not provided, YouTube default thumbnail will be used.
                   </p>
+                  <div className="space-y-2">
+                    <MediaSelector
+                      category="all"
+                      type="image"
+                      onSelect={(media: MediaFile) => {
+                        setFormData({ ...formData, featuredVideoThumbnail: media?.url || "" });
+                      }}
+                      selectedUrl={formData.featuredVideoThumbnail || ""}
+                      title="Select Video Thumbnail"
+                      description="Choose a thumbnail image from the media gallery"
+                    />
+                    {formData.featuredVideoThumbnail && (
+                      <div className="mt-2">
+                        <div className="w-32 h-32 rounded overflow-hidden border">
+                          <img
+                            src={formData.featuredVideoThumbnail}
+                            alt="Selected video thumbnail"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => setFormData({ ...formData, featuredVideoThumbnail: "" })}
+                        >
+                          Remove Thumbnail
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

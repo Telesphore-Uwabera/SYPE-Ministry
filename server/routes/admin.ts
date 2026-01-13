@@ -1,5 +1,6 @@
 import { RequestHandler, Request, Response } from "express";
 import { Member, NewsArticle, Project, Event, Donation, FAQ, MediaFile, EmailCampaign, Book, EmailSubscriber, CommitteeMember, Devotion } from "../../client/types/admin";
+import { prisma } from "../lib/prisma";
 
 // In-memory storage (replace with database in production)
 let members: Member[] = [];
@@ -13,7 +14,7 @@ let campaigns: EmailCampaign[] = [];
 let books: Book[] = [];
 let subscribers: EmailSubscriber[] = [];
 let committeeMembers: CommitteeMember[] = [];
-let devotions: Devotion[] = [];
+// Devotions are now stored in database via Prisma
 let contactSubmissions: Array<{
   id: string;
   name: string;
@@ -657,102 +658,177 @@ export const deleteCommitteeMember: RequestHandler = (req, res) => {
 };
 
 // Devotions API
-export const getDevotions: RequestHandler = (req, res) => {
-  let result = [...devotions];
-  
-  // Filter by date if provided
-  const dateFilter = req.query.dateFilter as string | undefined;
-  if (dateFilter === "last7days") {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    sevenDaysAgo.setHours(0, 0, 0, 0); // Normalize to start of day
-    result = result.filter((d) => {
-      const devotionDate = new Date(d.date);
-      devotionDate.setHours(0, 0, 0, 0);
-      return devotionDate >= sevenDaysAgo;
+export const getDevotions: RequestHandler = async (req, res) => {
+  try {
+    // Build where clause for date filtering
+    let where: any = {};
+    
+    const dateFilter = req.query.dateFilter as string | undefined;
+    const days = req.query.days ? parseInt(req.query.days as string) : undefined;
+    
+    if (dateFilter === "last7days" || days) {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - (days || 7));
+      cutoffDate.setHours(0, 0, 0, 0);
+      where.date = { gte: cutoffDate };
+    }
+    
+    // Fetch from database
+    let result = await prisma.devotion.findMany({
+      where,
+      orderBy: { date: "desc" },
+      take: req.query.limit ? parseInt(req.query.limit as string) : undefined,
     });
+    
+    // Convert Prisma format to API format
+    const formattedResult = result.map((d) => ({
+      id: d.id,
+      title: d.title,
+      date: d.date.toISOString().split("T")[0],
+      excerpt: d.excerpt,
+      content: d.content || undefined,
+      image: d.image || undefined,
+      featuredVideoUrl: d.featuredVideoUrl || undefined,
+      featuredVideoThumbnail: d.featuredVideoThumbnail || undefined,
+      featuredVideoTitle: d.featuredVideoTitle || undefined,
+      createdAt: d.createdAt.toISOString(),
+    }));
+    
+    res.json(formattedResult);
+  } catch (error: any) {
+    console.error("Error fetching devotions:", error);
+    res.status(500).json({ error: "Failed to fetch devotions" });
   }
-  
-  // Also support days parameter for backward compatibility
-  const days = req.query.days ? parseInt(req.query.days as string) : undefined;
-  if (days && !dateFilter) {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-    cutoffDate.setHours(0, 0, 0, 0);
-    result = result.filter((d) => {
-      const devotionDate = new Date(d.date);
-      devotionDate.setHours(0, 0, 0, 0);
-      return devotionDate >= cutoffDate;
+};
+
+export const getDevotion: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const devotion = await prisma.devotion.findUnique({
+      where: { id },
     });
+    
+    if (!devotion) {
+      return res.status(404).json({ error: "Devotion not found" });
+    }
+    
+    // Convert Prisma format to API format
+    res.json({
+      id: devotion.id,
+      title: devotion.title,
+      date: devotion.date.toISOString().split("T")[0],
+      excerpt: devotion.excerpt,
+      content: devotion.content || undefined,
+      image: devotion.image || undefined,
+      featuredVideoUrl: devotion.featuredVideoUrl || undefined,
+      featuredVideoThumbnail: devotion.featuredVideoThumbnail || undefined,
+      featuredVideoTitle: devotion.featuredVideoTitle || undefined,
+      createdAt: devotion.createdAt.toISOString(),
+    });
+  } catch (error: any) {
+    console.error("Error fetching devotion:", error);
+    res.status(500).json({ error: "Failed to fetch devotion" });
   }
-  
-  // Sort by date (newest first)
-  result.sort((a, b) => {
-    const dateA = new Date(a.date || 0).getTime();
-    const dateB = new Date(b.date || 0).getTime();
-    return dateB - dateA;
-  });
-  
-  // Limit results if provided
-  const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-  if (limit && limit > 0) {
-    result = result.slice(0, limit);
-  }
-  
-  res.json(result);
 };
 
-export const getDevotion: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const devotion = devotions.find((d) => d.id === id);
-  if (!devotion) {
-    return res.status(404).json({ error: "Devotion not found" });
+export const createDevotion: RequestHandler = async (req, res) => {
+  try {
+    const { title, date, excerpt, content, image, featuredVideoUrl, featuredVideoThumbnail, featuredVideoTitle } = req.body;
+    
+    if (!title || !date || !excerpt) {
+      return res.status(400).json({ error: "Title, date, and excerpt are required" });
+    }
+    
+    // Create in database
+    const newDevotion = await prisma.devotion.create({
+      data: {
+        title,
+        date: new Date(date),
+        excerpt,
+        content: content || null,
+        image: image || null,
+        featuredVideoUrl: featuredVideoUrl || null,
+        featuredVideoThumbnail: featuredVideoThumbnail || null,
+        featuredVideoTitle: featuredVideoTitle || null,
+      },
+    });
+    
+    // Convert Prisma format to API format
+    res.status(201).json({
+      id: newDevotion.id,
+      title: newDevotion.title,
+      date: newDevotion.date.toISOString().split("T")[0],
+      excerpt: newDevotion.excerpt,
+      content: newDevotion.content || undefined,
+      image: newDevotion.image || undefined,
+      featuredVideoUrl: newDevotion.featuredVideoUrl || undefined,
+      featuredVideoThumbnail: newDevotion.featuredVideoThumbnail || undefined,
+      featuredVideoTitle: newDevotion.featuredVideoTitle || undefined,
+      createdAt: newDevotion.createdAt.toISOString(),
+    });
+  } catch (error: any) {
+    console.error("Error creating devotion:", error);
+    res.status(500).json({ error: "Failed to create devotion" });
   }
-  res.json(devotion);
 };
 
-export const createDevotion: RequestHandler = (req, res) => {
-  const { title, date, excerpt, content, image, featuredVideoUrl, featuredVideoThumbnail, featuredVideoTitle } = req.body;
-  
-  if (!title || !date || !excerpt) {
-    return res.status(400).json({ error: "Title, date, and excerpt are required" });
+export const updateDevotion: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, date, excerpt, content, image, featuredVideoUrl, featuredVideoThumbnail, featuredVideoTitle } = req.body;
+    
+    // Prepare update data
+    const updateData: any = {};
+    if (title !== undefined) updateData.title = title;
+    if (date !== undefined) updateData.date = new Date(date);
+    if (excerpt !== undefined) updateData.excerpt = excerpt;
+    if (content !== undefined) updateData.content = content || null;
+    if (image !== undefined) updateData.image = image || null;
+    if (featuredVideoUrl !== undefined) updateData.featuredVideoUrl = featuredVideoUrl || null;
+    if (featuredVideoThumbnail !== undefined) updateData.featuredVideoThumbnail = featuredVideoThumbnail || null;
+    if (featuredVideoTitle !== undefined) updateData.featuredVideoTitle = featuredVideoTitle || null;
+    
+    const updatedDevotion = await prisma.devotion.update({
+      where: { id },
+      data: updateData,
+    });
+    
+    // Convert Prisma format to API format
+    res.json({
+      id: updatedDevotion.id,
+      title: updatedDevotion.title,
+      date: updatedDevotion.date.toISOString().split("T")[0],
+      excerpt: updatedDevotion.excerpt,
+      content: updatedDevotion.content || undefined,
+      image: updatedDevotion.image || undefined,
+      featuredVideoUrl: updatedDevotion.featuredVideoUrl || undefined,
+      featuredVideoThumbnail: updatedDevotion.featuredVideoThumbnail || undefined,
+      featuredVideoTitle: updatedDevotion.featuredVideoTitle || undefined,
+      createdAt: updatedDevotion.createdAt.toISOString(),
+    });
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Devotion not found" });
+    }
+    console.error("Error updating devotion:", error);
+    res.status(500).json({ error: "Failed to update devotion" });
   }
-  
-  const newDevotion: Devotion = {
-    id: generateId(),
-    title,
-    date: date ? (new Date(date).toISOString().split("T")[0]) : new Date().toISOString().split("T")[0],
-    excerpt,
-    content: content || undefined,
-    image: image || undefined,
-    featuredVideoUrl: featuredVideoUrl || undefined,
-    featuredVideoThumbnail: featuredVideoThumbnail || undefined,
-    featuredVideoTitle: featuredVideoTitle || undefined,
-    createdAt: new Date().toISOString(),
-  };
-  
-  devotions.push(newDevotion);
-  res.status(201).json(newDevotion);
 };
 
-export const updateDevotion: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = devotions.findIndex((d) => d.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Devotion not found" });
+export const deleteDevotion: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.devotion.delete({
+      where: { id },
+    });
+    res.status(204).send();
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Devotion not found" });
+    }
+    console.error("Error deleting devotion:", error);
+    res.status(500).json({ error: "Failed to delete devotion" });
   }
-  devotions[index] = { ...devotions[index], ...req.body };
-  res.json(devotions[index]);
-};
-
-export const deleteDevotion: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = devotions.findIndex((d) => d.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Devotion not found" });
-  }
-  devotions.splice(index, 1);
-  res.status(204).send();
 };
 
 // Contact Submissions API

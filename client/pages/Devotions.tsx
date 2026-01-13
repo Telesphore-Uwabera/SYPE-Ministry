@@ -5,28 +5,35 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Clock, Users, BookOpen, Heart, Calendar, Image as ImageIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
-import { MediaFile } from "@/types/admin";
+import { Devotion } from "@/types/admin";
+import { buildApiUrl } from "@/lib/apiConfig";
 
 export default function Devotions() {
-  const [posters, setPosters] = useState<MediaFile[]>([]);
-  const [postersLoading, setPostersLoading] = useState(true);
+  const [devotions, setDevotions] = useState<Devotion[]>([]);
+  const [devotionsLoading, setDevotionsLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch devotion posters (images with category "devotions" or "posters")
-    fetch("/api/admin/media?category=devotions,posters&type=image")
-      .then((res) => res.json())
+    // Fetch devotions from API
+    fetch(buildApiUrl("/api/devotions"))
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
         if (Array.isArray(data)) {
-          // Sort by upload date (newest first) and limit to recent ones
-          const sortedPosters = data.sort(
-            (a, b) => new Date(b.uploadDate || 0).getTime() - new Date(a.uploadDate || 0).getTime()
+          // Sort by date (newest first)
+          const sortedDevotions = data.sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
           );
-          setPosters(sortedPosters);
+          setDevotions(sortedDevotions);
         }
-        setPostersLoading(false);
+        setDevotionsLoading(false);
       })
-      .catch(() => {
-        setPostersLoading(false);
+      .catch((error) => {
+        console.error("Error fetching devotions:", error);
+        setDevotionsLoading(false);
       });
   }, []);
 
@@ -177,69 +184,80 @@ export default function Devotions() {
         </div>
       </section>
 
-      {/* Devotion Posters Section */}
+      {/* Devotions Section */}
       <section className="py-16 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           <ScrollAnimation direction="up" delay={0.2}>
             <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary text-center mb-12">
-              Devotion Posters
+              Daily Devotions
             </h2>
             <p className="text-foreground/70 text-center max-w-2xl mx-auto mb-8">
-              Browse through devotion posters uploaded by our admin team. These posters contain daily devotion messages and inspiration.
+              Browse through our daily devotions. Each devotion contains spiritual messages and inspiration for your daily walk with God.
             </p>
           </ScrollAnimation>
 
-          {postersLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          {devotionsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="h-96 bg-muted animate-pulse rounded-lg" />
               ))}
             </div>
-          ) : posters.length === 0 ? (
+          ) : devotions.length === 0 ? (
             <div className="text-center py-12">
-              <ImageIcon className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-40" />
-              <p className="text-foreground/70 mb-4">No devotion posters available yet.</p>
+              <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-40" />
+              <p className="text-foreground/70 mb-4">No devotions available yet.</p>
               <p className="text-sm text-foreground/60">
-                Devotion posters will be uploaded by admin and displayed here.
+                Devotions will be published by admin and displayed here.
               </p>
             </div>
           ) : (
             <StaggerContainer
               detectScrollDirection
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
               staggerDelay={0.15}
               direction="up"
             >
-              {posters.map((poster) => (
-                <HoverAnimation key={poster.id} scale={1.02} y={-5}>
+              {devotions.map((devotion) => (
+                <HoverAnimation key={devotion.id} scale={1.02} y={-5}>
                   <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300">
-                    <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-                      <img
-                        src={poster.url}
-                        alt={poster.name || "Devotion Poster"}
-                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-                      />
-                    </div>
-                    <CardHeader>
-                      <CardTitle className="line-clamp-2 text-lg">{poster.name || "Devotion Poster"}</CardTitle>
-                      {poster.uploadDate && (
-                        <CardDescription className="flex items-center gap-2 text-xs mt-2">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(poster.uploadDate).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </CardDescription>
-                      )}
-                    </CardHeader>
-                    {poster.description && (
-                      <CardContent>
-                        <p className="text-sm text-foreground/70 line-clamp-3">
-                          {poster.description}
-                        </p>
-                      </CardContent>
+                    {devotion.image ? (
+                      <div className="relative h-48 overflow-hidden">
+                        <img
+                          src={devotion.image}
+                          alt={devotion.title}
+                          className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-48 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                        <BookOpen className="w-16 h-16 text-primary opacity-40" />
+                      </div>
                     )}
+                    <CardHeader>
+                      <CardDescription className="flex items-center gap-2 text-xs mb-2">
+                        <Calendar className="w-3 h-3" />
+                        {new Date(devotion.date).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </CardDescription>
+                      <CardTitle className="line-clamp-2 text-lg">{devotion.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-foreground/70 line-clamp-3 mb-4">
+                        {devotion.excerpt}
+                      </p>
+                      {devotion.content && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                        >
+                          Read More
+                        </Button>
+                      )}
+                    </CardContent>
                   </Card>
                 </HoverAnimation>
               ))}

@@ -35,6 +35,7 @@ import { BookOpen, Plus, Search, Edit, Trash2, Eye, Download } from "lucide-reac
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import ImageUpload from "./ImageUpload";
+import DocumentUpload from "./DocumentUpload";
 
 const BOOK_CATEGORIES: Book["category"][] = [
   "Bible",
@@ -93,6 +94,17 @@ export default function BookManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.fileUrl) {
+      toast({
+        title: "Validation Error",
+        description: "Book PDF file is required. Please upload a PDF file.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       const url = editingBook ? `/api/admin/books/${editingBook.id}` : "/api/admin/books";
       const method = editingBook ? "PUT" : "POST";
@@ -337,14 +349,18 @@ export default function BookManagement() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="fileUrl">Book File URL (PDF/Document)</Label>
-                    <Input
-                      id="fileUrl"
-                      type="url"
+                    <Label>Book File (PDF) *</Label>
+                    <DocumentUpload
                       value={formData.fileUrl}
-                      onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })}
-                      placeholder="https://example.com/book.pdf"
+                      onChange={(url) => setFormData({ ...formData, fileUrl: url })}
+                      category="books"
+                      label="Upload Book PDF"
+                      accept=".pdf"
+                      maxSize={200}
                     />
+                    <p className="text-xs text-foreground/60">
+                      Upload the PDF file for this book. Maximum file size: 200MB
+                    </p>
                   </div>
 
                   <div className="flex items-center space-x-2">

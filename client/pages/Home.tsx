@@ -20,6 +20,7 @@ import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/
 import { useEffect, useState } from "react";
 import { NewsArticle, Devotion } from "@/types/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { buildApiUrl } from "@/lib/apiConfig";
 
 // YouTube Video interface
 interface YouTubeVideo {
@@ -37,8 +38,13 @@ function LatestNewsCards() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/news?limit=3")
-      .then((res) => res.json())
+    fetch(buildApiUrl("/api/admin/news?limit=3"))
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
         // Sort by publishDate (newest first) and take first 3
         const sortedNews = (Array.isArray(data) ? data : []).sort(
@@ -47,7 +53,8 @@ function LatestNewsCards() {
         setNews(sortedNews.slice(0, 3));
         setLoading(false);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error("Error fetching news:", error);
         setLoading(false);
       });
   }, []);

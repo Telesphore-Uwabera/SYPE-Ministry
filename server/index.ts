@@ -20,9 +20,11 @@ export function createServer() {
         "http://localhost:5173",
         "http://localhost:8080",
         "http://localhost:8081",
+        "http://localhost:8082",
         "http://localhost:3000",
         "http://127.0.0.1:8080",
         "http://127.0.0.1:8081",
+        "http://127.0.0.1:8082",
       ];
 
   app.use(

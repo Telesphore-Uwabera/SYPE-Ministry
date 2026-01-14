@@ -42,7 +42,17 @@ function getPrisma() {
     console.log("Initializing Prisma Client with adapter...");
     
     // Create PostgreSQL connection pool
-    const pool = new Pool({ connectionString: databaseUrl });
+    // Render may resolve Supabase DB host to IPv6 first; some instances can't route IPv6 -> ENETUNREACH.
+    // Force IPv4 at the socket level via `family: 4`.
+    // Supabase Postgres requires SSL in production.
+    const pool = new Pool({
+      connectionString: databaseUrl,
+      family: 4,
+      ssl:
+        process.env.NODE_ENV === "production"
+          ? { rejectUnauthorized: false }
+          : undefined,
+    });
     const adapter = new PrismaPg(pool);
 
     prismaInstance =

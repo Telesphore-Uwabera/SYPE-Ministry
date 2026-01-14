@@ -13,28 +13,42 @@ export default function Devotions() {
   const [devotionsLoading, setDevotionsLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch devotions from API
-    fetch(buildApiUrl("/api/devotions"))
-      .then((res) => {
+    const fetchDevotions = async () => {
+      try {
+        const apiUrl = buildApiUrl("/api/devotions");
+        console.log("Fetching devotions from:", apiUrl);
+        
+        const res = await fetch(apiUrl);
+        
         if (!res.ok) {
+          const errorText = await res.text();
+          console.error(`HTTP error! status: ${res.status}`, errorText);
           throw new Error(`HTTP error! status: ${res.status}`);
         }
-        return res.json();
-      })
-      .then((data) => {
+        
+        const data = await res.json();
+        console.log("Devotions data received:", data);
+        
         if (Array.isArray(data)) {
           // Sort by date (newest first)
           const sortedDevotions = data.sort(
             (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
           );
+          console.log("Sorted devotions:", sortedDevotions);
           setDevotions(sortedDevotions);
+        } else {
+          console.warn("Devotions data is not an array:", data);
+          setDevotions([]);
         }
         setDevotionsLoading(false);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Error fetching devotions:", error);
         setDevotionsLoading(false);
-      });
+        setDevotions([]); // Set empty array on error
+      }
+    };
+    
+    fetchDevotions();
   }, []);
 
   return (

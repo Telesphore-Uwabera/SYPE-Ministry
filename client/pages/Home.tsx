@@ -121,20 +121,37 @@ function LatestDevotionsCards() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch last 3 devotions from API
-    fetch(buildApiUrl("/api/devotions?days=7"))
-      .then((res) => res.json())
-      .then((data) => {
+    const fetchDevotions = async () => {
+      try {
+        const apiUrl = buildApiUrl("/api/devotions?days=7");
+        console.log("Fetching devotions from:", apiUrl);
+        
+        const res = await fetch(apiUrl);
+        
+        if (!res.ok) {
+          console.error(`HTTP error! status: ${res.status}`);
+          setLoading(false);
+          return;
+        }
+        
+        const data = await res.json();
+        console.log("Devotions data received:", data);
+        
         // Get latest 3 devotions
         const devotionsData = (Array.isArray(data) ? data : [])
           .sort((a: Devotion, b: Devotion) => new Date(b.date).getTime() - new Date(a.date).getTime())
           .slice(0, 3);
+        console.log("Latest 3 devotions:", devotionsData);
         setDevotions(devotionsData);
         setLoading(false);
-      })
-      .catch(() => {
+      } catch (error) {
+        console.error("Error fetching devotions:", error);
         setLoading(false);
-      });
+        setDevotions([]);
+      }
+    };
+    
+    fetchDevotions();
   }, []);
 
   if (loading) {

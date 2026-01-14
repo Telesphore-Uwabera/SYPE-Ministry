@@ -339,7 +339,17 @@ export const createProject: RequestHandler = async (req, res) => {
     });
   } catch (error: any) {
     console.error("Error creating project:", error);
-    res.status(500).json({ error: "Failed to create project" });
+    // Provide more detailed error information
+    if (error.code === "P2002") {
+      return res.status(400).json({ error: "A project with this name already exists" });
+    }
+    if (error.code === "P2003") {
+      return res.status(400).json({ error: "Invalid reference in project data" });
+    }
+    res.status(500).json({ 
+      error: "Failed to create project",
+      details: process.env.NODE_ENV === "development" ? error.message : undefined
+    });
   }
 };
 

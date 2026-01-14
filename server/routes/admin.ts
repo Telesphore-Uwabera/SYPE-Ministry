@@ -63,10 +63,14 @@ export const getNews: RequestHandler = async (req, res) => {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
     
+    console.log("Fetching news articles, limit:", limit);
+    
     const result = await prisma.newsArticle.findMany({
       orderBy: { publishDate: "desc" },
       take: limit,
     });
+    
+    console.log(`Found ${result.length} news articles in database`);
     
     // Convert Prisma format to API format
     const formattedResult = result.map((article) => ({
@@ -84,10 +88,15 @@ export const getNews: RequestHandler = async (req, res) => {
       createdAt: article.createdAt.toISOString(),
     }));
     
+    console.log(`Returning ${formattedResult.length} formatted news articles`);
     res.json(formattedResult);
   } catch (error: any) {
     console.error("Error fetching news:", error);
-    res.status(500).json({ error: "Failed to fetch news" });
+    console.error("Error details:", error.message, error.stack);
+    res.status(500).json({ 
+      error: "Failed to fetch news",
+      details: process.env.NODE_ENV === "development" ? error.message : undefined
+    });
   }
 };
 
@@ -1662,16 +1671,28 @@ export const getAnalytics: RequestHandler = async (req, res) => {
         contactCount,
         newContactCount,
       ] = await Promise.all([
-        prisma.project.count().catch(() => 0),
-        prisma.project.count({ where: { status: "ongoing" } }).catch(() => 0),
-        prisma.newsArticle.count().catch(() => 0),
-        prisma.book.count().catch(() => 0),
-        prisma.committeeMember.count().catch(() => 0),
-        prisma.committeeMember.count({ where: { active: true } }).catch(() => 0),
-        prisma.devotion.count().catch(() => 0),
-        prisma.contactSubmission.count().catch(() => 0),
-        prisma.contactSubmission.count({ where: { status: "new" } }).catch(() => 0),
+        prisma.project.count().catch((e) => { console.error("Error counting projects:", e); return 0; }),
+        prisma.project.count({ where: { status: "ongoing" } }).catch((e) => { console.error("Error counting active projects:", e); return 0; }),
+        prisma.newsArticle.count().catch((e) => { console.error("Error counting news articles:", e); return 0; }),
+        prisma.book.count().catch((e) => { console.error("Error counting books:", e); return 0; }),
+        prisma.committeeMember.count().catch((e) => { console.error("Error counting committee members:", e); return 0; }),
+        prisma.committeeMember.count({ where: { active: true } }).catch((e) => { console.error("Error counting active committee members:", e); return 0; }),
+        prisma.devotion.count().catch((e) => { console.error("Error counting devotions:", e); return 0; }),
+        prisma.contactSubmission.count().catch((e) => { console.error("Error counting contact submissions:", e); return 0; }),
+        prisma.contactSubmission.count({ where: { status: "new" } }).catch((e) => { console.error("Error counting new contact submissions:", e); return 0; }),
       ]);
+
+      console.log("Analytics counts:", {
+        projects: projectsCount,
+        activeProjects: activeProjectsCount,
+        news: newsCount,
+        books: booksCount,
+        committee: committeeCount,
+        activeCommittee: activeCommitteeCount,
+        devotions: devotionsCount,
+        contacts: contactCount,
+        newContacts: newContactCount,
+      });
 
       totalProjects = projectsCount;
       activeProjects = activeProjectsCount;
@@ -1684,6 +1705,7 @@ export const getAnalytics: RequestHandler = async (req, res) => {
       newContactSubmissions = newContactCount;
     } catch (dbError: any) {
       console.error("Database query error in analytics:", dbError);
+      console.error("Error details:", dbError.message, dbError.stack);
       // Continue with default values (0) if database queries fail
     }
     

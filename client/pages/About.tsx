@@ -20,13 +20,29 @@ export default function About() {
 
   const loadCommitteeMembers = async () => {
     try {
-      const response = await fetch(buildApiUrl("/api/committee?active=true"));
+      const apiUrl = buildApiUrl("/api/committee?active=true");
+      console.log("Fetching committee members from:", apiUrl);
+      
+      const response = await fetch(apiUrl);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`HTTP error! status: ${response.status}`, errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
+      console.log("Committee members data received:", data);
+      
       if (Array.isArray(data)) {
         setCommitteeMembers(data);
+      } else {
+        console.warn("Committee members data is not an array:", data);
+        setCommitteeMembers([]);
       }
     } catch (error) {
       console.error("Error loading committee members:", error);
+      setCommitteeMembers([]);
     } finally {
       setLoading(false);
     }

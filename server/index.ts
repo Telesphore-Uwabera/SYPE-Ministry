@@ -1,4 +1,5 @@
 import "dotenv/config";
+import dns from "dns";
 import express from "express";
 import cors from "cors";
 import path from "path";
@@ -7,6 +8,15 @@ import * as adminRoutes from "./routes/admin";
 import * as uploadRoutes from "./routes/upload";
 import * as mediaUploadRoutes from "./routes/mediaUpload";
 import * as youtubeRoutes from "./routes/youtube";
+
+// Render sometimes resolves Supabase DB hostnames to IPv6 first.
+// Their network egress may not have IPv6 routing, causing ENETUNREACH on port 5432.
+// Force IPv4-first resolution so Postgres connections succeed.
+try {
+  dns.setDefaultResultOrder("ipv4first");
+} catch {
+  // ignore if not supported on older Node versions
+}
 
 export function createServer() {
   const app = express();

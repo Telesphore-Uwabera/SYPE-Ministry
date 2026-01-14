@@ -15,27 +15,42 @@ export default function News() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetch(buildApiUrl("/api/news"))
-      .then((res) => {
+    const fetchNews = async () => {
+      try {
+        const apiUrl = buildApiUrl("/api/news");
+        console.log("Fetching news from:", apiUrl);
+        
+        const res = await fetch(apiUrl);
+        
         if (!res.ok) {
+          const errorText = await res.text();
+          console.error(`HTTP error! status: ${res.status}`, errorText);
           throw new Error(`HTTP error! status: ${res.status}`);
         }
-        return res.json();
-      })
-      .then((data) => {
+        
+        const data = await res.json();
+        console.log("News data received:", data);
+        
         if (Array.isArray(data)) {
           // Sort by publishDate (newest first)
           const sortedNews = data.sort(
             (a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
           );
+          console.log("Sorted news:", sortedNews);
           setNews(sortedNews);
+        } else {
+          console.warn("News data is not an array:", data);
+          setNews([]);
         }
         setLoading(false);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Error fetching news:", error);
         setLoading(false);
-      });
+        setNews([]); // Set empty array on error
+      }
+    };
+    
+    fetchNews();
   }, []);
 
   const filteredNews = news.filter((article) => {

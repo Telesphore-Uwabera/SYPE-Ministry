@@ -15,6 +15,14 @@ const getApiBaseUrl = (): string => {
     return import.meta.env.VITE_API_URL;
   }
   
+  // In production, if no env var is set, use the Render backend URL as fallback
+  if (import.meta.env.PROD) {
+    const fallbackUrl = "https://sype-ministry-api.onrender.com";
+    console.warn(`API base URL not configured. Using fallback: ${fallbackUrl}`);
+    console.warn("Please set VITE_API_BASE_URL or VITE_API_URL in Netlify environment variables");
+    return fallbackUrl;
+  }
+  
   // Default to relative URL (works when frontend and backend share domain)
   return "";
 };

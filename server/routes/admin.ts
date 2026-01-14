@@ -161,7 +161,17 @@ export const createNews: RequestHandler = async (req, res) => {
     });
   } catch (error: any) {
     console.error("Error creating news article:", error);
-    res.status(500).json({ error: "Failed to create news article" });
+    // Provide more detailed error information
+    if (error.code === "P2002") {
+      return res.status(400).json({ error: "A news article with this title already exists" });
+    }
+    if (error.code === "P2003") {
+      return res.status(400).json({ error: "Invalid reference in news article data" });
+    }
+    res.status(500).json({ 
+      error: "Failed to create news article",
+      details: process.env.NODE_ENV === "development" ? error.message : undefined
+    });
   }
 };
 
@@ -577,7 +587,17 @@ export const createFAQ: RequestHandler = async (req, res) => {
     });
   } catch (error: any) {
     console.error("Error creating FAQ:", error);
-    res.status(500).json({ error: "Failed to create FAQ" });
+    // Provide more detailed error information
+    if (error.code === "P2002") {
+      return res.status(400).json({ error: "A FAQ with this information already exists" });
+    }
+    if (error.code === "P2003") {
+      return res.status(400).json({ error: "Invalid reference in FAQ data" });
+    }
+    res.status(500).json({ 
+      error: "Failed to create FAQ",
+      details: process.env.NODE_ENV === "development" ? error.message : undefined
+    });
   }
 };
 
@@ -837,7 +857,17 @@ export const createBook: RequestHandler = async (req, res) => {
     });
   } catch (error: any) {
     console.error("Error creating book:", error);
-    res.status(500).json({ error: "Failed to create book" });
+    // Provide more detailed error information
+    if (error.code === "P2002") {
+      return res.status(400).json({ error: "A book with this information already exists" });
+    }
+    if (error.code === "P2003") {
+      return res.status(400).json({ error: "Invalid reference in book data" });
+    }
+    res.status(500).json({ 
+      error: "Failed to create book",
+      details: process.env.NODE_ENV === "development" ? error.message : undefined
+    });
   }
 };
 
@@ -1112,9 +1142,17 @@ export const createCommitteeMember: RequestHandler = async (req, res) => {
       return res.status(400).json({ error: "Position, name, church, phone, and category are required" });
     }
     
+    // Validate category
+    const validCategories = ["leadership", "team", "auditor", "asa_representatives", "board_chancellors"];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ 
+        error: `Invalid category. Must be one of: ${validCategories.join(", ")}` 
+      });
+    }
+    
     // Get count for order if not provided
     let memberOrder = order;
-    if (memberOrder === undefined) {
+    if (memberOrder === undefined || memberOrder === null) {
       const count = await prisma.committeeMember.count({
         where: { category },
       });
@@ -1123,13 +1161,13 @@ export const createCommitteeMember: RequestHandler = async (req, res) => {
     
     const newMember = await prisma.committeeMember.create({
       data: {
-        position,
-        name,
-        church,
-        phone,
+        position: position.trim(),
+        name: name.trim(),
+        church: church.trim(),
+        phone: phone.trim(),
         category: category as "leadership" | "team" | "auditor" | "asa_representatives" | "board_chancellors",
-        image: image || null,
-        email: email || null,
+        image: image?.trim() || null,
+        email: email?.trim() || null,
         order: memberOrder,
         active: active !== undefined ? active : true,
       },
@@ -1149,7 +1187,17 @@ export const createCommitteeMember: RequestHandler = async (req, res) => {
     });
   } catch (error: any) {
     console.error("Error creating committee member:", error);
-    res.status(500).json({ error: "Failed to create committee member" });
+    // Provide more detailed error information
+    if (error.code === "P2002") {
+      return res.status(400).json({ error: "A committee member with this information already exists" });
+    }
+    if (error.code === "P2003") {
+      return res.status(400).json({ error: "Invalid reference in committee member data" });
+    }
+    res.status(500).json({ 
+      error: "Failed to create committee member",
+      details: process.env.NODE_ENV === "development" ? error.message : undefined
+    });
   }
 };
 
@@ -1293,17 +1341,28 @@ export const createDevotion: RequestHandler = async (req, res) => {
       return res.status(400).json({ error: "Title, date, and excerpt are required" });
     }
     
+    // Validate date format
+    let devotionDate: Date;
+    try {
+      devotionDate = new Date(date);
+      if (isNaN(devotionDate.getTime())) {
+        return res.status(400).json({ error: "Invalid date format" });
+      }
+    } catch (e) {
+      return res.status(400).json({ error: "Invalid date format" });
+    }
+    
     // Create in database
     const newDevotion = await prisma.devotion.create({
       data: {
-        title,
-        date: new Date(date),
-        excerpt,
-        content: content || null,
-        image: image || null,
-        featuredVideoUrl: featuredVideoUrl || null,
-        featuredVideoThumbnail: featuredVideoThumbnail || null,
-        featuredVideoTitle: featuredVideoTitle || null,
+        title: title.trim(),
+        date: devotionDate,
+        excerpt: excerpt.trim(),
+        content: content?.trim() || null,
+        image: image?.trim() || null,
+        featuredVideoUrl: featuredVideoUrl?.trim() || null,
+        featuredVideoThumbnail: featuredVideoThumbnail?.trim() || null,
+        featuredVideoTitle: featuredVideoTitle?.trim() || null,
       },
     });
     
@@ -1322,7 +1381,17 @@ export const createDevotion: RequestHandler = async (req, res) => {
     });
   } catch (error: any) {
     console.error("Error creating devotion:", error);
-    res.status(500).json({ error: "Failed to create devotion" });
+    // Provide more detailed error information
+    if (error.code === "P2002") {
+      return res.status(400).json({ error: "A devotion with this title already exists" });
+    }
+    if (error.code === "P2003") {
+      return res.status(400).json({ error: "Invalid reference in devotion data" });
+    }
+    res.status(500).json({ 
+      error: "Failed to create devotion",
+      details: process.env.NODE_ENV === "development" ? error.message : undefined
+    });
   }
 };
 

@@ -24,6 +24,12 @@ export default defineConfig(({ mode }) => ({
       "@shared": path.resolve(__dirname, "./shared"),
     },
   },
+  optimizeDeps: {
+    exclude: ["@prisma/client", "@prisma/adapter-pg", "pg"],
+  },
+  ssr: {
+    noExternal: ["@prisma/client", "@prisma/adapter-pg", "pg"],
+  },
 }));
 
 function expressPlugin(): Plugin {
@@ -32,12 +38,50 @@ function expressPlugin(): Plugin {
     apply: "serve", // Only apply during development (serve mode)
     configureServer(server) {
       // Lazy-load server only when actually needed (during dev serve)
-      // This prevents Prisma from initializing during build
-      const { createServer } = require("./server");
-      const app = createServer();
+      // Use process.nextTick to defer require until after Vite config is loaded
+      let app: any = null;
+      let loading = false;
+      let loadPromise: Promise<any> | null = null;
+      
+      // Defer the server import until the first request
+      const loadServer = async () => {
+        if (app) return app;
+        if (loading && loadPromise) return loadPromise;
+        
+        loading = true;
+        loadPromise = new Promise((resolve, reject) => {
+          process.nextTick(() => {
+            try {
+              // Construct path at runtime to prevent Vite from statically analyzing it
+              const base = "./";
+              const module = "server";
+              const serverPath = base + module;
+              const serverModule = require(serverPath);
+              app = serverModule.createServer();
+              loading = false;
+              resolve(app);
+            } catch (error) {
+              loading = false;
+              console.error("Failed to load server:", error);
+              reject(error);
+            }
+          });
+        });
+        
+        return loadPromise;
+      };
 
       // Add Express app as middleware to Vite dev server
-      server.middlewares.use(app);
+      // Load server on first request
+      server.middlewares.use(async (req, res, next) => {
+        try {
+          const expressApp = await loadServer();
+          expressApp(req, res, next);
+        } catch (error) {
+          console.error("Error loading Express server:", error);
+          res.status(500).json({ error: "Server initialization failed" });
+        }
+      });
     },
   };
 }

@@ -1,6 +1,11 @@
 // Prisma Client Singleton
 // Load environment variables first
 import "dotenv/config";
+import { createRequire } from "module";
+
+// This project runs as ESM ("type": "module"). Prisma packages are loaded via CommonJS entrypoints,
+// so we must use createRequire() instead of relying on `require` (which is undefined in ESM).
+const require = createRequire(import.meta.url);
 
 const globalForPrisma = globalThis as unknown as {
   prisma: any | undefined;

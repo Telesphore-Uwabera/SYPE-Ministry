@@ -32,6 +32,16 @@ export function createServer() {
       origin: (origin, callback) => {
         // Allow requests with no origin (mobile apps, curl, etc.)
         if (!origin) return callback(null, true);
+        
+        // In development, allow localhost on any port
+        if (process.env.NODE_ENV !== "production") {
+          const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+          if (isLocalhost) {
+            return callback(null, true);
+          }
+        }
+        
+        // Check against explicit allowed origins
         if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {

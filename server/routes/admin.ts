@@ -1560,38 +1560,63 @@ export const deleteContactSubmission: RequestHandler = async (req, res) => {
 // Analytics API
 export const getAnalytics: RequestHandler = async (req, res) => {
   try {
-    // Get counts from database for migrated models
-    const [
-      totalProjects,
-      activeProjects,
-      totalNewsArticles,
-      totalBooks,
-      totalCommitteeMembers,
-      activeCommitteeMembers,
-      totalDevotions,
-      totalContactSubmissions,
-      newContactSubmissions,
-    ] = await Promise.all([
-      prisma.project.count(),
-      prisma.project.count({ where: { status: "ongoing" } }),
-      prisma.newsArticle.count(),
-      prisma.book.count(),
-      prisma.committeeMember.count(),
-      prisma.committeeMember.count({ where: { active: true } }),
-      prisma.devotion.count(),
-      prisma.contactSubmission.count(),
-      prisma.contactSubmission.count({ where: { status: "new" } }),
-    ]);
+    // Get counts from database for migrated models with error handling
+    let totalProjects = 0;
+    let activeProjects = 0;
+    let totalNewsArticles = 0;
+    let totalBooks = 0;
+    let totalCommitteeMembers = 0;
+    let activeCommitteeMembers = 0;
+    let totalDevotions = 0;
+    let totalContactSubmissions = 0;
+    let newContactSubmissions = 0;
+
+    try {
+      const [
+        projectsCount,
+        activeProjectsCount,
+        newsCount,
+        booksCount,
+        committeeCount,
+        activeCommitteeCount,
+        devotionsCount,
+        contactCount,
+        newContactCount,
+      ] = await Promise.all([
+        prisma.project.count().catch(() => 0),
+        prisma.project.count({ where: { status: "ongoing" } }).catch(() => 0),
+        prisma.newsArticle.count().catch(() => 0),
+        prisma.book.count().catch(() => 0),
+        prisma.committeeMember.count().catch(() => 0),
+        prisma.committeeMember.count({ where: { active: true } }).catch(() => 0),
+        prisma.devotion.count().catch(() => 0),
+        prisma.contactSubmission.count().catch(() => 0),
+        prisma.contactSubmission.count({ where: { status: "new" } }).catch(() => 0),
+      ]);
+
+      totalProjects = projectsCount;
+      activeProjects = activeProjectsCount;
+      totalNewsArticles = newsCount;
+      totalBooks = booksCount;
+      totalCommitteeMembers = committeeCount;
+      activeCommitteeMembers = activeCommitteeCount;
+      totalDevotions = devotionsCount;
+      totalContactSubmissions = contactCount;
+      newContactSubmissions = newContactCount;
+    } catch (dbError: any) {
+      console.error("Database query error in analytics:", dbError);
+      // Continue with default values (0) if database queries fail
+    }
     
     // Get counts from in-memory arrays for models not yet migrated
-    const totalMembers = members.length;
-    const activeMembers = members.filter((m) => m.status === "Active").length;
-    const totalDonations = donations.length;
-    const totalDonationAmount = donations.reduce((sum, d) => sum + d.amount, 0);
-    const totalEvents = events.length;
-    const upcomingEvents = events.filter((e) => e.status === "upcoming").length;
-    const totalSubscribers = subscribers.length;
-    const activeSubscribers = subscribers.filter((s) => s.status === "active").length;
+    const totalMembers = members?.length || 0;
+    const activeMembers = members?.filter((m) => m.status === "Active").length || 0;
+    const totalDonations = donations?.length || 0;
+    const totalDonationAmount = donations?.reduce((sum, d) => sum + (d.amount || 0), 0) || 0;
+    const totalEvents = events?.length || 0;
+    const upcomingEvents = events?.filter((e) => e.status === "upcoming").length || 0;
+    const totalSubscribers = subscribers?.length || 0;
+    const activeSubscribers = subscribers?.filter((s) => s.status === "active").length || 0;
     
     const analytics = {
       totalMembers,
@@ -1616,6 +1641,25 @@ export const getAnalytics: RequestHandler = async (req, res) => {
     res.json(analytics);
   } catch (error: any) {
     console.error("Error fetching analytics:", error);
-    res.status(500).json({ error: "Failed to fetch analytics" });
+    // Return default values instead of error to prevent frontend crashes
+    res.json({
+      totalMembers: 0,
+      activeMembers: 0,
+      totalProjects: 0,
+      activeProjects: 0,
+      totalDonations: 0,
+      totalDonationAmount: 0,
+      totalEvents: 0,
+      upcomingEvents: 0,
+      totalNewsArticles: 0,
+      totalBooks: 0,
+      totalSubscribers: 0,
+      activeSubscribers: 0,
+      totalCommitteeMembers: 0,
+      activeCommitteeMembers: 0,
+      totalDevotions: 0,
+      totalContactSubmissions: 0,
+      newContactSubmissions: 0,
+    });
   }
 };

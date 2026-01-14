@@ -14,12 +14,54 @@ export default function AnalyticsDashboard() {
   const loadAnalytics = async () => {
     try {
       const response = await fetch(buildApiUrl("/api/admin/analytics"));
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       if (data) {
-        setAnalytics(data);
+        // Ensure all required fields have default values
+        setAnalytics({
+          totalMembers: data.totalMembers || 0,
+          activeMembers: data.activeMembers || 0,
+          totalProjects: data.totalProjects || 0,
+          activeProjects: data.activeProjects || 0,
+          totalDonations: data.totalDonations || 0,
+          totalDonationAmount: data.totalDonationAmount || 0,
+          totalEvents: data.totalEvents || 0,
+          upcomingEvents: data.upcomingEvents || 0,
+          totalNewsArticles: data.totalNewsArticles || 0,
+          totalBooks: data.totalBooks || 0,
+          totalSubscribers: data.totalSubscribers || 0,
+          activeSubscribers: data.activeSubscribers || 0,
+          totalCommitteeMembers: data.totalCommitteeMembers || 0,
+          activeCommitteeMembers: data.activeCommitteeMembers || 0,
+          totalDevotions: data.totalDevotions || 0,
+          totalContactSubmissions: data.totalContactSubmissions || 0,
+          newContactSubmissions: data.newContactSubmissions || 0,
+        });
       }
     } catch (error) {
       console.error("Error loading analytics:", error);
+      // Set default values on error
+      setAnalytics({
+        totalMembers: 0,
+        activeMembers: 0,
+        totalProjects: 0,
+        activeProjects: 0,
+        totalDonations: 0,
+        totalDonationAmount: 0,
+        totalEvents: 0,
+        upcomingEvents: 0,
+        totalNewsArticles: 0,
+        totalBooks: 0,
+        totalSubscribers: 0,
+        activeSubscribers: 0,
+        totalCommitteeMembers: 0,
+        activeCommitteeMembers: 0,
+        totalDevotions: 0,
+        totalContactSubmissions: 0,
+        newContactSubmissions: 0,
+      });
     }
   };
 
@@ -47,7 +89,7 @@ export default function AnalyticsDashboard() {
     {
       title: "Total Donations",
       value: analytics.totalDonations,
-      description: `${analytics.totalDonationAmount.toLocaleString()} RWF`,
+      description: `${(analytics.totalDonationAmount || 0).toLocaleString()} RWF`,
       icon: DollarSign,
       color: "text-yellow-500",
       bgColor: "bg-yellow-500/10",
@@ -121,7 +163,7 @@ export default function AnalyticsDashboard() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-foreground/70">Total Donation Amount</span>
-              <span className="font-semibold">{analytics.totalDonationAmount.toLocaleString()} RWF</span>
+              <span className="font-semibold">{(analytics.totalDonationAmount || 0).toLocaleString()} RWF</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-foreground/70">Upcoming Events</span>

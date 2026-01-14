@@ -800,10 +800,16 @@ export const getBooks: RequestHandler = async (req, res) => {
       uploadDate: book.uploadDate.toISOString(),
     }));
     
+    console.log(`Returning ${formattedResult.length} formatted books`);
     res.json(formattedResult);
   } catch (error: any) {
     console.error("Error fetching books:", error);
-    res.status(500).json({ error: "Failed to fetch books" });
+    console.error("Error details:", error.message, error.stack);
+    console.error("Error code:", error.code);
+    res.status(500).json({ 
+      error: "Failed to fetch books",
+      details: process.env.NODE_ENV === "development" ? error.message : undefined
+    });
   }
 };
 

@@ -38,7 +38,7 @@ function expressPlugin(): Plugin {
     apply: "serve", // Only apply during development (serve mode)
     configureServer(server) {
       // Lazy-load server only when actually needed (during dev serve)
-      // Use process.nextTick to defer require until after Vite config is loaded
+      // Use dynamic import to defer loading until after Vite config is loaded
       let app: any = null;
       let loading = false;
       let loadPromise: Promise<any> | null = null;
@@ -49,24 +49,21 @@ function expressPlugin(): Plugin {
         if (loading && loadPromise) return loadPromise;
         
         loading = true;
-        loadPromise = new Promise((resolve, reject) => {
-          process.nextTick(() => {
-            try {
-              // Construct path at runtime to prevent Vite from statically analyzing it
-              const base = "./";
-              const module = "server";
-              const serverPath = base + module;
-              const serverModule = require(serverPath);
-              app = serverModule.createServer();
-              loading = false;
-              resolve(app);
-            } catch (error) {
-              loading = false;
-              console.error("Failed to load server:", error);
-              reject(error);
-            }
-          });
-        });
+        loadPromise = (async () => {
+          try {
+            // Use dynamic import (ESM) instead of require (CommonJS)
+            // Import from the server/index.ts file directly
+            // Vite will handle the TypeScript compilation
+            const serverModule = await import("./server/index.js");
+            app = serverModule.createServer();
+            loading = false;
+            return app;
+          } catch (error) {
+            loading = false;
+            console.error("Failed to load server:", error);
+            throw error;
+          }
+        })();
         
         return loadPromise;
       };
@@ -79,7 +76,12 @@ function expressPlugin(): Plugin {
           expressApp(req, res, next);
         } catch (error) {
           console.error("Error loading Express server:", error);
-          res.status(500).json({ error: "Server initialization failed" });
+          if (res.status && res.json) {
+            res.status(500).json({ error: "Server initialization failed" });
+          } else {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Server initialization failed" }));
+          }
         }
       });
     },

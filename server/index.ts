@@ -41,6 +41,16 @@ export function createServer() {
           }
         }
         
+        // In production, if ALLOWED_ORIGINS is not set, allow common production domains
+        if (process.env.NODE_ENV === "production" && allowedOrigins.length === 0) {
+          // Allow Netlify and common production domains
+          const isNetlify = /^https?:\/\/[^/]+\.netlify\.app/.test(origin);
+          const isRender = /^https?:\/\/[^/]+\.onrender\.com/.test(origin);
+          if (isNetlify || isRender) {
+            return callback(null, true);
+          }
+        }
+        
         // Check against explicit allowed origins
         if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
           callback(null, true);
@@ -89,6 +99,10 @@ export function createServer() {
   app.post("/api/admin/news", adminRoutes.createNews);
   app.put("/api/admin/news/:id", adminRoutes.updateNews);
   app.delete("/api/admin/news/:id", adminRoutes.deleteNews);
+
+  // Public API Routes - News (for News page)
+  app.get("/api/news", adminRoutes.getNews);
+  app.get("/api/news/:id", adminRoutes.getNewsArticle);
 
   // Admin API Routes - Projects
   app.get("/api/admin/projects", adminRoutes.getProjects);

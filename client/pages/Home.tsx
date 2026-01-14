@@ -38,7 +38,7 @@ function LatestNewsCards() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(buildApiUrl("/api/admin/news?limit=3"))
+    fetch(buildApiUrl("/api/news?limit=3"))
       .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);

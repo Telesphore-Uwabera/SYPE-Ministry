@@ -15,7 +15,7 @@ export default function News() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetch(buildApiUrl("/api/admin/news"))
+    fetch(buildApiUrl("/api/news"))
       .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);

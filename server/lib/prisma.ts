@@ -8,48 +8,78 @@ const globalForPrisma = globalThis as unknown as {
 
 // Lazy-load Prisma to prevent issues during Vite config loading
 let prismaInstance: any = null;
+let initializationError: Error | null = null;
 
 function getPrisma() {
   if (prismaInstance) {
     return prismaInstance;
   }
 
-  // Lazy import Prisma modules
-  const { PrismaClient } = require("@prisma/client");
-  const { Pool } = require("pg");
-  const { PrismaPg } = require("@prisma/adapter-pg");
-
-  // Ensure DATABASE_URL is available
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    console.error("Error: DATABASE_URL is not set. Prisma Client cannot be initialized.");
-    throw new Error("DATABASE_URL environment variable is required");
+  if (initializationError) {
+    throw initializationError;
   }
 
-  // Create PostgreSQL connection pool
-  const pool = new Pool({ connectionString: databaseUrl });
-  const adapter = new PrismaPg(pool);
+  try {
+    // Lazy import Prisma modules
+    const { PrismaClient } = require("@prisma/client");
+    const { Pool } = require("pg");
+    const { PrismaPg } = require("@prisma/adapter-pg");
 
-  prismaInstance =
-    globalForPrisma.prisma ??
-    new PrismaClient({
-      adapter,
-      log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-    });
+    // Ensure DATABASE_URL is available
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      const error = new Error("DATABASE_URL environment variable is required");
+      console.error("Error: DATABASE_URL is not set. Prisma Client cannot be initialized.");
+      initializationError = error;
+      throw error;
+    }
 
-  if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prismaInstance;
+    console.log("Initializing Prisma Client with adapter...");
+    
+    // Create PostgreSQL connection pool
+    const pool = new Pool({ connectionString: databaseUrl });
+    const adapter = new PrismaPg(pool);
 
-  return prismaInstance;
+    prismaInstance =
+      globalForPrisma.prisma ??
+      new PrismaClient({
+        adapter,
+        log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+      });
+
+    if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prismaInstance;
+
+    console.log("Prisma Client initialized successfully");
+    return prismaInstance;
+  } catch (error: any) {
+    console.error("Failed to initialize Prisma Client:", error);
+    initializationError = error;
+    throw error;
+  }
 }
 
 // Export a getter function that lazy-loads Prisma
+// Use a more robust Proxy that handles async operations correctly
 export const prisma = new Proxy({} as any, {
   get(_target, prop) {
-    const prisma = getPrisma();
-    const value = prisma[prop];
-    if (typeof value === "function") {
-      return value.bind(prisma);
+    try {
+      const prismaClient = getPrisma();
+      const value = prismaClient[prop];
+      if (typeof value === "function") {
+        // Return a bound function that handles errors
+        return function(...args: any[]) {
+          try {
+            return value.apply(prismaClient, args);
+          } catch (error: any) {
+            console.error(`Prisma error calling ${String(prop)}:`, error);
+            throw error;
+          }
+        };
+      }
+      return value;
+    } catch (error: any) {
+      console.error(`Error accessing Prisma property ${String(prop)}:`, error);
+      throw error;
     }
-    return value;
   },
 });

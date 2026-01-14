@@ -1281,6 +1281,8 @@ export const deleteCommitteeMember: RequestHandler = async (req, res) => {
 // Devotions API
 export const getDevotions: RequestHandler = async (req, res) => {
   try {
+    console.log("Fetching devotions, query params:", req.query);
+    
     // Build where clause for date filtering
     let where: any = {};
     
@@ -1292,14 +1294,18 @@ export const getDevotions: RequestHandler = async (req, res) => {
       cutoffDate.setDate(cutoffDate.getDate() - (days || 7));
       cutoffDate.setHours(0, 0, 0, 0);
       where.date = { gte: cutoffDate };
+      console.log("Date filter applied, cutoff date:", cutoffDate.toISOString());
     }
     
     // Fetch from database
+    console.log("Querying devotions with where clause:", JSON.stringify(where));
     let result = await prisma.devotion.findMany({
       where,
       orderBy: { date: "desc" },
       take: req.query.limit ? parseInt(req.query.limit as string) : undefined,
     });
+    
+    console.log(`Found ${result.length} devotions in database`);
     
     // Convert Prisma format to API format
     const formattedResult = result.map((d) => ({
@@ -1315,10 +1321,16 @@ export const getDevotions: RequestHandler = async (req, res) => {
       createdAt: d.createdAt.toISOString(),
     }));
     
+    console.log(`Returning ${formattedResult.length} formatted devotions`);
     res.json(formattedResult);
   } catch (error: any) {
     console.error("Error fetching devotions:", error);
-    res.status(500).json({ error: "Failed to fetch devotions" });
+    console.error("Error details:", error.message, error.stack);
+    console.error("Error code:", error.code);
+    res.status(500).json({ 
+      error: "Failed to fetch devotions",
+      details: process.env.NODE_ENV === "development" ? error.message : undefined
+    });
   }
 };
 

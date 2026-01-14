@@ -248,9 +248,13 @@ export const deleteNews: RequestHandler = async (req, res) => {
 // Projects API
 export const getProjects: RequestHandler = async (req, res) => {
   try {
+    console.log("Fetching projects from database");
+    
     const result = await prisma.project.findMany({
       orderBy: { createdAt: "desc" },
     });
+    
+    console.log(`Found ${result.length} projects in database`);
     
     const formattedResult = result.map((project) => ({
       id: project.id,
@@ -268,10 +272,16 @@ export const getProjects: RequestHandler = async (req, res) => {
       createdAt: project.createdAt.toISOString(),
     }));
     
+    console.log(`Returning ${formattedResult.length} formatted projects`);
     res.json(formattedResult);
   } catch (error: any) {
     console.error("Error fetching projects:", error);
-    res.status(500).json({ error: "Failed to fetch projects" });
+    console.error("Error details:", error.message, error.stack);
+    console.error("Error code:", error.code);
+    res.status(500).json({ 
+      error: "Failed to fetch projects",
+      details: process.env.NODE_ENV === "development" ? error.message : undefined
+    });
   }
 };
 
@@ -757,6 +767,7 @@ export const deleteMedia: RequestHandler = (req, res) => {
 export const getBooks: RequestHandler = async (req, res) => {
   try {
     const category = req.query.category as string | undefined;
+    console.log("Fetching books, category filter:", category);
     
     let where: any = {};
     if (category && category !== "All") {
@@ -767,6 +778,8 @@ export const getBooks: RequestHandler = async (req, res) => {
       where,
       orderBy: { uploadDate: "desc" },
     });
+    
+    console.log(`Found ${result.length} books in database`);
     
     const formattedResult = result.map((book) => ({
       id: book.id,

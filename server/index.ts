@@ -111,6 +111,10 @@ export function createServer() {
   app.put("/api/admin/projects/:id", adminRoutes.updateProject);
   app.delete("/api/admin/projects/:id", adminRoutes.deleteProject);
 
+  // Public API Routes - Projects (for Projects page)
+  app.get("/api/projects", adminRoutes.getProjects);
+  app.get("/api/projects/:id", adminRoutes.getProject);
+
   // Admin API Routes - Events
   app.get("/api/admin/events", adminRoutes.getEvents);
   app.get("/api/admin/events/:id", adminRoutes.getEvent);
@@ -146,6 +150,10 @@ export function createServer() {
   app.put("/api/admin/books/:id", adminRoutes.updateBook);
   app.delete("/api/admin/books/:id", adminRoutes.deleteBook);
   app.post("/api/admin/books/:id/download", adminRoutes.trackBookDownload);
+
+  // Public API Routes - Books (for Library page)
+  app.get("/api/books", adminRoutes.getBooks);
+  app.get("/api/books/:id", adminRoutes.getBook);
 
   // Email Subscription Routes (Public)
   app.post("/api/subscribe", adminRoutes.createSubscriber);

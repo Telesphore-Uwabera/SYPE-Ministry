@@ -28,23 +28,37 @@ export default function Library() {
   const [dateFilter, setDateFilter] = useState<"all" | "past" | "ongoing" | "future">("all");
 
   useEffect(() => {
-    fetch(buildApiUrl("/api/admin/books"))
-      .then((res) => {
+    const fetchBooks = async () => {
+      try {
+        const apiUrl = buildApiUrl("/api/books");
+        console.log("Fetching books from:", apiUrl);
+        
+        const res = await fetch(apiUrl);
+        
         if (!res.ok) {
+          const errorText = await res.text();
+          console.error(`HTTP error! status: ${res.status}`, errorText);
           throw new Error(`HTTP error! status: ${res.status}`);
         }
-        return res.json();
-      })
-      .then((data) => {
+        
+        const data = await res.json();
+        console.log("Books data received:", data);
+        
         if (Array.isArray(data)) {
           setBooks(data);
+        } else {
+          console.warn("Books data is not an array:", data);
+          setBooks([]);
         }
         setLoading(false);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Error fetching books:", error);
         setLoading(false);
-      });
+        setBooks([]);
+      }
+    };
+    
+    fetchBooks();
   }, []);
 
   // Filter books by category, search query, and date

@@ -22,13 +22,29 @@ export default function Projects() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch(buildApiUrl("/api/admin/projects"));
+      const apiUrl = buildApiUrl("/api/projects");
+      console.log("Fetching projects from:", apiUrl);
+      
+      const response = await fetch(apiUrl);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`HTTP error! status: ${response.status}`, errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
+      console.log("Projects data received:", data);
+      
       if (Array.isArray(data)) {
         setProjects(data);
+      } else {
+        console.warn("Projects data is not an array:", data);
+        setProjects([]);
       }
     } catch (error) {
       console.error("Error fetching projects:", error);
+      setProjects([]);
     } finally {
       setLoading(false);
     }

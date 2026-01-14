@@ -13,14 +13,23 @@ export default function AnalyticsDashboard() {
 
   const loadAnalytics = async () => {
     try {
-      const response = await fetch(buildApiUrl("/api/admin/analytics"));
+      const apiUrl = buildApiUrl("/api/admin/analytics");
+      console.log("Fetching analytics from:", apiUrl);
+      
+      const response = await fetch(apiUrl);
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`HTTP error! status: ${response.status}`, errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
       const data = await response.json();
+      console.log("Analytics data received:", data);
+      
       if (data) {
         // Ensure all required fields have default values
-        setAnalytics({
+        const analyticsData = {
           totalMembers: data.totalMembers || 0,
           activeMembers: data.activeMembers || 0,
           totalProjects: data.totalProjects || 0,
@@ -38,7 +47,9 @@ export default function AnalyticsDashboard() {
           totalDevotions: data.totalDevotions || 0,
           totalContactSubmissions: data.totalContactSubmissions || 0,
           newContactSubmissions: data.newContactSubmissions || 0,
-        });
+        };
+        console.log("Setting analytics:", analyticsData);
+        setAnalytics(analyticsData);
       }
     } catch (error) {
       console.error("Error loading analytics:", error);

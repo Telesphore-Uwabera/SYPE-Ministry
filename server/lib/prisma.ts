@@ -42,20 +42,33 @@ async function initPrisma(): Promise<any> {
   const password = decodeURIComponent(url.password || "");
   const database = url.pathname.replace(/^\//, "") || "postgres";
 
-  // Critical: force IPv4 resolution to avoid Render -> Supabase IPv6 ENETUNREACH
-  const lookup = await dns.promises.lookup(host, { family: 4 });
+  // Critical: force IPv4 resolution to avoid Render -> Supabase IPv6 ENETUNREACH.
+  // Note: Node `pg` does not reliably honor a `hostaddr` option, so we connect to the IPv4
+  // address as the host (bypasses DNS entirely) while keeping TLS SNI via `ssl.servername`.
+  let ipv4Address: string | null = null;
+  try {
+    const lookup = await dns.promises.lookup(host, { family: 4 });
+    ipv4Address = lookup.address;
+  } catch (err) {
+    console.warn("IPv4 DNS lookup failed; falling back to hostname for Postgres:", err);
+  }
 
-  console.log("Initializing Prisma Client (Supabase host resolved to IPv4)");
+  console.log(
+    `Initializing Prisma Client (Postgres host: ${host}${
+      ipv4Address ? ` -> IPv4 ${ipv4Address}` : ""
+    })`
+  );
 
   const pool = new Pool({
-    host,
-    // `hostaddr` bypasses DNS inside pg and forces the resolved IPv4 address.
-    hostaddr: lookup.address,
+    host: ipv4Address ?? host,
     port,
     user,
     password,
     database,
-    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
+    ssl:
+      process.env.NODE_ENV === "production"
+        ? { rejectUnauthorized: false, servername: host }
+        : undefined,
   });
 
   const adapter = new PrismaPg(pool);

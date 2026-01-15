@@ -244,7 +244,8 @@ export function createServer() {
         error: {
           name,
           code,
-          message: process.env.NODE_ENV === "development" ? message : undefined,
+          // Always return a redacted message so we can debug production deploys without leaking secrets.
+          message,
         },
       });
     }

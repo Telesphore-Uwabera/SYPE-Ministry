@@ -8,6 +8,17 @@ import * as adminRoutes from "./routes/admin";
 import * as uploadRoutes from "./routes/upload";
 import * as mediaUploadRoutes from "./routes/mediaUpload";
 import * as youtubeRoutes from "./routes/youtube";
+import { prisma } from "./lib/prisma";
+
+function sanitizeErrorMessage(message: string) {
+  // Best-effort redaction of credentials inside connection strings.
+  // Examples:
+  // - mongodb+srv://user:pass@host/db -> mongodb+srv://<redacted>@host/db
+  // - postgresql://user:pass@host/db -> postgresql://<redacted>@host/db
+  return message
+    .replace(/(mongodb(?:\+srv)?:\/\/)([^@\s]+)@/gi, "$1<redacted>@")
+    .replace(/(postgres(?:ql)?:\/\/)([^@\s]+)@/gi, "$1<redacted>@");
+}
 
 // Render sometimes resolves Supabase DB hostnames to IPv6 first.
 // Their network egress may not have IPv6 routing, causing ENETUNREACH on port 5432.
@@ -214,6 +225,29 @@ export function createServer() {
   // Health check endpoint
   app.get("/health", (_req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // DB connectivity check (safe diagnostics; no secrets exposed)
+  app.get("/api/db-status", async (_req, res) => {
+    try {
+      await prisma.$connect();
+      // lightweight query that exercises the connection
+      await prisma.newsArticle.count();
+      res.json({ ok: true });
+    } catch (err: any) {
+      const name = err?.name;
+      const code = err?.code;
+      const message = err?.message ? sanitizeErrorMessage(String(err.message)) : undefined;
+      console.error("DB status check failed:", { name, code, message });
+      res.status(500).json({
+        ok: false,
+        error: {
+          name,
+          code,
+          message: process.env.NODE_ENV === "development" ? message : undefined,
+        },
+      });
+    }
   });
 
   // Error handling middleware

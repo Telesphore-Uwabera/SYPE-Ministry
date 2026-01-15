@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  engineType = "library"
   // Note: Prisma 7.x supports both prisma-client-js and prisma-client
   // Using prisma-client-js for compatibility
 }

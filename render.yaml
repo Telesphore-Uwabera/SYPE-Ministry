@@ -11,6 +11,8 @@ services:
         value: production
       - key: NODE_OPTIONS
         value: --dns-result-order=ipv4first
+      - key: PRISMA_CLIENT_ENGINE_TYPE
+        value: library
       - key: PORT
         fromService:
           name: sype-ministry-api

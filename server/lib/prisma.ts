@@ -24,6 +24,14 @@ async function initPrisma(): Promise<any> {
     return prismaInstance;
   }
 
+  // Prisma 7 can run in different "engine types". On some deploy/bundler setups this may
+  // end up as engine type "client" (meant for driver adapters / Accelerate) which will throw:
+  // "Using engine type \"client\" requires either \"adapter\" or \"accelerateUrl\"..."
+  // This server runs on Node, so force a Node engine type.
+  if (!process.env.PRISMA_CLIENT_ENGINE_TYPE || process.env.PRISMA_CLIENT_ENGINE_TYPE === "client") {
+    process.env.PRISMA_CLIENT_ENGINE_TYPE = "library";
+  }
+
   // Lazy import Prisma modules
   const { PrismaClient } = require("@prisma/client");
 

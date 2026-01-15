@@ -1,7 +1,6 @@
-// Storage Adapter - Supports both local files (dev) and Supabase Storage (production)
-import { uploadFile, deleteFile, getPublicUrl } from "./supabase";
+// Storage Adapter - Supports Cloudinary in production and local files in development
 import path from "path";
-import { STORAGE_BUCKETS } from "./supabase";
+import { getCloudinary, isCloudinaryConfigured } from "./cloudinary";
 
 export interface UploadResult {
   url: string;
@@ -10,8 +9,8 @@ export interface UploadResult {
   path: string;
 }
 
-// Determine if we should use Supabase Storage (production) or local files (development)
-const USE_SUPABASE_STORAGE = !!process.env.SUPABASE_URL && !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Determine if we should use Cloudinary (when configured) or local files (development)
+const USE_CLOUDINARY = isCloudinaryConfigured();
 
 /**
  * Upload file to storage (Supabase in production, local in development)
@@ -21,67 +20,59 @@ export async function uploadToStorage(
   category: string = "media",
   type: "image" | "video" | "document" = "image"
 ): Promise<UploadResult> {
-  if (USE_SUPABASE_STORAGE) {
-    return uploadToSupabase(file, category, type);
+  if (USE_CLOUDINARY) {
+    return uploadToCloudinary(file, category, type);
   } else {
     return uploadToLocal(file, category, type);
   }
 }
 
 /**
- * Upload file to Supabase Storage
+ * Upload file to Cloudinary
  */
-async function uploadToSupabase(
+async function uploadToCloudinary(
   file: Express.Multer.File,
   category: string,
   type: "image" | "video" | "document"
 ): Promise<UploadResult> {
-  // Determine bucket based on type
-  let bucket: string;
-  if (type === "image") {
-    bucket = STORAGE_BUCKETS.IMAGES;
-  } else if (type === "video") {
-    bucket = STORAGE_BUCKETS.VIDEOS;
-  } else {
-    bucket = STORAGE_BUCKETS.DOCUMENTS;
+  if (!file.buffer) {
+    throw new Error("File buffer is required for upload. Make sure multer is configured with memory storage.");
   }
-
-  // Create file path with category folder structure
   const timestamp = Date.now();
   const randomSuffix = Math.round(Math.random() * 1e9);
   const ext = path.extname(file.originalname);
   const basename = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9]/g, "-");
   const filename = `${basename}-${timestamp}-${randomSuffix}${ext}`;
-  
-  // Organize by category in bucket
-  let filePath: string;
-  if (category && category !== "media") {
-    filePath = `${category}/${filename}`;
-  } else {
-    filePath = filename;
-  }
 
-  // Upload to Supabase Storage
-  // With memory storage, file.buffer should always be available
-  if (!file.buffer) {
-    throw new Error("File buffer is required for upload. Make sure multer is configured with memory storage.");
-  }
+  const folderParts = ["sype-ministry"];
+  if (type) folderParts.push(type);
+  if (category && category !== "media") folderParts.push(category);
+  const folder = folderParts.join("/");
 
-  const result = await uploadFile(
-    bucket,
-    filePath,
-    file.buffer,
-    {
-      contentType: file.mimetype,
-      upsert: false,
-    }
-  );
+  const resourceType = type === "image" ? "image" : type === "video" ? "video" : "raw";
+  const cld = getCloudinary();
+
+  const uploadResult = await new Promise<any>((resolve, reject) => {
+    const stream = cld.uploader.upload_stream(
+      {
+        folder,
+        resource_type: resourceType,
+        public_id: filename.replace(ext, ""),
+        overwrite: false,
+      },
+      (err, result) => {
+        if (err) return reject(err);
+        return resolve(result);
+      }
+    );
+    stream.end(file.buffer);
+  });
 
   return {
-    url: result.url,
+    url: uploadResult.secure_url || uploadResult.url,
     filename,
     size: file.size,
-    path: result.path,
+    path: uploadResult.public_id || filename,
   };
 }
 
@@ -130,32 +121,21 @@ export async function deleteFromStorage(
   url: string,
   type: "image" | "video" | "document" = "image"
 ): Promise<void> {
-  if (USE_SUPABASE_STORAGE) {
-    await deleteFromSupabase(url, type);
-  } else {
+  if (!USE_CLOUDINARY) {
     // In development, local files can be deleted manually or left as-is
-    // Supabase handles deletion automatically
-  }
-}
-
-/**
- * Delete file from Supabase Storage
- */
-async function deleteFromSupabase(
-  url: string,
-  type: "image" | "video" | "document"
-): Promise<void> {
-  // Extract path from Supabase URL
-  // URL format: https://xxxxx.supabase.co/storage/v1/object/public/bucket-name/path/to/file
-  const urlMatch = url.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)/);
-  if (!urlMatch) {
-    throw new Error("Invalid Supabase Storage URL");
+    return;
   }
 
-  const bucket = urlMatch[1];
-  const filePath = urlMatch[2];
+  const cld = getCloudinary();
+  const resourceType = type === "image" ? "image" : type === "video" ? "video" : "raw";
 
-  await deleteFile(bucket, filePath);
+  // URL-based deletion is ambiguous on Cloudinary; prefer storing and deleting by public_id.
+  // We best-effort parse the public_id from the URL.
+  const match = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[a-zA-Z0-9]+)?$/);
+  const publicId = match?.[1];
+  if (!publicId) return;
+
+  await cld.uploader.destroy(publicId, { resource_type: resourceType });
 }
 
 /**
@@ -166,39 +146,22 @@ export function getStorageUrl(
   type: "image" | "video" | "document",
   filename: string
 ): string {
-  if (USE_SUPABASE_STORAGE) {
-    let bucket: string;
-    if (type === "image") {
-      bucket = STORAGE_BUCKETS.IMAGES;
-    } else if (type === "video") {
-      bucket = STORAGE_BUCKETS.VIDEOS;
+  // For Cloudinary we store full URLs in DB; this helper is mainly for local dev.
+  if (type === "image") {
+    if (category === "devotions") {
+      return `/images/devotions/${filename}`;
+    } else if (category && category !== "media") {
+      return `/images/${category}/${filename}`;
     } else {
-      bucket = STORAGE_BUCKETS.DOCUMENTS;
+      return `/media/images/${filename}`;
     }
-
-    const filePath = category && category !== "media" 
-      ? `${category}/${filename}`
-      : filename;
-
-    return getPublicUrl(bucket, filePath);
+  } else if (type === "video") {
+    if (category === "testimony") {
+      return `/media/videos/testimony/${filename}`;
+    } else {
+      return `/media/videos/${filename}`;
+    }
   } else {
-    // Local development URLs
-    if (type === "image") {
-      if (category === "devotions") {
-        return `/images/devotions/${filename}`;
-      } else if (category && category !== "media") {
-        return `/images/${category}/${filename}`;
-      } else {
-        return `/media/images/${filename}`;
-      }
-    } else if (type === "video") {
-      if (category === "testimony") {
-        return `/media/videos/testimony/${filename}`;
-      } else {
-        return `/media/videos/${filename}`;
-      }
-    } else {
-      return `/media/documents/${filename}`;
-    }
+    return `/media/documents/${filename}`;
   }
 }

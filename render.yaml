@@ -4,8 +4,8 @@ services:
     env: node
     plan: starter
     buildCommand: NODE_ENV=development npm install && npm run build:server && npx prisma generate
-    # Ensure database schema is applied before starting the server
-    startCommand: npx prisma migrate deploy && node dist/server/node-build.mjs
+    # MongoDB: apply schema via db push before starting
+    startCommand: npx prisma db push && node dist/server/node-build.mjs
     envVars:
       - key: NODE_ENV
         value: production
@@ -17,22 +17,15 @@ services:
           type: web
           property: port
       - key: DATABASE_URL
-        fromDatabase:
-          name: sype-ministry-db
-          property: connectionString
+        sync: false
       - key: YOUTUBE_API_KEY
-        sync: false
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_ANON_KEY
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: ALLOWED_ORIGINS
         sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
 
-databases:
-  - name: sype-ministry-db
-    plan: starter
-    databaseName: sypeministry
-    user: sypeministry

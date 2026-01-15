@@ -1,5 +1,5 @@
 // Prisma Schema for SYPE Ministry Admin Panel
-// Database: PostgreSQL (Supabase)
+// Database: MongoDB
 
 generator client {
   provider = "prisma-client-js"
@@ -8,11 +8,11 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
 }
 
 model Member {
-  id          String   @id @default(uuid())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   email       String   @unique
   phone       String?
@@ -28,12 +28,12 @@ model Member {
 }
 
 model NewsArticle {
-  id          String   @id @default(uuid())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   author      String
   publishDate DateTime @default(now())
   excerpt     String
-  body        String   @db.Text
+  body        String
   image       String?  // URL to image in Supabase Storage
   featured    Boolean  @default(false)
   category    String?
@@ -46,11 +46,11 @@ model NewsArticle {
 }
 
 model Project {
-  id           String    @id @default(uuid())
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
   name         String
   category     String    // "Documentary" | "Posters" | "Articles"
   topic        String
-  description  String    @db.Text
+  description  String
   distribution String
   status       String    // "ongoing" | "completed" | "planned"
   year         String
@@ -65,9 +65,9 @@ model Project {
 }
 
 model Event {
-  id           String    @id @default(uuid())
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
   title        String
-  description  String    @db.Text
+  description  String
   date         DateTime
   time         String
   location     String
@@ -84,7 +84,7 @@ model Event {
 }
 
 model Donation {
-  id            String    @id @default(uuid())
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
   donorName     String
   donorEmail    String
   amount        Float
@@ -95,7 +95,7 @@ model Donation {
   paymentMethod String?
   paymentStatus String    @default("unpaid") // "paid" | "unpaid" | "installment"
   receiptSent   Boolean   @default(false)
-  notes         String?   @db.Text
+  notes         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -103,10 +103,10 @@ model Donation {
 }
 
 model FAQ {
-  id       String @id @default(uuid())
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
   category String
-  question String @db.Text
-  answer   String @db.Text
+  question String
+  answer   String
   order    Int    @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -115,7 +115,7 @@ model FAQ {
 }
 
 model MediaFile {
-  id          String    @id @default(uuid())
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   type        String    // "image" | "video" | "document"
   url         String    // URL to file in Supabase Storage
@@ -124,7 +124,7 @@ model MediaFile {
   uploadDate  DateTime  @default(now())
   category    String?
   tags        String[]  // Array of tags
-  description String?   @db.Text
+  description String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -132,9 +132,9 @@ model MediaFile {
 }
 
 model EmailCampaign {
-  id         String    @id @default(uuid())
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
   subject    String
-  body       String    @db.Text
+  body       String
   recipients String[]  // Array of email addresses
   sentDate   DateTime?
   status     String    // "draft" | "scheduled" | "sent"
@@ -146,11 +146,11 @@ model EmailCampaign {
 }
 
 model Devotion {
-  id                    String    @id @default(uuid())
+  id                    String    @id @default(auto()) @map("_id") @db.ObjectId
   title                 String
   date                  DateTime
-  excerpt               String    @db.Text
-  content               String?   @db.Text
+  excerpt               String
+  content               String?
   image                 String?   // URL to image in Supabase Storage
   featuredVideoUrl      String?
   featuredVideoThumbnail String?
@@ -162,15 +162,15 @@ model Devotion {
 }
 
 model ContactSubmission {
-  id          String    @id @default(uuid())
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   email       String
   subject     String
-  message     String    @db.Text
+  message     String
   status      String    @default("new") // "new" | "read" | "replied" | "archived"
   readAt      DateTime?
   repliedAt   DateTime?
-  notes       String?   @db.Text
+  notes       String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -178,11 +178,11 @@ model ContactSubmission {
 }
 
 model Book {
-  id          String    @id @default(uuid())
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   author      String?
   category    String    // "Health" | "Genzura" | "Ellen G. White Books" | "Bible" | "Inyandiko" | "Integuza" | "Others"
-  description String?   @db.Text
+  description String?
   coverImage  String?   // URL to cover image in Supabase Storage
   fileUrl     String?   // URL to PDF/document in Supabase Storage
   isbn        String?
@@ -201,7 +201,7 @@ model Book {
 }
 
 model CommitteeMember {
-  id       String   @id @default(uuid())
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
   position String
   name     String
   church   String
@@ -215,4 +215,18 @@ model CommitteeMember {
   updatedAt DateTime @updatedAt
 
   @@map("committee_members")
+}
+
+model EmailSubscriber {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  email        String   @unique
+  name         String?
+  subscribedAt DateTime @default(now())
+  status       String   @default("active") // "active" | "unsubscribed"
+  source       String?
+  tags         String[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("email_subscribers")
 }

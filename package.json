@@ -25,18 +25,16 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "postinstall": "prisma generate || true"
+    "postinstall": "prisma generate || echo \"prisma generate skipped\""
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
-    "@supabase/supabase-js": "^2.90.1",
     "@types/multer": "^2.0.0",
+    "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "multer": "^2.0.2",
-    "pg": "^8.16.3",
     "prisma": "^7.2.0",
     "vite": "^7.1.2",
     "zod": "^3.25.76"

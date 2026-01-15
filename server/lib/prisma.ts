@@ -2,7 +2,6 @@
 // Load environment variables first
 import "dotenv/config";
 import { createRequire } from "module";
-import dns from "dns";
 
 // This project runs as ESM ("type": "module"). Prisma packages are loaded via CommonJS entrypoints,
 // so we must use createRequire() instead of relying on `require` (which is undefined in ESM).
@@ -27,54 +26,13 @@ async function initPrisma(): Promise<any> {
 
   // Lazy import Prisma modules
   const { PrismaClient } = require("@prisma/client");
-  const { Pool } = require("pg");
-  const { PrismaPg } = require("@prisma/adapter-pg");
 
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
     throw new Error("DATABASE_URL environment variable is required");
   }
 
-  const url = new URL(databaseUrl);
-  const host = url.hostname;
-  const port = url.port ? Number(url.port) : 5432;
-  const user = decodeURIComponent(url.username || "");
-  const password = decodeURIComponent(url.password || "");
-  const database = url.pathname.replace(/^\//, "") || "postgres";
-
-  // Critical: force IPv4 resolution to avoid Render -> Supabase IPv6 ENETUNREACH.
-  // Note: Node `pg` does not reliably honor a `hostaddr` option, so we connect to the IPv4
-  // address as the host (bypasses DNS entirely) while keeping TLS SNI via `ssl.servername`.
-  let ipv4Address: string | null = null;
-  try {
-    const lookup = await dns.promises.lookup(host, { family: 4 });
-    ipv4Address = lookup.address;
-  } catch (err) {
-    console.warn("IPv4 DNS lookup failed; falling back to hostname for Postgres:", err);
-  }
-
-  console.log(
-    `Initializing Prisma Client (Postgres host: ${host}${
-      ipv4Address ? ` -> IPv4 ${ipv4Address}` : ""
-    })`
-  );
-
-  const pool = new Pool({
-    host: ipv4Address ?? host,
-    port,
-    user,
-    password,
-    database,
-    ssl:
-      process.env.NODE_ENV === "production"
-        ? { rejectUnauthorized: false, servername: host }
-        : undefined,
-  });
-
-  const adapter = new PrismaPg(pool);
-
   prismaInstance = new PrismaClient({
-    adapter,
     log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
   });
 

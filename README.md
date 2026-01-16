@@ -103,12 +103,10 @@ SYPE Ministry/
 │   └── lib/                  # Backend utilities
 │       ├── upload.ts         # Image upload config (Multer)
 │       ├── mediaUpload.ts    # Media upload config (Multer)
-│       ├── supabase.ts       # Supabase client & storage helpers
-│       ├── storageAdapter.ts # Storage adapter (local/Supabase)
-│       └── prisma.ts         # Database client
-│
-├── prisma/                   # Database schema
-│   └── schema.prisma         # Prisma schema (PostgreSQL)
+│       ├── mongoose.ts       # MongoDB (Mongoose) connection
+│       ├── cloudinary.ts     # Cloudinary client config
+│       ├── storageAdapter.ts # Storage adapter (local/Cloudinary)
+│       └── ...
 │
 ├── public/                   # Static assets
 │   ├── media/                # Media files (dev only)
@@ -300,18 +298,10 @@ pnpm format.fix
    - Project Name: `sype-ministry`
    - Save your database password!
 
-2. **Get Database Connection String**: Settings → Database → Connection String (URI)
+2. **Get MongoDB Connection String** (MongoDB Atlas): Cluster → Connect → Drivers
    ```
-   postgresql://postgres:[PASSWORD]@db.xxxxx.supabase.co:5432/postgres
+   mongodb+srv://<DB_USER>:<DB_PASSWORD>@<CLUSTER_HOST>/SYPEMinistry?retryWrites=true&w=majority
    ```
-
-3. **Get API Keys**: Settings → API
-   - Copy: Project URL, anon key, service_role key
-
-4. **Create Storage Buckets**: Storage → New Bucket
-   - Create `images` bucket (Public: ✅ Yes, File size: 50 MB)
-   - Create `videos` bucket (Public: ✅ Yes, File size: 500 MB)
-   - Create `documents` bucket (Public: ✅ Yes, File size: 100 MB)
 
 #### Step 2: Deploy Backend on Render (10 min)
 
@@ -322,17 +312,17 @@ pnpm format.fix
 3. **Configure**:
    - **Name**: `sype-ministry-api`
    - **Environment**: Node
-   - **Build Command**: `npm install && npm run build:server && npx prisma generate`
+   - **Build Command**: `npm install && npm run build:server`
    - **Start Command**: `node dist/server/node-build.mjs`
    - **Plan**: Free (or Starter for production)
 
 4. **Add Environment Variables** (Environment tab):
    ```env
    NODE_ENV=production
-   DATABASE_URL=postgresql://postgres:[PASSWORD]@db.xxxxx.supabase.co:5432/postgres
-   SUPABASE_URL=https://xxxxx.supabase.co
-   SUPABASE_ANON_KEY=your-anon-key
-   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+   DATABASE_URL=mongodb+srv://<DB_USER>:<DB_PASSWORD>@<CLUSTER_HOST>/SYPEMinistry?retryWrites=true&w=majority&appName=Cluster0
+   CLOUDINARY_CLOUD_NAME=your-cloud-name
+   CLOUDINARY_API_KEY=your-cloudinary-key
+   CLOUDINARY_API_SECRET=your-cloudinary-secret
    YOUTUBE_API_KEY=your-youtube-key
    ALLOWED_ORIGINS=https://your-netlify-app.netlify.app
    SITE_URL=https://your-netlify-app.netlify.app
@@ -760,8 +750,8 @@ VITE_API_BASE_URL=https://sype-ministry-api.onrender.com
 - `vite.config.server.ts` - Vite server build configuration
 - `tsconfig.json` - TypeScript configuration
 - `tailwind.config.ts` - Tailwind CSS configuration
-- `prisma/schema.prisma` - Database schema
-- `prisma.config.ts` - Prisma configuration
+- `server/lib/mongoose.ts` - MongoDB connection
+- `server/models/` - Mongoose models/schemas
 
 ### Deployment Files
 - `netlify.toml` - Netlify deployment configuration
@@ -773,7 +763,7 @@ VITE_API_BASE_URL=https://sype-ministry-api.onrender.com
 - `client/` - Frontend React application
 - `server/` - Backend Express API
 - `public/` - Static assets (images, media files)
-- `prisma/` - Database schema and migrations
+- MongoDB collections are created automatically when documents are inserted
 
 ---
 

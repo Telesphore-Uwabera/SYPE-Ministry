@@ -1,9 +1,17 @@
 import { RequestHandler, Request, Response } from "express";
 import { Member, NewsArticle, Project, Event, Donation, FAQ, MediaFile, EmailCampaign, Book, EmailSubscriber, CommitteeMember, Devotion } from "../../client/types/admin";
-import { prisma } from "../lib/prisma";
+import { connectMongo, isValidObjectId } from "../lib/mongoose";
+import {
+  BookModel,
+  CommitteeMemberModel,
+  ContactSubmissionModel,
+  DevotionModel,
+  FAQModel,
+  NewsArticleModel,
+  ProjectModel,
+} from "../models/core";
 
-// In-memory storage (being migrated to database)
-// All data is now stored in database via Prisma for persistence
+// In-memory storage (being migrated to MongoDB via Mongoose)
 let members: Member[] = []; // TODO: Migrate to database
 let events: Event[] = []; // TODO: Migrate to database
 let donations: Donation[] = []; // TODO: Migrate to database
@@ -14,6 +22,10 @@ let subscribers: EmailSubscriber[] = []; // TODO: Migrate to database
 
 // Helper function to generate ID
 const generateId = () => Date.now().toString();
+
+function idOf(doc: any): string {
+  return String(doc?._id ?? doc?.id ?? "");
+}
 
 // Members API
 export const getMembers: RequestHandler = (req, res) => {
@@ -64,20 +76,20 @@ export const getNews: RequestHandler = async (req, res) => {
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
     
     console.log("Fetching news articles, limit:", limit);
-    
-    const result = await prisma.newsArticle.findMany({
-      orderBy: { publishDate: "desc" },
-      take: limit,
-    });
+
+    await connectMongo();
+    const query = NewsArticleModel.find().sort({ publishDate: -1 });
+    if (limit) query.limit(limit);
+    const result = await query.exec();
     
     console.log(`Found ${result.length} news articles in database`);
     
-    // Convert Prisma format to API format
+    // Convert DB format to API format
     const formattedResult = result.map((article) => ({
-      id: article.id,
+      id: idOf(article),
       title: article.title,
       author: article.author,
-      publishDate: article.publishDate.toISOString(),
+      publishDate: new Date(article.publishDate).toISOString(),
       excerpt: article.excerpt,
       body: article.body,
       image: article.image || undefined,
@@ -85,7 +97,7 @@ export const getNews: RequestHandler = async (req, res) => {
       category: article.category || undefined,
       tags: article.tags || [],
       views: article.views,
-      createdAt: article.createdAt.toISOString(),
+      createdAt: (article.createdAt ? new Date(article.createdAt) : new Date()).toISOString(),
     }));
     
     console.log(`Returning ${formattedResult.length} formatted news articles`);
@@ -103,19 +115,19 @@ export const getNews: RequestHandler = async (req, res) => {
 export const getNewsArticle: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const article = await prisma.newsArticle.findUnique({
-      where: { id },
-    });
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const article = await NewsArticleModel.findById(id).exec();
     
     if (!article) {
       return res.status(404).json({ error: "Article not found" });
     }
     
     res.json({
-      id: article.id,
+      id: idOf(article),
       title: article.title,
       author: article.author,
-      publishDate: article.publishDate.toISOString(),
+      publishDate: new Date(article.publishDate).toISOString(),
       excerpt: article.excerpt,
       body: article.body,
       image: article.image || undefined,
@@ -123,7 +135,7 @@ export const getNewsArticle: RequestHandler = async (req, res) => {
       category: article.category || undefined,
       tags: article.tags || [],
       views: article.views,
-      createdAt: article.createdAt.toISOString(),
+      createdAt: (article.createdAt ? new Date(article.createdAt) : new Date()).toISOString(),
     });
   } catch (error: any) {
     console.error("Error fetching news article:", error);
@@ -138,27 +150,26 @@ export const createNews: RequestHandler = async (req, res) => {
     if (!title || !author || !excerpt || !body) {
       return res.status(400).json({ error: "Title, author, excerpt, and body are required" });
     }
-    
-    const newArticle = await prisma.newsArticle.create({
-      data: {
-        title,
-        author,
-        publishDate: publishDate ? new Date(publishDate) : new Date(),
-        excerpt,
-        body,
-        image: image || null,
-        featured: featured || false,
-        category: category || null,
-        tags: tags || [],
-        views: 0,
-      },
+
+    await connectMongo();
+    const newArticle = await NewsArticleModel.create({
+      title,
+      author,
+      publishDate: publishDate ? new Date(publishDate) : new Date(),
+      excerpt,
+      body,
+      image: image || undefined,
+      featured: !!featured,
+      category: category || undefined,
+      tags: tags || [],
+      views: 0,
     });
     
     res.status(201).json({
-      id: newArticle.id,
+      id: idOf(newArticle),
       title: newArticle.title,
       author: newArticle.author,
-      publishDate: newArticle.publishDate.toISOString(),
+      publishDate: new Date(newArticle.publishDate).toISOString(),
       excerpt: newArticle.excerpt,
       body: newArticle.body,
       image: newArticle.image || undefined,
@@ -166,16 +177,12 @@ export const createNews: RequestHandler = async (req, res) => {
       category: newArticle.category || undefined,
       tags: newArticle.tags || [],
       views: newArticle.views,
-      createdAt: newArticle.createdAt.toISOString(),
+      createdAt: (newArticle.createdAt ? new Date(newArticle.createdAt) : new Date()).toISOString(),
     });
   } catch (error: any) {
     console.error("Error creating news article:", error);
-    // Provide more detailed error information
-    if (error.code === "P2002") {
-      return res.status(400).json({ error: "A news article with this title already exists" });
-    }
-    if (error.code === "P2003") {
-      return res.status(400).json({ error: "Invalid reference in news article data" });
+    if (error?.code === 11000) {
+      return res.status(400).json({ error: "Duplicate news article" });
     }
     res.status(500).json({ 
       error: "Failed to create news article",
@@ -188,29 +195,29 @@ export const updateNews: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, author, publishDate, excerpt, body, image, featured, category, tags, views } = req.body;
-    
+
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
     if (author !== undefined) updateData.author = author;
     if (publishDate !== undefined) updateData.publishDate = new Date(publishDate);
     if (excerpt !== undefined) updateData.excerpt = excerpt;
     if (body !== undefined) updateData.body = body;
-    if (image !== undefined) updateData.image = image || null;
+    if (image !== undefined) updateData.image = image || undefined;
     if (featured !== undefined) updateData.featured = featured;
-    if (category !== undefined) updateData.category = category || null;
+    if (category !== undefined) updateData.category = category || undefined;
     if (tags !== undefined) updateData.tags = tags || [];
     if (views !== undefined) updateData.views = views;
-    
-    const updatedArticle = await prisma.newsArticle.update({
-      where: { id },
-      data: updateData,
-    });
+
+    await connectMongo();
+    const updatedArticle = await NewsArticleModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    if (!updatedArticle) return res.status(404).json({ error: "Article not found" });
     
     res.json({
-      id: updatedArticle.id,
+      id: idOf(updatedArticle),
       title: updatedArticle.title,
       author: updatedArticle.author,
-      publishDate: updatedArticle.publishDate.toISOString(),
+      publishDate: new Date(updatedArticle.publishDate).toISOString(),
       excerpt: updatedArticle.excerpt,
       body: updatedArticle.body,
       image: updatedArticle.image || undefined,
@@ -218,12 +225,9 @@ export const updateNews: RequestHandler = async (req, res) => {
       category: updatedArticle.category || undefined,
       tags: updatedArticle.tags || [],
       views: updatedArticle.views,
-      createdAt: updatedArticle.createdAt.toISOString(),
+      createdAt: (updatedArticle.createdAt ? new Date(updatedArticle.createdAt) : new Date()).toISOString(),
     });
   } catch (error: any) {
-    if (error.code === "P2025") {
-      return res.status(404).json({ error: "Article not found" });
-    }
     console.error("Error updating news article:", error);
     res.status(500).json({ error: "Failed to update news article" });
   }
@@ -232,14 +236,12 @@ export const updateNews: RequestHandler = async (req, res) => {
 export const deleteNews: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.newsArticle.delete({
-      where: { id },
-    });
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const deleted = await NewsArticleModel.findByIdAndDelete(id).exec();
+    if (!deleted) return res.status(404).json({ error: "Article not found" });
     res.status(204).send();
   } catch (error: any) {
-    if (error.code === "P2025") {
-      return res.status(404).json({ error: "Article not found" });
-    }
     console.error("Error deleting news article:", error);
     res.status(500).json({ error: "Failed to delete news article" });
   }
@@ -249,15 +251,14 @@ export const deleteNews: RequestHandler = async (req, res) => {
 export const getProjects: RequestHandler = async (req, res) => {
   try {
     console.log("Fetching projects from database");
-    
-    const result = await prisma.project.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+
+    await connectMongo();
+    const result = await ProjectModel.find().sort({ createdAt: -1 }).exec();
     
     console.log(`Found ${result.length} projects in database`);
     
     const formattedResult = result.map((project) => ({
-      id: project.id,
+      id: idOf(project),
       name: project.name,
       category: project.category,
       topic: project.topic,
@@ -266,10 +267,10 @@ export const getProjects: RequestHandler = async (req, res) => {
       status: project.status,
       year: project.year,
       teamMembers: project.teamMembers || [],
-      startDate: project.startDate?.toISOString().split("T")[0] || undefined,
-      endDate: project.endDate?.toISOString().split("T")[0] || undefined,
+      startDate: project.startDate ? new Date(project.startDate).toISOString().split("T")[0] : undefined,
+      endDate: project.endDate ? new Date(project.endDate).toISOString().split("T")[0] : undefined,
       budget: project.budget || undefined,
-      createdAt: project.createdAt.toISOString(),
+      createdAt: project.createdAt ? new Date(project.createdAt).toISOString() : new Date().toISOString(),
     }));
     
     console.log(`Returning ${formattedResult.length} formatted projects`);
@@ -288,16 +289,16 @@ export const getProjects: RequestHandler = async (req, res) => {
 export const getProject: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const project = await prisma.project.findUnique({
-      where: { id },
-    });
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const project = await ProjectModel.findById(id).exec();
     
     if (!project) {
       return res.status(404).json({ error: "Project not found" });
     }
     
     res.json({
-      id: project.id,
+      id: idOf(project),
       name: project.name,
       category: project.category,
       topic: project.topic,
@@ -306,10 +307,10 @@ export const getProject: RequestHandler = async (req, res) => {
       status: project.status,
       year: project.year,
       teamMembers: project.teamMembers || [],
-      startDate: project.startDate?.toISOString().split("T")[0] || undefined,
-      endDate: project.endDate?.toISOString().split("T")[0] || undefined,
+      startDate: project.startDate ? new Date(project.startDate).toISOString().split("T")[0] : undefined,
+      endDate: project.endDate ? new Date(project.endDate).toISOString().split("T")[0] : undefined,
       budget: project.budget || undefined,
-      createdAt: project.createdAt.toISOString(),
+      createdAt: project.createdAt ? new Date(project.createdAt).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
     console.error("Error fetching project:", error);
@@ -324,25 +325,24 @@ export const createProject: RequestHandler = async (req, res) => {
     if (!name || !category || !topic || !description || !distribution || !status || !year) {
       return res.status(400).json({ error: "Name, category, topic, description, distribution, status, and year are required" });
     }
-    
-    const newProject = await prisma.project.create({
-      data: {
-        name,
-        category,
-        topic,
-        description,
-        distribution,
-        status,
-        year,
-        teamMembers: teamMembers || [],
-        startDate: startDate ? new Date(startDate) : null,
-        endDate: endDate ? new Date(endDate) : null,
-        budget: budget || null,
-      },
+
+    await connectMongo();
+    const newProject = await ProjectModel.create({
+      name,
+      category,
+      topic,
+      description,
+      distribution,
+      status,
+      year,
+      teamMembers: teamMembers || [],
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+      budget: budget ?? undefined,
     });
     
     res.status(201).json({
-      id: newProject.id,
+      id: idOf(newProject),
       name: newProject.name,
       category: newProject.category,
       topic: newProject.topic,
@@ -351,19 +351,15 @@ export const createProject: RequestHandler = async (req, res) => {
       status: newProject.status,
       year: newProject.year,
       teamMembers: newProject.teamMembers || [],
-      startDate: newProject.startDate?.toISOString().split("T")[0] || undefined,
-      endDate: newProject.endDate?.toISOString().split("T")[0] || undefined,
+      startDate: newProject.startDate ? new Date(newProject.startDate).toISOString().split("T")[0] : undefined,
+      endDate: newProject.endDate ? new Date(newProject.endDate).toISOString().split("T")[0] : undefined,
       budget: newProject.budget || undefined,
-      createdAt: newProject.createdAt.toISOString(),
+      createdAt: newProject.createdAt ? new Date(newProject.createdAt).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
     console.error("Error creating project:", error);
-    // Provide more detailed error information
-    if (error.code === "P2002") {
-      return res.status(400).json({ error: "A project with this name already exists" });
-    }
-    if (error.code === "P2003") {
-      return res.status(400).json({ error: "Invalid reference in project data" });
+    if (error?.code === 11000) {
+      return res.status(400).json({ error: "Duplicate project" });
     }
     res.status(500).json({ 
       error: "Failed to create project",
@@ -377,6 +373,7 @@ export const updateProject: RequestHandler = async (req, res) => {
     const { id } = req.params;
     const { name, category, topic, description, distribution, status, year, teamMembers, startDate, endDate, budget } = req.body;
     
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
     if (category !== undefined) updateData.category = category;
@@ -386,17 +383,16 @@ export const updateProject: RequestHandler = async (req, res) => {
     if (status !== undefined) updateData.status = status;
     if (year !== undefined) updateData.year = year;
     if (teamMembers !== undefined) updateData.teamMembers = teamMembers || [];
-    if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : null;
-    if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : null;
-    if (budget !== undefined) updateData.budget = budget || null;
-    
-    const updatedProject = await prisma.project.update({
-      where: { id },
-      data: updateData,
-    });
+    if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : undefined;
+    if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : undefined;
+    if (budget !== undefined) updateData.budget = budget ?? undefined;
+
+    await connectMongo();
+    const updatedProject = await ProjectModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    if (!updatedProject) return res.status(404).json({ error: "Project not found" });
     
     res.json({
-      id: updatedProject.id,
+      id: idOf(updatedProject),
       name: updatedProject.name,
       category: updatedProject.category,
       topic: updatedProject.topic,
@@ -405,15 +401,12 @@ export const updateProject: RequestHandler = async (req, res) => {
       status: updatedProject.status,
       year: updatedProject.year,
       teamMembers: updatedProject.teamMembers || [],
-      startDate: updatedProject.startDate?.toISOString().split("T")[0] || undefined,
-      endDate: updatedProject.endDate?.toISOString().split("T")[0] || undefined,
+      startDate: updatedProject.startDate ? new Date(updatedProject.startDate).toISOString().split("T")[0] : undefined,
+      endDate: updatedProject.endDate ? new Date(updatedProject.endDate).toISOString().split("T")[0] : undefined,
       budget: updatedProject.budget || undefined,
-      createdAt: updatedProject.createdAt.toISOString(),
+      createdAt: updatedProject.createdAt ? new Date(updatedProject.createdAt).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
-    if (error.code === "P2025") {
-      return res.status(404).json({ error: "Project not found" });
-    }
     console.error("Error updating project:", error);
     res.status(500).json({ error: "Failed to update project" });
   }
@@ -422,14 +415,12 @@ export const updateProject: RequestHandler = async (req, res) => {
 export const deleteProject: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.project.delete({
-      where: { id },
-    });
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const deleted = await ProjectModel.findByIdAndDelete(id).exec();
+    if (!deleted) return res.status(404).json({ error: "Project not found" });
     res.status(204).send();
   } catch (error: any) {
-    if (error.code === "P2025") {
-      return res.status(404).json({ error: "Project not found" });
-    }
     console.error("Error deleting project:", error);
     res.status(500).json({ error: "Failed to delete project" });
   }
@@ -544,17 +535,16 @@ export const deleteDonation: RequestHandler = (req, res) => {
 // FAQs API
 export const getFAQs: RequestHandler = async (req, res) => {
   try {
-    const result = await prisma.fAQ.findMany({
-      orderBy: [{ category: "asc" }, { order: "asc" }],
-    });
+    await connectMongo();
+    const result = await FAQModel.find().sort({ category: 1, order: 1 }).exec();
     
     const formattedResult = result.map((faq) => ({
-      id: faq.id,
+      id: idOf(faq),
       category: faq.category,
       question: faq.question,
       answer: faq.answer,
       order: faq.order,
-      createdAt: faq.createdAt.toISOString(),
+      createdAt: faq.createdAt ? new Date(faq.createdAt).toISOString() : new Date().toISOString(),
     }));
     
     res.json(formattedResult);
@@ -567,21 +557,21 @@ export const getFAQs: RequestHandler = async (req, res) => {
 export const getFAQ: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const faq = await prisma.fAQ.findUnique({
-      where: { id },
-    });
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const faq = await FAQModel.findById(id).exec();
     
     if (!faq) {
       return res.status(404).json({ error: "FAQ not found" });
     }
     
     res.json({
-      id: faq.id,
+      id: idOf(faq),
       category: faq.category,
       question: faq.question,
       answer: faq.answer,
       order: faq.order,
-      createdAt: faq.createdAt.toISOString(),
+      createdAt: faq.createdAt ? new Date(faq.createdAt).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
     console.error("Error fetching FAQ:", error);
@@ -596,32 +586,27 @@ export const createFAQ: RequestHandler = async (req, res) => {
     if (!category || !question || !answer) {
       return res.status(400).json({ error: "Category, question, and answer are required" });
     }
-    
-    const newFAQ = await prisma.fAQ.create({
-      data: {
-        category,
-        question,
-        answer,
-        order: order || 0,
-      },
+
+    await connectMongo();
+    const newFAQ = await FAQModel.create({
+      category,
+      question,
+      answer,
+      order: order || 0,
     });
     
     res.status(201).json({
-      id: newFAQ.id,
+      id: idOf(newFAQ),
       category: newFAQ.category,
       question: newFAQ.question,
       answer: newFAQ.answer,
       order: newFAQ.order,
-      createdAt: newFAQ.createdAt.toISOString(),
+      createdAt: newFAQ.createdAt ? new Date(newFAQ.createdAt).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
     console.error("Error creating FAQ:", error);
-    // Provide more detailed error information
-    if (error.code === "P2002") {
-      return res.status(400).json({ error: "A FAQ with this information already exists" });
-    }
-    if (error.code === "P2003") {
-      return res.status(400).json({ error: "Invalid reference in FAQ data" });
+    if (error?.code === 11000) {
+      return res.status(400).json({ error: "Duplicate FAQ" });
     }
     res.status(500).json({ 
       error: "Failed to create FAQ",
@@ -635,29 +620,26 @@ export const updateFAQ: RequestHandler = async (req, res) => {
     const { id } = req.params;
     const { category, question, answer, order } = req.body;
     
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     const updateData: any = {};
     if (category !== undefined) updateData.category = category;
     if (question !== undefined) updateData.question = question;
     if (answer !== undefined) updateData.answer = answer;
     if (order !== undefined) updateData.order = order;
-    
-    const updatedFAQ = await prisma.fAQ.update({
-      where: { id },
-      data: updateData,
-    });
+
+    await connectMongo();
+    const updatedFAQ = await FAQModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    if (!updatedFAQ) return res.status(404).json({ error: "FAQ not found" });
     
     res.json({
-      id: updatedFAQ.id,
+      id: idOf(updatedFAQ),
       category: updatedFAQ.category,
       question: updatedFAQ.question,
       answer: updatedFAQ.answer,
       order: updatedFAQ.order,
-      createdAt: updatedFAQ.createdAt.toISOString(),
+      createdAt: updatedFAQ.createdAt ? new Date(updatedFAQ.createdAt).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
-    if (error.code === "P2025") {
-      return res.status(404).json({ error: "FAQ not found" });
-    }
     console.error("Error updating FAQ:", error);
     res.status(500).json({ error: "Failed to update FAQ" });
   }
@@ -666,14 +648,12 @@ export const updateFAQ: RequestHandler = async (req, res) => {
 export const deleteFAQ: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.fAQ.delete({
-      where: { id },
-    });
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const deleted = await FAQModel.findByIdAndDelete(id).exec();
+    if (!deleted) return res.status(404).json({ error: "FAQ not found" });
     res.status(204).send();
   } catch (error: any) {
-    if (error.code === "P2025") {
-      return res.status(404).json({ error: "FAQ not found" });
-    }
     console.error("Error deleting FAQ:", error);
     res.status(500).json({ error: "Failed to delete FAQ" });
   }
@@ -769,20 +749,16 @@ export const getBooks: RequestHandler = async (req, res) => {
     const category = req.query.category as string | undefined;
     console.log("Fetching books, category filter:", category);
     
-    let where: any = {};
-    if (category && category !== "All") {
-      where.category = category;
-    }
-    
-    const result = await prisma.book.findMany({
-      where,
-      orderBy: { uploadDate: "desc" },
-    });
+    const where: any = {};
+    if (category && category !== "All") where.category = category;
+
+    await connectMongo();
+    const result = await BookModel.find(where).sort({ uploadDate: -1 }).exec();
     
     console.log(`Found ${result.length} books in database`);
     
     const formattedResult = result.map((book) => ({
-      id: book.id,
+      id: idOf(book),
       title: book.title,
       author: book.author || undefined,
       category: book.category,
@@ -791,13 +767,13 @@ export const getBooks: RequestHandler = async (req, res) => {
       fileUrl: book.fileUrl || undefined,
       isbn: book.isbn || undefined,
       publisher: book.publisher || undefined,
-      publishDate: book.publishDate?.toISOString().split("T")[0] || undefined,
+      publishDate: book.publishDate ? new Date(book.publishDate).toISOString().split("T")[0] : undefined,
       language: book.language || undefined,
       pages: book.pages || undefined,
       tags: book.tags || [],
       featured: book.featured,
       downloads: book.downloads,
-      uploadDate: book.uploadDate.toISOString(),
+      uploadDate: book.uploadDate ? new Date(book.uploadDate).toISOString() : new Date().toISOString(),
     }));
     
     console.log(`Returning ${formattedResult.length} formatted books`);
@@ -816,16 +792,16 @@ export const getBooks: RequestHandler = async (req, res) => {
 export const getBook: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const book = await prisma.book.findUnique({
-      where: { id },
-    });
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const book = await BookModel.findById(id).exec();
     
     if (!book) {
       return res.status(404).json({ error: "Book not found" });
     }
     
     res.json({
-      id: book.id,
+      id: idOf(book),
       title: book.title,
       author: book.author || undefined,
       category: book.category,
@@ -834,13 +810,13 @@ export const getBook: RequestHandler = async (req, res) => {
       fileUrl: book.fileUrl || undefined,
       isbn: book.isbn || undefined,
       publisher: book.publisher || undefined,
-      publishDate: book.publishDate?.toISOString().split("T")[0] || undefined,
+      publishDate: book.publishDate ? new Date(book.publishDate).toISOString().split("T")[0] : undefined,
       language: book.language || undefined,
       pages: book.pages || undefined,
       tags: book.tags || [],
       featured: book.featured,
       downloads: book.downloads,
-      uploadDate: book.uploadDate.toISOString(),
+      uploadDate: book.uploadDate ? new Date(book.uploadDate).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
     console.error("Error fetching book:", error);
@@ -855,28 +831,28 @@ export const createBook: RequestHandler = async (req, res) => {
     if (!title || !category) {
       return res.status(400).json({ error: "Title and category are required" });
     }
-    
-    const newBook = await prisma.book.create({
-      data: {
-        title,
-        author: author || null,
-        category,
-        description: description || null,
-        coverImage: coverImage || null,
-        fileUrl: fileUrl || null,
-        isbn: isbn || null,
-        publisher: publisher || null,
-        publishDate: publishDate ? new Date(publishDate) : null,
-        language: language || null,
-        pages: pages || null,
-        tags: tags || [],
-        featured: featured || false,
-        downloads: 0,
-      },
+
+    await connectMongo();
+    const newBook = await BookModel.create({
+      title,
+      author: author || undefined,
+      category,
+      description: description || undefined,
+      coverImage: coverImage || undefined,
+      fileUrl: fileUrl || undefined,
+      isbn: isbn || undefined,
+      publisher: publisher || undefined,
+      publishDate: publishDate ? new Date(publishDate) : undefined,
+      language: language || undefined,
+      pages: pages || undefined,
+      tags: tags || [],
+      featured: !!featured,
+      downloads: 0,
+      uploadDate: new Date(),
     });
     
     res.status(201).json({
-      id: newBook.id,
+      id: idOf(newBook),
       title: newBook.title,
       author: newBook.author || undefined,
       category: newBook.category,
@@ -885,22 +861,18 @@ export const createBook: RequestHandler = async (req, res) => {
       fileUrl: newBook.fileUrl || undefined,
       isbn: newBook.isbn || undefined,
       publisher: newBook.publisher || undefined,
-      publishDate: newBook.publishDate?.toISOString().split("T")[0] || undefined,
+      publishDate: newBook.publishDate ? new Date(newBook.publishDate).toISOString().split("T")[0] : undefined,
       language: newBook.language || undefined,
       pages: newBook.pages || undefined,
       tags: newBook.tags || [],
       featured: newBook.featured,
       downloads: newBook.downloads,
-      uploadDate: newBook.uploadDate.toISOString(),
+      uploadDate: newBook.uploadDate ? new Date(newBook.uploadDate).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
     console.error("Error creating book:", error);
-    // Provide more detailed error information
-    if (error.code === "P2002") {
-      return res.status(400).json({ error: "A book with this information already exists" });
-    }
-    if (error.code === "P2003") {
-      return res.status(400).json({ error: "Invalid reference in book data" });
+    if (error?.code === 11000) {
+      return res.status(400).json({ error: "Duplicate book" });
     }
     res.status(500).json({ 
       error: "Failed to create book",
@@ -914,28 +886,28 @@ export const updateBook: RequestHandler = async (req, res) => {
     const { id } = req.params;
     const { title, author, category, description, coverImage, fileUrl, isbn, publisher, publishDate, language, pages, tags, featured } = req.body;
     
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
-    if (author !== undefined) updateData.author = author || null;
+    if (author !== undefined) updateData.author = author || undefined;
     if (category !== undefined) updateData.category = category;
-    if (description !== undefined) updateData.description = description || null;
-    if (coverImage !== undefined) updateData.coverImage = coverImage || null;
-    if (fileUrl !== undefined) updateData.fileUrl = fileUrl || null;
-    if (isbn !== undefined) updateData.isbn = isbn || null;
-    if (publisher !== undefined) updateData.publisher = publisher || null;
-    if (publishDate !== undefined) updateData.publishDate = publishDate ? new Date(publishDate) : null;
-    if (language !== undefined) updateData.language = language || null;
-    if (pages !== undefined) updateData.pages = pages || null;
+    if (description !== undefined) updateData.description = description || undefined;
+    if (coverImage !== undefined) updateData.coverImage = coverImage || undefined;
+    if (fileUrl !== undefined) updateData.fileUrl = fileUrl || undefined;
+    if (isbn !== undefined) updateData.isbn = isbn || undefined;
+    if (publisher !== undefined) updateData.publisher = publisher || undefined;
+    if (publishDate !== undefined) updateData.publishDate = publishDate ? new Date(publishDate) : undefined;
+    if (language !== undefined) updateData.language = language || undefined;
+    if (pages !== undefined) updateData.pages = pages || undefined;
     if (tags !== undefined) updateData.tags = tags || [];
     if (featured !== undefined) updateData.featured = featured;
-    
-    const updatedBook = await prisma.book.update({
-      where: { id },
-      data: updateData,
-    });
+
+    await connectMongo();
+    const updatedBook = await BookModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    if (!updatedBook) return res.status(404).json({ error: "Book not found" });
     
     res.json({
-      id: updatedBook.id,
+      id: idOf(updatedBook),
       title: updatedBook.title,
       author: updatedBook.author || undefined,
       category: updatedBook.category,
@@ -944,18 +916,15 @@ export const updateBook: RequestHandler = async (req, res) => {
       fileUrl: updatedBook.fileUrl || undefined,
       isbn: updatedBook.isbn || undefined,
       publisher: updatedBook.publisher || undefined,
-      publishDate: updatedBook.publishDate?.toISOString().split("T")[0] || undefined,
+      publishDate: updatedBook.publishDate ? new Date(updatedBook.publishDate).toISOString().split("T")[0] : undefined,
       language: updatedBook.language || undefined,
       pages: updatedBook.pages || undefined,
       tags: updatedBook.tags || [],
       featured: updatedBook.featured,
       downloads: updatedBook.downloads,
-      uploadDate: updatedBook.uploadDate.toISOString(),
+      uploadDate: updatedBook.uploadDate ? new Date(updatedBook.uploadDate).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
-    if (error.code === "P2025") {
-      return res.status(404).json({ error: "Book not found" });
-    }
     console.error("Error updating book:", error);
     res.status(500).json({ error: "Failed to update book" });
   }
@@ -964,14 +933,12 @@ export const updateBook: RequestHandler = async (req, res) => {
 export const deleteBook: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.book.delete({
-      where: { id },
-    });
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const deleted = await BookModel.findByIdAndDelete(id).exec();
+    if (!deleted) return res.status(404).json({ error: "Book not found" });
     res.status(204).send();
   } catch (error: any) {
-    if (error.code === "P2025") {
-      return res.status(404).json({ error: "Book not found" });
-    }
     console.error("Error deleting book:", error);
     res.status(500).json({ error: "Failed to delete book" });
   }
@@ -980,19 +947,14 @@ export const deleteBook: RequestHandler = async (req, res) => {
 export const trackBookDownload: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const book = await prisma.book.findUnique({
-      where: { id },
-    });
-    
-    if (!book) {
-      return res.status(404).json({ error: "Book not found" });
-    }
-    
-    const updatedBook = await prisma.book.update({
-      where: { id },
-      data: { downloads: book.downloads + 1 },
-    });
-    
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const updatedBook = await BookModel.findByIdAndUpdate(
+      id,
+      { $inc: { downloads: 1 } },
+      { new: true }
+    ).exec();
+    if (!updatedBook) return res.status(404).json({ error: "Book not found" });
     res.json({ downloads: updatedBook.downloads });
   } catch (error: any) {
     console.error("Error tracking book download:", error);
@@ -1114,17 +1076,12 @@ export const getCommitteeMembers: RequestHandler = async (req, res) => {
     if (active) {
       where.active = true;
     }
-    
-    const result = await prisma.committeeMember.findMany({
-      where,
-      orderBy: [
-        { category: "asc" },
-        { order: "asc" },
-      ],
-    });
+
+    await connectMongo();
+    const result = await CommitteeMemberModel.find(where).sort({ category: 1, order: 1 }).exec();
     
     const formattedResult = result.map((member) => ({
-      id: member.id,
+      id: idOf(member),
       position: member.position,
       name: member.name,
       church: member.church,
@@ -1146,16 +1103,16 @@ export const getCommitteeMembers: RequestHandler = async (req, res) => {
 export const getCommitteeMember: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const member = await prisma.committeeMember.findUnique({
-      where: { id },
-    });
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const member = await CommitteeMemberModel.findById(id).exec();
     
     if (!member) {
       return res.status(404).json({ error: "Committee member not found" });
     }
     
     res.json({
-      id: member.id,
+      id: idOf(member),
       position: member.position,
       name: member.name,
       church: member.church,
@@ -1191,28 +1148,26 @@ export const createCommitteeMember: RequestHandler = async (req, res) => {
     // Get count for order if not provided
     let memberOrder = order;
     if (memberOrder === undefined || memberOrder === null) {
-      const count = await prisma.committeeMember.count({
-        where: { category },
-      });
+      await connectMongo();
+      const count = await CommitteeMemberModel.countDocuments({ category }).exec();
       memberOrder = count + 1;
     }
-    
-    const newMember = await prisma.committeeMember.create({
-      data: {
-        position: position.trim(),
-        name: name.trim(),
-        church: church.trim(),
-        phone: phone.trim(),
-        category: category as "leadership" | "team" | "auditor" | "asa_representatives" | "board_chancellors",
-        image: image?.trim() || null,
-        email: email?.trim() || null,
-        order: memberOrder,
-        active: active !== undefined ? active : true,
-      },
+
+    await connectMongo();
+    const newMember = await CommitteeMemberModel.create({
+      position: position.trim(),
+      name: name.trim(),
+      church: church.trim(),
+      phone: phone.trim(),
+      category,
+      image: image?.trim() || undefined,
+      email: email?.trim() || undefined,
+      order: memberOrder,
+      active: active !== undefined ? active : true,
     });
     
     res.status(201).json({
-      id: newMember.id,
+      id: idOf(newMember),
       position: newMember.position,
       name: newMember.name,
       church: newMember.church,
@@ -1225,12 +1180,8 @@ export const createCommitteeMember: RequestHandler = async (req, res) => {
     });
   } catch (error: any) {
     console.error("Error creating committee member:", error);
-    // Provide more detailed error information
-    if (error.code === "P2002") {
-      return res.status(400).json({ error: "A committee member with this information already exists" });
-    }
-    if (error.code === "P2003") {
-      return res.status(400).json({ error: "Invalid reference in committee member data" });
+    if (error?.code === 11000) {
+      return res.status(400).json({ error: "Duplicate committee member" });
     }
     res.status(500).json({ 
       error: "Failed to create committee member",
@@ -1244,24 +1195,24 @@ export const updateCommitteeMember: RequestHandler = async (req, res) => {
     const { id } = req.params;
     const { position, name, church, phone, category, image, email, order, active } = req.body;
     
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     const updateData: any = {};
     if (position !== undefined) updateData.position = position;
     if (name !== undefined) updateData.name = name;
     if (church !== undefined) updateData.church = church;
     if (phone !== undefined) updateData.phone = phone;
     if (category !== undefined) updateData.category = category;
-    if (image !== undefined) updateData.image = image || null;
-    if (email !== undefined) updateData.email = email || null;
+    if (image !== undefined) updateData.image = image || undefined;
+    if (email !== undefined) updateData.email = email || undefined;
     if (order !== undefined) updateData.order = order;
     if (active !== undefined) updateData.active = active;
-    
-    const updatedMember = await prisma.committeeMember.update({
-      where: { id },
-      data: updateData,
-    });
+
+    await connectMongo();
+    const updatedMember = await CommitteeMemberModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    if (!updatedMember) return res.status(404).json({ error: "Committee member not found" });
     
     res.json({
-      id: updatedMember.id,
+      id: idOf(updatedMember),
       position: updatedMember.position,
       name: updatedMember.name,
       church: updatedMember.church,
@@ -1273,9 +1224,6 @@ export const updateCommitteeMember: RequestHandler = async (req, res) => {
       active: updatedMember.active,
     });
   } catch (error: any) {
-    if (error.code === "P2025") {
-      return res.status(404).json({ error: "Committee member not found" });
-    }
     console.error("Error updating committee member:", error);
     res.status(500).json({ error: "Failed to update committee member" });
   }
@@ -1284,14 +1232,12 @@ export const updateCommitteeMember: RequestHandler = async (req, res) => {
 export const deleteCommitteeMember: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.committeeMember.delete({
-      where: { id },
-    });
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const deleted = await CommitteeMemberModel.findByIdAndDelete(id).exec();
+    if (!deleted) return res.status(404).json({ error: "Committee member not found" });
     res.status(204).send();
   } catch (error: any) {
-    if (error.code === "P2025") {
-      return res.status(404).json({ error: "Committee member not found" });
-    }
     console.error("Error deleting committee member:", error);
     res.status(500).json({ error: "Failed to delete committee member" });
   }
@@ -1312,32 +1258,32 @@ export const getDevotions: RequestHandler = async (req, res) => {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - (days || 7));
       cutoffDate.setHours(0, 0, 0, 0);
-      where.date = { gte: cutoffDate };
+      where.date = { $gte: cutoffDate };
       console.log("Date filter applied, cutoff date:", cutoffDate.toISOString());
     }
     
     // Fetch from database
     console.log("Querying devotions with where clause:", JSON.stringify(where));
-    let result = await prisma.devotion.findMany({
-      where,
-      orderBy: { date: "desc" },
-      take: req.query.limit ? parseInt(req.query.limit as string) : undefined,
-    });
+    await connectMongo();
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+    const q = DevotionModel.find(where).sort({ date: -1 });
+    if (limit) q.limit(limit);
+    const result = await q.exec();
     
     console.log(`Found ${result.length} devotions in database`);
     
-    // Convert Prisma format to API format
+    // Convert DB format to API format
     const formattedResult = result.map((d) => ({
-      id: d.id,
+      id: idOf(d),
       title: d.title,
-      date: d.date.toISOString().split("T")[0],
+      date: new Date(d.date).toISOString().split("T")[0],
       excerpt: d.excerpt,
       content: d.content || undefined,
       image: d.image || undefined,
       featuredVideoUrl: d.featuredVideoUrl || undefined,
       featuredVideoThumbnail: d.featuredVideoThumbnail || undefined,
       featuredVideoTitle: d.featuredVideoTitle || undefined,
-      createdAt: d.createdAt.toISOString(),
+      createdAt: d.createdAt ? new Date(d.createdAt).toISOString() : new Date().toISOString(),
     }));
     
     console.log(`Returning ${formattedResult.length} formatted devotions`);
@@ -1356,26 +1302,26 @@ export const getDevotions: RequestHandler = async (req, res) => {
 export const getDevotion: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const devotion = await prisma.devotion.findUnique({
-      where: { id },
-    });
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const devotion = await DevotionModel.findById(id).exec();
     
     if (!devotion) {
       return res.status(404).json({ error: "Devotion not found" });
     }
     
-    // Convert Prisma format to API format
+    // Convert DB format to API format
     res.json({
-      id: devotion.id,
+      id: idOf(devotion),
       title: devotion.title,
-      date: devotion.date.toISOString().split("T")[0],
+      date: new Date(devotion.date).toISOString().split("T")[0],
       excerpt: devotion.excerpt,
       content: devotion.content || undefined,
       image: devotion.image || undefined,
       featuredVideoUrl: devotion.featuredVideoUrl || undefined,
       featuredVideoThumbnail: devotion.featuredVideoThumbnail || undefined,
       featuredVideoTitle: devotion.featuredVideoTitle || undefined,
-      createdAt: devotion.createdAt.toISOString(),
+      createdAt: devotion.createdAt ? new Date(devotion.createdAt).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
     console.error("Error fetching devotion:", error);
@@ -1402,41 +1348,35 @@ export const createDevotion: RequestHandler = async (req, res) => {
       return res.status(400).json({ error: "Invalid date format" });
     }
     
-    // Create in database
-    const newDevotion = await prisma.devotion.create({
-      data: {
-        title: title.trim(),
-        date: devotionDate,
-        excerpt: excerpt.trim(),
-        content: content?.trim() || null,
-        image: image?.trim() || null,
-        featuredVideoUrl: featuredVideoUrl?.trim() || null,
-        featuredVideoThumbnail: featuredVideoThumbnail?.trim() || null,
-        featuredVideoTitle: featuredVideoTitle?.trim() || null,
-      },
+    await connectMongo();
+    const newDevotion = await DevotionModel.create({
+      title: title.trim(),
+      date: devotionDate,
+      excerpt: excerpt.trim(),
+      content: content?.trim() || undefined,
+      image: image?.trim() || undefined,
+      featuredVideoUrl: featuredVideoUrl?.trim() || undefined,
+      featuredVideoThumbnail: featuredVideoThumbnail?.trim() || undefined,
+      featuredVideoTitle: featuredVideoTitle?.trim() || undefined,
     });
     
-    // Convert Prisma format to API format
+    // Convert DB format to API format
     res.status(201).json({
-      id: newDevotion.id,
+      id: idOf(newDevotion),
       title: newDevotion.title,
-      date: newDevotion.date.toISOString().split("T")[0],
+      date: new Date(newDevotion.date).toISOString().split("T")[0],
       excerpt: newDevotion.excerpt,
       content: newDevotion.content || undefined,
       image: newDevotion.image || undefined,
       featuredVideoUrl: newDevotion.featuredVideoUrl || undefined,
       featuredVideoThumbnail: newDevotion.featuredVideoThumbnail || undefined,
       featuredVideoTitle: newDevotion.featuredVideoTitle || undefined,
-      createdAt: newDevotion.createdAt.toISOString(),
+      createdAt: newDevotion.createdAt ? new Date(newDevotion.createdAt).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
     console.error("Error creating devotion:", error);
-    // Provide more detailed error information
-    if (error.code === "P2002") {
-      return res.status(400).json({ error: "A devotion with this title already exists" });
-    }
-    if (error.code === "P2003") {
-      return res.status(400).json({ error: "Invalid reference in devotion data" });
+    if (error?.code === 11000) {
+      return res.status(400).json({ error: "Duplicate devotion" });
     }
     res.status(500).json({ 
       error: "Failed to create devotion",
@@ -1450,39 +1390,36 @@ export const updateDevotion: RequestHandler = async (req, res) => {
     const { id } = req.params;
     const { title, date, excerpt, content, image, featuredVideoUrl, featuredVideoThumbnail, featuredVideoTitle } = req.body;
     
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     // Prepare update data
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
     if (date !== undefined) updateData.date = new Date(date);
     if (excerpt !== undefined) updateData.excerpt = excerpt;
-    if (content !== undefined) updateData.content = content || null;
-    if (image !== undefined) updateData.image = image || null;
-    if (featuredVideoUrl !== undefined) updateData.featuredVideoUrl = featuredVideoUrl || null;
-    if (featuredVideoThumbnail !== undefined) updateData.featuredVideoThumbnail = featuredVideoThumbnail || null;
-    if (featuredVideoTitle !== undefined) updateData.featuredVideoTitle = featuredVideoTitle || null;
+    if (content !== undefined) updateData.content = content || undefined;
+    if (image !== undefined) updateData.image = image || undefined;
+    if (featuredVideoUrl !== undefined) updateData.featuredVideoUrl = featuredVideoUrl || undefined;
+    if (featuredVideoThumbnail !== undefined) updateData.featuredVideoThumbnail = featuredVideoThumbnail || undefined;
+    if (featuredVideoTitle !== undefined) updateData.featuredVideoTitle = featuredVideoTitle || undefined;
+
+    await connectMongo();
+    const updatedDevotion = await DevotionModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    if (!updatedDevotion) return res.status(404).json({ error: "Devotion not found" });
     
-    const updatedDevotion = await prisma.devotion.update({
-      where: { id },
-      data: updateData,
-    });
-    
-    // Convert Prisma format to API format
+    // Convert DB format to API format
     res.json({
-      id: updatedDevotion.id,
+      id: idOf(updatedDevotion),
       title: updatedDevotion.title,
-      date: updatedDevotion.date.toISOString().split("T")[0],
+      date: new Date(updatedDevotion.date).toISOString().split("T")[0],
       excerpt: updatedDevotion.excerpt,
       content: updatedDevotion.content || undefined,
       image: updatedDevotion.image || undefined,
       featuredVideoUrl: updatedDevotion.featuredVideoUrl || undefined,
       featuredVideoThumbnail: updatedDevotion.featuredVideoThumbnail || undefined,
       featuredVideoTitle: updatedDevotion.featuredVideoTitle || undefined,
-      createdAt: updatedDevotion.createdAt.toISOString(),
+      createdAt: updatedDevotion.createdAt ? new Date(updatedDevotion.createdAt).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
-    if (error.code === "P2025") {
-      return res.status(404).json({ error: "Devotion not found" });
-    }
     console.error("Error updating devotion:", error);
     res.status(500).json({ error: "Failed to update devotion" });
   }
@@ -1491,14 +1428,12 @@ export const updateDevotion: RequestHandler = async (req, res) => {
 export const deleteDevotion: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.devotion.delete({
-      where: { id },
-    });
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const deleted = await DevotionModel.findByIdAndDelete(id).exec();
+    if (!deleted) return res.status(404).json({ error: "Devotion not found" });
     res.status(204).send();
   } catch (error: any) {
-    if (error.code === "P2025") {
-      return res.status(404).json({ error: "Devotion not found" });
-    }
     console.error("Error deleting devotion:", error);
     res.status(500).json({ error: "Failed to delete devotion" });
   }
@@ -1513,24 +1448,22 @@ export const getContactSubmissions: RequestHandler = async (req, res) => {
     if (status) {
       where.status = status;
     }
-    
-    const result = await prisma.contactSubmission.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-    });
+
+    await connectMongo();
+    const result = await ContactSubmissionModel.find(where).sort({ createdAt: -1 }).exec();
     
     const formattedResult = result.map((submission) => ({
-      id: submission.id,
+      id: idOf(submission),
       name: submission.name,
       email: submission.email,
       subject: submission.subject,
       message: submission.message,
       status: submission.status,
-      readAt: submission.readAt?.toISOString() || undefined,
-      repliedAt: submission.repliedAt?.toISOString() || undefined,
+      readAt: submission.readAt ? new Date(submission.readAt).toISOString() : undefined,
+      repliedAt: submission.repliedAt ? new Date(submission.repliedAt).toISOString() : undefined,
       notes: submission.notes || undefined,
-      createdAt: submission.createdAt.toISOString(),
-      updatedAt: submission.updatedAt.toISOString(),
+      createdAt: submission.createdAt ? new Date(submission.createdAt).toISOString() : new Date().toISOString(),
+      updatedAt: submission.updatedAt ? new Date(submission.updatedAt).toISOString() : new Date().toISOString(),
     }));
     
     res.json(formattedResult);
@@ -1543,26 +1476,26 @@ export const getContactSubmissions: RequestHandler = async (req, res) => {
 export const getContactSubmission: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const submission = await prisma.contactSubmission.findUnique({
-      where: { id },
-    });
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const submission = await ContactSubmissionModel.findById(id).exec();
     
     if (!submission) {
       return res.status(404).json({ error: "Contact submission not found" });
     }
     
     res.json({
-      id: submission.id,
+      id: idOf(submission),
       name: submission.name,
       email: submission.email,
       subject: submission.subject,
       message: submission.message,
       status: submission.status,
-      readAt: submission.readAt?.toISOString() || undefined,
-      repliedAt: submission.repliedAt?.toISOString() || undefined,
+      readAt: submission.readAt ? new Date(submission.readAt).toISOString() : undefined,
+      repliedAt: submission.repliedAt ? new Date(submission.repliedAt).toISOString() : undefined,
       notes: submission.notes || undefined,
-      createdAt: submission.createdAt.toISOString(),
-      updatedAt: submission.updatedAt.toISOString(),
+      createdAt: submission.createdAt ? new Date(submission.createdAt).toISOString() : new Date().toISOString(),
+      updatedAt: submission.updatedAt ? new Date(submission.updatedAt).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
     console.error("Error fetching contact submission:", error);
@@ -1577,29 +1510,28 @@ export const createContactSubmission: RequestHandler = async (req, res) => {
     if (!name || !email || !subject || !message) {
       return res.status(400).json({ error: "Name, email, subject, and message are required" });
     }
-    
-    const newSubmission = await prisma.contactSubmission.create({
-      data: {
-        name,
-        email,
-        subject,
-        message,
-        status: "new",
-      },
+
+    await connectMongo();
+    const newSubmission = await ContactSubmissionModel.create({
+      name,
+      email,
+      subject,
+      message,
+      status: "new",
     });
     
     res.status(201).json({
-      id: newSubmission.id,
+      id: idOf(newSubmission),
       name: newSubmission.name,
       email: newSubmission.email,
       subject: newSubmission.subject,
       message: newSubmission.message,
       status: newSubmission.status,
-      readAt: newSubmission.readAt?.toISOString() || undefined,
-      repliedAt: newSubmission.repliedAt?.toISOString() || undefined,
+      readAt: newSubmission.readAt ? new Date(newSubmission.readAt).toISOString() : undefined,
+      repliedAt: newSubmission.repliedAt ? new Date(newSubmission.repliedAt).toISOString() : undefined,
       notes: newSubmission.notes || undefined,
-      createdAt: newSubmission.createdAt.toISOString(),
-      updatedAt: newSubmission.updatedAt.toISOString(),
+      createdAt: newSubmission.createdAt ? new Date(newSubmission.createdAt).toISOString() : new Date().toISOString(),
+      updatedAt: newSubmission.updatedAt ? new Date(newSubmission.updatedAt).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
     console.error("Error creating contact submission:", error);
@@ -1613,9 +1545,9 @@ export const updateContactSubmission: RequestHandler = async (req, res) => {
     const { status, notes } = req.body;
     
     // Get current submission to check status transitions
-    const current = await prisma.contactSubmission.findUnique({
-      where: { id },
-    });
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const current = await ContactSubmissionModel.findById(id).exec();
     
     if (!current) {
       return res.status(404).json({ error: "Contact submission not found" });
@@ -1631,30 +1563,25 @@ export const updateContactSubmission: RequestHandler = async (req, res) => {
         updateData.repliedAt = new Date();
       }
     }
-    if (notes !== undefined) updateData.notes = notes || null;
-    
-    const updatedSubmission = await prisma.contactSubmission.update({
-      where: { id },
-      data: updateData,
-    });
+    if (notes !== undefined) updateData.notes = notes || undefined;
+
+    const updatedSubmission = await ContactSubmissionModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    if (!updatedSubmission) return res.status(404).json({ error: "Contact submission not found" });
     
     res.json({
-      id: updatedSubmission.id,
+      id: idOf(updatedSubmission),
       name: updatedSubmission.name,
       email: updatedSubmission.email,
       subject: updatedSubmission.subject,
       message: updatedSubmission.message,
       status: updatedSubmission.status,
-      readAt: updatedSubmission.readAt?.toISOString() || undefined,
-      repliedAt: updatedSubmission.repliedAt?.toISOString() || undefined,
+      readAt: updatedSubmission.readAt ? new Date(updatedSubmission.readAt).toISOString() : undefined,
+      repliedAt: updatedSubmission.repliedAt ? new Date(updatedSubmission.repliedAt).toISOString() : undefined,
       notes: updatedSubmission.notes || undefined,
-      createdAt: updatedSubmission.createdAt.toISOString(),
-      updatedAt: updatedSubmission.updatedAt.toISOString(),
+      createdAt: updatedSubmission.createdAt ? new Date(updatedSubmission.createdAt).toISOString() : new Date().toISOString(),
+      updatedAt: updatedSubmission.updatedAt ? new Date(updatedSubmission.updatedAt).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
-    if (error.code === "P2025") {
-      return res.status(404).json({ error: "Contact submission not found" });
-    }
     console.error("Error updating contact submission:", error);
     res.status(500).json({ error: "Failed to update contact submission" });
   }
@@ -1663,14 +1590,12 @@ export const updateContactSubmission: RequestHandler = async (req, res) => {
 export const deleteContactSubmission: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.contactSubmission.delete({
-      where: { id },
-    });
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const deleted = await ContactSubmissionModel.findByIdAndDelete(id).exec();
+    if (!deleted) return res.status(404).json({ error: "Contact submission not found" });
     res.status(204).send();
   } catch (error: any) {
-    if (error.code === "P2025") {
-      return res.status(404).json({ error: "Contact submission not found" });
-    }
     console.error("Error deleting contact submission:", error);
     res.status(500).json({ error: "Failed to delete contact submission" });
   }
@@ -1679,7 +1604,7 @@ export const deleteContactSubmission: RequestHandler = async (req, res) => {
 // Analytics API
 export const getAnalytics: RequestHandler = async (req, res) => {
   try {
-    // Get counts from database for migrated models with error handling
+    // Get counts from database (Mongo) for migrated models with error handling
     let totalProjects = 0;
     let activeProjects = 0;
     let totalNewsArticles = 0;
@@ -1691,6 +1616,7 @@ export const getAnalytics: RequestHandler = async (req, res) => {
     let newContactSubmissions = 0;
 
     try {
+      await connectMongo();
       const [
         projectsCount,
         activeProjectsCount,
@@ -1702,15 +1628,15 @@ export const getAnalytics: RequestHandler = async (req, res) => {
         contactCount,
         newContactCount,
       ] = await Promise.all([
-        prisma.project.count().catch((e) => { console.error("Error counting projects:", e); return 0; }),
-        prisma.project.count({ where: { status: "ongoing" } }).catch((e) => { console.error("Error counting active projects:", e); return 0; }),
-        prisma.newsArticle.count().catch((e) => { console.error("Error counting news articles:", e); return 0; }),
-        prisma.book.count().catch((e) => { console.error("Error counting books:", e); return 0; }),
-        prisma.committeeMember.count().catch((e) => { console.error("Error counting committee members:", e); return 0; }),
-        prisma.committeeMember.count({ where: { active: true } }).catch((e) => { console.error("Error counting active committee members:", e); return 0; }),
-        prisma.devotion.count().catch((e) => { console.error("Error counting devotions:", e); return 0; }),
-        prisma.contactSubmission.count().catch((e) => { console.error("Error counting contact submissions:", e); return 0; }),
-        prisma.contactSubmission.count({ where: { status: "new" } }).catch((e) => { console.error("Error counting new contact submissions:", e); return 0; }),
+        ProjectModel.countDocuments({}).exec().catch((e) => { console.error("Error counting projects:", e); return 0; }),
+        ProjectModel.countDocuments({ status: "ongoing" }).exec().catch((e) => { console.error("Error counting active projects:", e); return 0; }),
+        NewsArticleModel.countDocuments({}).exec().catch((e) => { console.error("Error counting news articles:", e); return 0; }),
+        BookModel.countDocuments({}).exec().catch((e) => { console.error("Error counting books:", e); return 0; }),
+        CommitteeMemberModel.countDocuments({}).exec().catch((e) => { console.error("Error counting committee members:", e); return 0; }),
+        CommitteeMemberModel.countDocuments({ active: true }).exec().catch((e) => { console.error("Error counting active committee members:", e); return 0; }),
+        DevotionModel.countDocuments({}).exec().catch((e) => { console.error("Error counting devotions:", e); return 0; }),
+        ContactSubmissionModel.countDocuments({}).exec().catch((e) => { console.error("Error counting contact submissions:", e); return 0; }),
+        ContactSubmissionModel.countDocuments({ status: "new" }).exec().catch((e) => { console.error("Error counting new contact submissions:", e); return 0; }),
       ]);
 
       console.log("Analytics counts:", {

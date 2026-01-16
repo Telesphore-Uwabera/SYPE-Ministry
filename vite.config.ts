@@ -25,10 +25,10 @@ export default defineConfig(({ mode }) => ({
     },
   },
   optimizeDeps: {
-    exclude: ["@prisma/client", "@prisma/adapter-pg", "pg"],
+    exclude: ["./server"],
   },
   ssr: {
-    noExternal: ["@prisma/client", "@prisma/adapter-pg", "pg"],
+    external: [],
   },
 }));
 

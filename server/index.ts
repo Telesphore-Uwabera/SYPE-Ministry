@@ -8,7 +8,8 @@ import * as adminRoutes from "./routes/admin";
 import * as uploadRoutes from "./routes/upload";
 import * as mediaUploadRoutes from "./routes/mediaUpload";
 import * as youtubeRoutes from "./routes/youtube";
-import { prisma } from "./lib/prisma";
+import mongoose from "mongoose";
+import { connectMongo } from "./lib/mongoose";
 
 function sanitizeErrorMessage(message: string) {
   // Best-effort redaction of credentials inside connection strings.
@@ -31,6 +32,11 @@ try {
 
 export function createServer() {
   const app = express();
+
+  // Connect to MongoDB early (non-blocking)
+  connectMongo().catch((err) => {
+    console.error("MongoDB connection failed:", err);
+  });
 
   // Middleware - CORS Configuration
   const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -230,10 +236,13 @@ export function createServer() {
   // DB connectivity check (safe diagnostics; no secrets exposed)
   app.get("/api/db-status", async (_req, res) => {
     try {
-      await prisma.$connect();
-      // lightweight query that exercises the connection
-      await prisma.newsArticle.count();
-      res.json({ ok: true });
+      await connectMongo();
+      const state = mongoose.connection.readyState; // 1 = connected
+      // Lightweight ping if possible
+      if (mongoose.connection.db) {
+        await mongoose.connection.db.admin().ping();
+      }
+      res.json({ ok: state === 1 });
     } catch (err: any) {
       const name = err?.name;
       const code = err?.code;

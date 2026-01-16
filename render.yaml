@@ -3,16 +3,13 @@ services:
     name: sype-ministry-api
     env: node
     plan: starter
-    buildCommand: NODE_ENV=development npm install && npm run build:server && npx prisma generate
-    # MongoDB: apply schema via db push before starting
-    startCommand: npx prisma db push && node dist/server/node-build.mjs
+    buildCommand: NODE_ENV=development npm install && npm run build:server
+    startCommand: node dist/server/node-build.mjs
     envVars:
       - key: NODE_ENV
         value: production
       - key: NODE_OPTIONS
         value: --dns-result-order=ipv4first
-      - key: PRISMA_CLIENT_ENGINE_TYPE
-        value: library
       - key: PORT
         fromService:
           name: sype-ministry-api

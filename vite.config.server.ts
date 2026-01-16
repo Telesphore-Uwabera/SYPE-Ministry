@@ -32,10 +32,6 @@ export default defineConfig({
         // External dependencies that should not be bundled
         "express",
         "cors",
-        // Prisma must NOT be bundled (causes runtime engine/config issues on deploy)
-        "prisma",
-        "@prisma/client",
-        ".prisma/client",
         // Other runtime deps better left external
         "cloudinary",
       ],

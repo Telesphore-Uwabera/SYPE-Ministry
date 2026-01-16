@@ -31,8 +31,8 @@ SYPE Ministry is a full-stack web application built to serve the Seventh-day Adv
              ▼
     ┌──────────────────┐    ┌──────────────────┐
     │   Database       │    │   Storage        │
-    │   (Supabase      │    │   (Supabase      │
-    │    PostgreSQL)   │    │    Storage)      │
+    │   (MongoDB       │    │   (Cloudinary)   │
+    │    Atlas)        │    │                  │
     └──────────────────┘    └──────────────────┘
 ```
 
@@ -43,15 +43,15 @@ SYPE Ministry is a full-stack web application built to serve the Seventh-day Adv
 - **Icons**: Lucide React
 - **Animations**: Framer Motion
 - **Backend**: Express.js + TypeScript
-- **Database**: PostgreSQL (via Supabase)
-- **Storage**: Supabase Storage (for multimedia files)
+- **Database**: MongoDB (via MongoDB Atlas) + Mongoose
+- **Storage**: Cloudinary (for multimedia files)
 - **Package Manager**: PNPM
 - **Testing**: Vitest
 - **Deployment**: 
   - Frontend: Netlify
   - Backend: Render.com
-  - Database: Supabase
-  - Storage: Supabase Storage
+  - Database: MongoDB Atlas
+  - Storage: Cloudinary
 
 ## 📁 Project Structure
 
@@ -156,7 +156,7 @@ SYPE Ministry/
 - **Project Management**: Manage projects with date filtering
 - **Event Management**: Create and manage events
 - **Donation Management**: Track donations with payment status
-- **Media Management**: Upload images, videos, documents to Supabase Storage
+- **Media Management**: Upload images, videos, documents to Cloudinary
 - **Book Management**: Manage library books
 - **Committee Management**: Manage committee members by category
 - **Devotion Management**: Create and manage devotions
@@ -195,13 +195,13 @@ Create a `.env` file in the root directory (copy from `env.example`):
 PORT=8080
 NODE_ENV=development
 
-# Database (PostgreSQL - Supabase)
-DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@[YOUR-PROJECT-REF].supabase.co:5432/postgres"
+# Database (MongoDB Atlas)
+DATABASE_URL="mongodb+srv://<DB_USER>:<DB_PASSWORD>@<CLUSTER_HOST>/SYPEMinistry?retryWrites=true&w=majority&appName=Cluster0"
 
-# Supabase Configuration (Optional - if using Supabase)
-SUPABASE_URL="https://[YOUR-PROJECT-REF].supabase.co"
-SUPABASE_ANON_KEY="your-anon-key-here"
-SUPABASE_SERVICE_ROLE_KEY="your-service-role-key-here"
+# Cloudinary (required for uploads in production)
+CLOUDINARY_CLOUD_NAME="your-cloud-name"
+CLOUDINARY_API_KEY="your-cloudinary-key"
+CLOUDINARY_API_SECRET="your-cloudinary-secret"
 
 # YouTube Data API v3 Key (Required for Videos page)
 YOUTUBE_API_KEY="your-youtube-api-key-here"
@@ -250,22 +250,6 @@ pnpm build:server
 pnpm start
 ```
 
-### Database Commands
-
-```bash
-# Generate Prisma Client
-pnpm db:generate
-
-# Push schema to database
-pnpm db:push
-
-# Run migrations
-pnpm db:migrate
-
-# Open Prisma Studio
-pnpm db:studio
-```
-
 ### Other Commands
 
 ```bash
@@ -287,23 +271,30 @@ pnpm format.fix
 
 - **Frontend**: Netlify (React/Vite SPA)
 - **Backend**: Render.com (Node.js/Express API)
-- **Database**: Supabase (PostgreSQL)
-- **Storage**: Supabase Storage (for multimedia files)
+- **Database**: MongoDB Atlas
+- **Storage**: Cloudinary (for multimedia files)
 
 ### Quick Deployment Guide (30 minutes)
 
-#### Step 1: Set Up Supabase (10 min)
+#### Step 1: Set Up MongoDB Atlas (10 min)
 
-1. **Create Project**: Go to [supabase.com](https://supabase.com) → New Project
-   - Project Name: `sype-ministry`
-   - Save your database password!
-
-2. **Get MongoDB Connection String** (MongoDB Atlas): Cluster → Connect → Drivers
+1. **Create a MongoDB Atlas cluster**
+2. **Create a DB user** (Database Access → Add new user)
+3. **Allow Render network access** (Network Access → add `0.0.0.0/0`)
+4. **Get MongoDB Connection String**: Cluster → Connect → Drivers
    ```
    mongodb+srv://<DB_USER>:<DB_PASSWORD>@<CLUSTER_HOST>/SYPEMinistry?retryWrites=true&w=majority
    ```
 
-#### Step 2: Deploy Backend on Render (10 min)
+#### Step 2: Set Up Cloudinary (5 min)
+
+1. Create a Cloudinary account
+2. Copy values from Cloudinary Console → API Keys:
+   - `CLOUDINARY_CLOUD_NAME`
+   - `CLOUDINARY_API_KEY`
+   - `CLOUDINARY_API_SECRET`
+
+#### Step 3: Deploy Backend on Render (10 min)
 
 1. **Create Account**: [render.com](https://render.com) → Sign up with GitHub
 
@@ -339,7 +330,7 @@ pnpm format.fix
    curl https://sype-ministry-api.onrender.com/api/ping
    ```
 
-#### Step 3: Deploy Frontend on Netlify (5 min)
+#### Step 4: Deploy Frontend on Netlify (5 min)
 
 1. **In Netlify Dashboard**: Site Settings → Build & deploy
    - **Build command**: `npm run build:client`
@@ -383,10 +374,10 @@ curl https://sype-ministry-api.onrender.com/api/ping
 
 ### Deployment Checklist
 
-- [ ] Supabase project created
-- [ ] Database connection string obtained
-- [ ] Supabase API keys obtained
-- [ ] Storage buckets created (`images`, `videos`, `documents`)
+- [ ] MongoDB Atlas cluster created
+- [ ] MongoDB connection string obtained
+- [ ] MongoDB Network Access includes `0.0.0.0/0` for Render
+- [ ] Cloudinary credentials created (`CLOUDINARY_*`)
 - [ ] Backend deployed on Render
 - [ ] Backend environment variables set
 - [ ] Backend health check passing
@@ -398,63 +389,17 @@ curl https://sype-ministry-api.onrender.com/api/ping
 
 ---
 
-## 📦 Storage Architecture
+## 📦 Storage Architecture (Cloudinary)
 
-### Where Data is Stored
+### Where data is stored
 
-#### Database (Supabase PostgreSQL)
-Stores all structured data:
-- Members, News Articles, Projects, Events
-- Donations, FAQs, Committee Members
-- Devotions, Email Subscribers
-- Media File Metadata (references to storage URLs)
+- **Database (MongoDB Atlas)**: structured data (news, devotions, projects, books, committee, FAQs, contacts, etc.)
+- **Cloudinary**: uploaded files (images/videos/documents) – the backend stores the returned URL in MongoDB
 
-#### Multimedia Files (Supabase Storage)
-Stored in public buckets:
-- **`images/`** bucket: All images
-  - `images/news/` - News article images
-  - `images/projects/` - Project images
-  - `images/members/` - Member profile photos
-  - `images/committee/` - Committee member photos
-  - `images/devotions/` - Devotion poster images
-  - `images/posters/` - Poster images
-  - `images/graphics/` - Graphics and design files
-- **`videos/`** bucket: All videos
-  - `videos/testimony/` - Testimony videos
-  - `videos/featured/` - Featured videos
-- **`documents/`** bucket: PDFs and documents
-  - `documents/pdfs/` - PDF documents
-  - `documents/files/` - Other documents
+### How uploads work
 
-### How Upload Works
-
-#### Development (Local Storage)
-1. User uploads file via admin panel
-2. File saved to `public/media/` or `public/images/` folder
-3. URL returned: `/media/images/category/filename.jpg`
-4. Files served by Express static middleware
-
-#### Production (Supabase Storage)
-1. User uploads file via admin panel
-2. File received by backend (stored in memory temporarily)
-3. File uploaded to Supabase Storage bucket
-4. Supabase returns public CDN URL
-5. URL saved to database/media metadata
-6. Files served by Supabase CDN globally
-
-### Accessing Files
-
-**Development:**
-```
-http://localhost:8080/media/images/news/article.jpg
-http://localhost:8080/images/devotions/poster.jpg
-```
-
-**Production:**
-```
-https://xxxxx.supabase.co/storage/v1/object/public/images/news/article.jpg
-https://xxxxx.supabase.co/storage/v1/object/public/images/devotions/poster.jpg
-```
+- **Development**: URLs may be local (served by Express static middleware)
+- **Production**: uploads go to Cloudinary and return a public `https://...cloudinary.com/...` URL
 
 ### Storage Benefits
 
@@ -612,19 +557,14 @@ Currently, the admin panel is accessible without authentication. For production,
 **Database Connection Issues:**
 - Verify `DATABASE_URL` is correct in backend environment variables
 - Check database password is correct (no special character encoding issues)
-- Verify Supabase database is accessible from Render
-- Check Supabase dashboard for connection logs
+- Verify MongoDB Atlas user/password and Network Access allowlist (`0.0.0.0/0` for Render)
 
 **File Upload Issues:**
-- Verify Supabase Storage buckets exist and are public
-- Check `SUPABASE_SERVICE_ROLE_KEY` is set correctly
-- Verify file size limits (check bucket settings in Supabase)
+- Verify Cloudinary env vars are set (`CLOUDINARY_*`)
 - Check browser console for upload errors
 
 **Images/Videos Not Loading:**
-- Verify storage buckets are public in Supabase
-- Check file URLs are correct (Supabase Storage URLs)
-- Verify CORS is configured for storage bucket
+- Check the stored Cloudinary URLs are correct
 - Check browser console for 404 errors
 
 ### Development Issues
@@ -685,11 +625,11 @@ pnpm typecheck
           │                  │                  │
           ▼                  ▼                  ▼
 ┌─────────────────────────────────────────────────────────┐
-│              Supabase (Database & Storage)               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │  PostgreSQL  │  │   Storage    │  │    CDN       │  │
-│  │   Database   │  │   Buckets    │  │   Delivery   │  │
-│  └──────────────┘  └──────────────┘  └──────────────┘  │
+│            MongoDB Atlas + Cloudinary                    │
+│  ┌──────────────┐  ┌──────────────┐                      │
+│  │   MongoDB    │  │  Cloudinary  │                      │
+│  │  Database    │  │   Storage    │                      │
+│  └──────────────┘  └──────────────┘                      │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -698,14 +638,14 @@ pnpm typecheck
 1. **User Request** → Frontend receives user interaction
 2. **API Call** → Frontend makes fetch request to backend API
 3. **Backend Processing** → Express handles request, processes data
-4. **Database Query** → Backend queries Supabase PostgreSQL (if using Prisma)
-5. **Storage Operation** → Backend uploads/downloads files from Supabase Storage
+4. **Database Query** → Backend queries MongoDB via Mongoose
+5. **Storage Operation** → Backend uploads files to Cloudinary (for uploads)
 6. **Response** → Backend returns JSON response
 7. **UI Update** → Frontend updates UI with response data
 
 ### Performance Optimization
 
-- **CDN**: Static assets and media files served via Supabase CDN
+- **CDN**: Media files served via Cloudinary CDN
 - **Caching**: Browser caching for static assets
 - **Lazy Loading**: Images and components loaded on demand
 - **Code Splitting**: Route-based code splitting with React Router
@@ -719,10 +659,10 @@ pnpm typecheck
 
 ```env
 NODE_ENV=production
-DATABASE_URL=postgresql://postgres:[PASSWORD]@db.xxxxx.supabase.co:5432/postgres
-SUPABASE_URL=https://xxxxx.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+DATABASE_URL=mongodb+srv://<DB_USER>:<DB_PASSWORD>@<CLUSTER_HOST>/SYPEMinistry?retryWrites=true&w=majority&appName=Cluster0
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-cloudinary-key
+CLOUDINARY_API_SECRET=your-cloudinary-secret
 YOUTUBE_API_KEY=your-youtube-api-key
 ALLOWED_ORIGINS=https://your-netlify-app.netlify.app
 SITE_URL=https://your-netlify-app.netlify.app

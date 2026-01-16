@@ -49,7 +49,21 @@ export default function Layout({ children }: LayoutProps) {
     const handleHashChange = () => {
       const hash = window.location.hash;
       if (hash && !hash.includes('invite_token')) {
-        const element = document.querySelector(hash);
+        const id = hash.startsWith("#") ? hash.slice(1) : hash;
+        // Hash IDs may start with digits (e.g. Mongo ObjectId), which are not valid CSS selectors.
+        // Prefer getElementById to avoid querySelector selector syntax issues.
+        let element: Element | null = document.getElementById(id);
+        if (!element) {
+          try {
+            const cssEscape =
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (window as any).CSS?.escape?.bind((window as any).CSS) ??
+              ((value: string) => value.replace(/([ #;?%&,.+*~\\':!^$\\[\\]()=>|/@])/g, "\\$1"));
+            element = document.querySelector(`#${cssEscape(id)}`);
+          } catch {
+            // ignore
+          }
+        }
         if (element) {
           setTimeout(() => {
             element.scrollIntoView({

@@ -2,136 +2,55 @@ import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import { buildApiUrl } from "@/lib/apiConfig";
+
+type ApiFAQ = {
+  id: string;
+  category: string;
+  question: string;
+  answer: string;
+  order: number;
+};
 
 export default function FAQs() {
-  const faqs = [
-    {
-      category: "General Information",
-      questions: [
-        {
-          q: "What is SYPE Ministry?",
-          a: "SYPE (Seventh-day Adventist Young Professionals in Evangelism) is a ministry uniting alumni and students from Adventist Associations in public universities in Kigali and beyond, dedicated to structured, consistent, and impactful evangelism."
-        },
-        {
-          q: "When was SYPE Ministry established?",
-          a: "SYPE Ministry was officially established on September 14, 2019, with official activities launching in April 2020."
-        },
-        {
-          q: "What is the mission of SYPE Ministry?",
-          a: "Our mission is to equip young SDA professionals for active evangelism through their talents, professions, and service, enabling them to serve through evangelical projects and outreach."
-        },
-        {
-          q: "Where is SYPE Ministry located?",
-          a: "SYPE Ministry is based in Kigali, Rwanda, and serves young professionals from Adventist Student Associations in public universities in Kigali and beyond."
-        }
-      ]
-    },
-    {
-      category: "Membership",
-      questions: [
-        {
-          q: "Who can become a member of SYPE Ministry?",
-          a: "Seventh-day Adventist member from Adventist Student and Alumni Associations (ASSA Kigali) Plus any other location."
-        },
-        {
-          q: "How do I join SYPE Ministry?",
-          a: "Membership is invitation-based. You can be invited by an existing SYPE member, or you can contact us directly through our contact page to express your interest in joining."
-        },
-        {
-          q: "What are the benefits of membership?",
-          a: "Members receive evangelism training, mentorship opportunities, project participation, leadership development, community support, and access to exclusive evangelism materials and resources."
-        },
-        {
-          q: "Is there a membership fee?",
-          a: "SYPE Ministry does not charge membership fees. However, members are encouraged to support evangelism projects through voluntary contributions and donations."
-        }
-      ]
-    },
-    {
-      category: "Activities & Programs",
-      questions: [
-        {
-          q: "What activities does SYPE Ministry organize?",
-          a: "SYPE organizes various activities including daily prayer and devotion programs, evangelism projects, mission camps, media content creation (videos, posters, written content), and digital outreach initiatives."
-        },
-        {
-          q: "When are the daily devotion programs?",
-          a: "Our daily prayer and devotion program takes place every day from 6:00 AM to 7:00 AM via WhatsApp. The program focuses on Jesus' methods and Ellen G. White's teachings on evangelism."
-        },
-        {
-          q: "How can I participate in evangelism projects?",
-          a: "Members are invited to participate in various evangelical projects. Those interested can volunteer for projects that match their talents and professions. Contact us or check with project coordinators for current opportunities."
-        },
-        {
-          q: "What kind of media content does SYPE produce?",
-          a: "SYPE produces evangelism posters, videos (sermons, testimonies, evangelism methods), written content, and digital materials for social media sharing and outreach."
-        }
-      ]
-    },
-    {
-      category: "Donations & Support",
-      questions: [
-        {
-          q: "How can I support SYPE Ministry?",
-          a: "You can support SYPE Ministry through donations, volunteering your time and talents, participating in evangelism projects, or sharing our content and mission with others."
-        },
-        {
-          q: "How are donations used?",
-          a: "All donations are used to support evangelism projects and ministry activities, including media production, mission camps, outreach programs, and resource development."
-        },
-        {
-          q: "Is my donation tax-deductible?",
-          a: "Please contact us directly for information about tax deductions and receipts for donations, as this may vary by location and local regulations."
-        },
-        {
-          q: "Can I specify how my donation is used?",
-          a: "While we appreciate your support, donations are generally used where they are most needed for evangelism activities. You can contact us to discuss specific project support."
-        }
-      ]
-    },
-    {
-      category: "Resources & Content",
-      questions: [
-        {
-          q: "Where can I find SYPE Ministry videos?",
-          a: "You can find our videos on our YouTube channel at https://www.youtube.com/@sypeministry5276. We also share videos and content on our website and social media platforms."
-        },
-        {
-          q: "Can I use SYPE Ministry content for my own evangelism?",
-          a: "SYPE Ministry content is created for evangelism purposes. Please contact us for permission to use our materials, and we encourage sharing our content to spread the Gospel."
-        },
-        {
-          q: "How can I access the library resources?",
-          a: "Library resources are available to SYPE members. Contact us or visit our library page for more information about accessing evangelism materials and resources."
-        },
-        {
-          q: "Do you provide evangelism training materials?",
-          a: "Yes, SYPE provides structured training in evangelism methods and biblical principles. Members have access to training materials and participate in training programs."
-        }
-      ]
-    },
-    {
-      category: "Contact & Communication",
-      questions: [
-        {
-          q: "How can I contact SYPE Ministry?",
-          a: "You can contact us via email at sypeministry@gmail.com, phone at +250 780 430 990 or +250 785 073 847, or through our contact page on the website."
-        },
-        {
-          q: "Do you have a WhatsApp group?",
-          a: "Yes, SYPE has a WhatsApp community group for members. Join our Training Program group at https://chat.whatsapp.com/DIKintfrZjbARzYMQ1SQbN. The group is used for communication, coordination, and sharing approved evangelism materials."
-        },
-        {
-          q: "How often do you update your website?",
-          a: "We regularly update our website with news, events, and new content. Follow us on social media and subscribe to our updates to stay informed."
-        },
-        {
-          q: "Can I subscribe to newsletters or updates?",
-          a: "Yes, you can stay updated by following our social media channels, subscribing to our YouTube channel, or contacting us to be added to our communication list."
-        }
-      ]
+  const [items, setItems] = useState<ApiFAQ[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFaqs = async () => {
+      try {
+        const apiUrl = buildApiUrl("/api/faqs");
+        const res = await fetch(apiUrl, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const data = await res.json();
+        setItems(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error("Failed to fetch FAQs:", e);
+        setItems([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFaqs();
+  }, []);
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, ApiFAQ[]>();
+    for (const f of items) {
+      const key = (f.category || "General").trim() || "General";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(f);
     }
-  ];
+    return Array.from(map.entries())
+      .map(([category, questions]) => ({
+        category,
+        questions: questions
+          .slice()
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.question.localeCompare(b.question)),
+      }))
+      .sort((a, b) => a.category.localeCompare(b.category));
+  }, [items]);
 
   return (
     <Layout>
@@ -159,7 +78,14 @@ export default function FAQs() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            {faqs.map((category, categoryIndex) => (
+            {loading ? (
+              <div className="text-center py-12 text-foreground/70">Loading FAQs...</div>
+            ) : grouped.length === 0 ? (
+              <div className="text-center py-12 text-foreground/70">
+                No FAQs available yet.
+              </div>
+            ) : (
+              grouped.map((category, categoryIndex) => (
               <Card key={categoryIndex}>
                 <CardHeader>
                   <CardTitle className="text-2xl">{category.category}</CardTitle>
@@ -172,17 +98,18 @@ export default function FAQs() {
                         value={`item-${categoryIndex}-${faqIndex}`}
                       >
                         <AccordionTrigger className="text-left font-semibold">
-                          {faq.q}
+                          {faq.question}
                         </AccordionTrigger>
                         <AccordionContent className="text-foreground/80 leading-relaxed">
-                          {faq.a}
+                          {faq.answer}
                         </AccordionContent>
                       </AccordionItem>
                     ))}
                   </Accordion>
                 </CardContent>
               </Card>
-            ))}
+            ))
+            )}
 
             {/* Still Have Questions */}
             <Card className="bg-primary text-primary-foreground">

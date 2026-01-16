@@ -25,12 +25,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { HelpCircle, Plus, Edit, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function FAQManagement() {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingFAQ, setEditingFAQ] = useState<FAQ | null>(null);
   const { toast } = useToast();
+  const [categoryMode, setCategoryMode] = useState<"select" | "custom">("select");
 
   const [formData, setFormData] = useState<Omit<FAQ, "id">>({
     category: "",
@@ -60,8 +62,24 @@ export default function FAQManagement() {
     }
   };
 
+  const existingCategories = Array.from(
+    new Set(
+      faqs
+        .map((f) => (f.category || "").trim())
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b));
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.category?.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Category is required.",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       if (editingFAQ) {
         const response = await fetch(`/api/admin/faqs/${editingFAQ.id}`, {
@@ -102,6 +120,7 @@ export default function FAQManagement() {
       answer: faq.answer,
       order: faq.order,
     });
+    setCategoryMode("select");
     setIsDialogOpen(true);
   };
 
@@ -124,6 +143,7 @@ export default function FAQManagement() {
   const resetForm = () => {
     setEditingFAQ(null);
     setFormData({ category: "", question: "", answer: "", order: 0 });
+    setCategoryMode("select");
   };
 
   return (
@@ -154,12 +174,42 @@ export default function FAQManagement() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="category">Category *</Label>
-                  <Input
-                    id="category"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    required
-                  />
+                  <div className="space-y-2">
+                    <Select
+                      value={categoryMode === "custom" ? "__custom__" : (formData.category || "")}
+                      onValueChange={(value) => {
+                        if (value === "__custom__") {
+                          setCategoryMode("custom");
+                          setFormData({ ...formData, category: "" });
+                          return;
+                        }
+                        setCategoryMode("select");
+                        setFormData({ ...formData, category: value });
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {existingCategories.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="__custom__">Custom…</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {categoryMode === "custom" && (
+                      <Input
+                        id="category"
+                        value={formData.category}
+                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        placeholder="Type a category (e.g., Donations & Support)"
+                        required
+                      />
+                    )}
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="order">Order *</Label>

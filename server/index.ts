@@ -169,6 +169,10 @@ export function createServer() {
   app.put("/api/admin/faqs/:id", adminRoutes.updateFAQ);
   app.delete("/api/admin/faqs/:id", adminRoutes.deleteFAQ);
 
+  // Public API Routes - FAQs (for user FAQs page)
+  app.get("/api/faqs", adminRoutes.getFAQs);
+  app.get("/api/faqs/:id", adminRoutes.getFAQ);
+
   // Admin API Routes - Media
   app.get("/api/admin/media", adminRoutes.getMedia);
   app.get("/api/admin/media/:id", adminRoutes.getMediaFile);

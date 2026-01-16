@@ -1,16 +1,20 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, Users, BookOpen, Heart, Calendar, Image as ImageIcon } from "lucide-react";
+import { Clock, Users, BookOpen, Heart, Calendar, X, ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 import { Devotion } from "@/types/admin";
 import { buildApiUrl } from "@/lib/apiConfig";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function Devotions() {
   const [devotions, setDevotions] = useState<Devotion[]>([]);
   const [devotionsLoading, setDevotionsLoading] = useState(true);
+  const [selectedDevotion, setSelectedDevotion] = useState<Devotion | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchDevotions = async () => {
@@ -50,6 +54,15 @@ export default function Devotions() {
     
     fetchDevotions();
   }, []);
+
+  // Support deep linking from Home cards: /devotions#<id>
+  useEffect(() => {
+    if (!devotions.length) return;
+    const hash = (location.hash || "").replace("#", "").trim();
+    if (!hash) return;
+    const match = devotions.find((d) => d.id === hash);
+    if (match) setSelectedDevotion(match);
+  }, [location.hash, devotions]);
 
   return (
     <Layout>
@@ -267,8 +280,13 @@ export default function Devotions() {
                           variant="outline"
                           size="sm"
                           className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                          onClick={() => {
+                            setSelectedDevotion(devotion);
+                            navigate({ pathname: "/devotions", hash: `#${devotion.id}` }, { replace: false });
+                          }}
                         >
                           Read More
+                          <ArrowRight className="w-3 h-3 ml-2" />
                         </Button>
                       )}
                     </CardContent>
@@ -279,6 +297,74 @@ export default function Devotions() {
           )}
         </div>
       </section>
+
+      <Dialog
+        open={!!selectedDevotion}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedDevotion(null);
+            navigate({ pathname: "/devotions" }, { replace: true });
+          }
+        }}
+      >
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          {selectedDevotion && (
+            <>
+              <DialogHeader>
+                <div className="flex items-start justify-between gap-4">
+                  <DialogTitle className="text-2xl font-bold text-primary">
+                    {selectedDevotion.title}
+                  </DialogTitle>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setSelectedDevotion(null);
+                      navigate({ pathname: "/devotions" }, { replace: true });
+                    }}
+                    aria-label="Close"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="text-sm text-foreground/70 flex items-center gap-2 mt-2">
+                  <Calendar className="w-4 h-4" />
+                  {new Date(selectedDevotion.date).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </div>
+              </DialogHeader>
+
+              {selectedDevotion.image && (
+                <div className="mt-4 rounded-lg overflow-hidden border">
+                  <img
+                    src={selectedDevotion.image}
+                    alt={selectedDevotion.title}
+                    className="w-full max-h-[360px] object-cover"
+                  />
+                </div>
+              )}
+
+              <div className="mt-4 space-y-4">
+                {selectedDevotion.excerpt && (
+                  <p className="text-foreground/80 font-medium">
+                    {selectedDevotion.excerpt}
+                  </p>
+                )}
+                {selectedDevotion.content && (
+                  <div className="prose prose-slate max-w-none">
+                    <p className="whitespace-pre-wrap text-foreground/80 leading-relaxed">
+                      {selectedDevotion.content}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Key Themes Section */}
       <section className="py-16 md:py-24 bg-muted/30">

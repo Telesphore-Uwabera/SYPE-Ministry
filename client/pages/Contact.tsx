@@ -69,7 +69,7 @@ export default function Contact() {
     {
       icon: Phone,
       title: "Phone",
-      content: "+250 780 430 990 / +250 785 073 847",
+      content: "+250 780430990/785073847",
       link: "tel:+250780430990",
       description: "Call or WhatsApp us",
     },
@@ -163,7 +163,13 @@ export default function Contact() {
                         <CardDescription className="text-xs">{info.description}</CardDescription>
                       </CardHeader>
                       <CardContent className="flex-1 flex items-center min-w-0">
-                        <p className={`text-foreground font-medium text-sm ${info.title === "Phone" ? "text-xs leading-tight whitespace-nowrap overflow-x-auto w-full text-center" : ""}`}>
+                        <p
+                          className={
+                            info.title === "Phone"
+                              ? "w-full text-left font-medium text-[11px] md:text-sm whitespace-nowrap overflow-hidden text-ellipsis"
+                              : "text-foreground font-medium text-sm"
+                          }
+                        >
                           {info.content}
                         </p>
                       </CardContent>
@@ -183,7 +189,13 @@ export default function Contact() {
                       <CardDescription className="text-xs">{info.description}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1 flex items-center min-w-0">
-                      <p className={`text-foreground font-medium text-sm ${info.title === "Phone" ? "text-xs leading-tight whitespace-nowrap overflow-x-auto w-full text-center" : ""}`}>
+                      <p
+                        className={
+                          info.title === "Phone"
+                            ? "w-full text-left font-medium text-[11px] md:text-sm whitespace-nowrap overflow-hidden text-ellipsis"
+                            : "text-foreground font-medium text-sm"
+                        }
+                      >
                         {info.content}
                       </p>
                     </CardContent>

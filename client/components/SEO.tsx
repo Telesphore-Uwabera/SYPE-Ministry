@@ -10,14 +10,26 @@ interface SEOProps {
   type?: string;
 }
 
+const getSiteOrigin = (): string => {
+  // Prefer explicit env var if provided (useful once you switch to sypeministry.org)
+  const envOrigin = (import.meta as any)?.env?.VITE_SITE_URL as string | undefined;
+  if (envOrigin) return envOrigin.replace(/\/+$/, "");
+  // Fallback to runtime origin in the browser
+  if (typeof window !== "undefined" && window.location?.origin) return window.location.origin;
+  // Last resort (legacy Netlify default)
+  return "https://sypeministry.netlify.app";
+};
+
+const SITE_ORIGIN = getSiteOrigin();
+
 const defaultSEO = {
   title: "SYPE Ministry - Equipping Young Professionals for Evangelism",
   description:
     "SYPE (Seventh-day Adventist Young Professionals in Evangelism) - Equipping young professionals for evangelism through talents, professions, and service. Based in Kigali, Rwanda.",
   keywords:
     "SYPE Ministry, Seventh-day Adventist, Young Professionals, Evangelism, Rwanda, Kigali, SDA, Ministry, Christian Ministry, Youth Ministry",
-  image: "https://sypeministry.netlify.app/Sype%20logo.png",
-  url: "https://sypeministry.netlify.app",
+  image: `${SITE_ORIGIN}/Sype%20logo.png`,
+  url: SITE_ORIGIN,
   type: "website",
 };
 

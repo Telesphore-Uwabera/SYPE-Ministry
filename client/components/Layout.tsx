@@ -80,6 +80,29 @@ export default function Layout({ children }: LayoutProps) {
   // Get page-specific SEO data
   const getPageSEO = () => {
     const path = location.pathname;
+    // Handle dynamic detail routes first
+    if (path.startsWith("/news/")) {
+      return {
+        title: "News Article - SYPE Ministry",
+        description: "Read the full news article from SYPE Ministry.",
+        keywords: "SYPE News, Ministry News, SYPE Article",
+      };
+    }
+    if (path.startsWith("/devotions/")) {
+      return {
+        title: "Devotion - SYPE Ministry",
+        description: "Read the full devotion from SYPE Ministry.",
+        keywords: "SYPE Devotion, Daily Devotion, Prayer Program",
+      };
+    }
+    if (path.startsWith("/events/")) {
+      return {
+        title: "Event - SYPE Ministry",
+        description: "View event details and ministry activities from SYPE Ministry.",
+        keywords: "SYPE Events, Ministry Events, Kigali SDA Events",
+      };
+    }
+
     switch (path) {
       case "/about":
         return {
@@ -128,6 +151,14 @@ export default function Layout({ children }: LayoutProps) {
             "Join us every day from 6:00 AM to 7:00 AM for daily prayer and spiritual reflection guided by Jesus' methods and Ellen G. White's teachings.",
           keywords:
             "SYPE Devotions, Weekly Prayer, Sunday Devotion, Prayer Program, Spiritual Reflection",
+        };
+      case "/news":
+        return {
+          title: "News - SYPE Ministry",
+          description:
+            "Stay informed with ministry updates, announcements, and inspiring stories from SYPE Ministry.",
+          keywords:
+            "SYPE News, Ministry Updates, Announcements, Evangelism News",
         };
       case "/projects":
         return {

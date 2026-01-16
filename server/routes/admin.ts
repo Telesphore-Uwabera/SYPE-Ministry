@@ -7,67 +7,153 @@ import {
   ContactSubmissionModel,
   DevotionModel,
   FAQModel,
+  DonationModel,
+  EmailCampaignModel,
+  EmailSubscriberModel,
+  EventModel,
+  MediaFileModel,
+  MemberModel,
   NewsArticleModel,
   ProjectModel,
 } from "../models/core";
 
-// In-memory storage (being migrated to MongoDB via Mongoose)
-let members: Member[] = []; // TODO: Migrate to database
-let events: Event[] = []; // TODO: Migrate to database
-let donations: Donation[] = []; // TODO: Migrate to database
-let media: MediaFile[] = []; // TODO: Migrate to database
-let campaigns: EmailCampaign[] = []; // TODO: Migrate to database
-let subscribers: EmailSubscriber[] = []; // TODO: Migrate to database
-// Devotions, News, Projects, Books, Committee, Contact Submissions, FAQs are now in database
-
-// Helper function to generate ID
-const generateId = () => Date.now().toString();
+// All data is persisted in MongoDB via Mongoose models.
 
 function idOf(doc: any): string {
   return String(doc?._id ?? doc?.id ?? "");
 }
 
 // Members API
-export const getMembers: RequestHandler = (req, res) => {
-  res.json(members);
-};
-
-export const getMember: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const member = members.find((m) => m.id === id);
-  if (!member) {
-    return res.status(404).json({ error: "Member not found" });
+export const getMembers: RequestHandler = async (req, res) => {
+  try {
+    await connectMongo();
+    const result = await MemberModel.find().sort({ joinDate: -1 }).exec();
+    res.json(
+      result.map((m: any) => ({
+        id: idOf(m),
+        name: m.name,
+        email: m.email,
+        phone: m.phone || "",
+        role: m.role,
+        status: m.status,
+        joinDate: m.joinDate ? new Date(m.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+        department: m.department || "",
+        notes: m.notes || "",
+      }))
+    );
+  } catch (error) {
+    console.error("Error fetching members:", error);
+    res.status(500).json({ error: "Failed to fetch members" });
   }
-  res.json(member);
 };
 
-export const createMember: RequestHandler = (req, res) => {
-  const newMember: Member = {
-    id: generateId(),
-    ...req.body,
-  };
-  members.push(newMember);
-  res.status(201).json(newMember);
-};
-
-export const updateMember: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = members.findIndex((m) => m.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Member not found" });
+export const getMember: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const member = await MemberModel.findById(id).exec();
+    if (!member) return res.status(404).json({ error: "Member not found" });
+    res.json({
+      id: idOf(member),
+      name: member.name,
+      email: member.email,
+      phone: member.phone || "",
+      role: member.role,
+      status: member.status,
+      joinDate: member.joinDate ? new Date(member.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      department: member.department || "",
+      notes: member.notes || "",
+    });
+  } catch (error) {
+    console.error("Error fetching member:", error);
+    res.status(500).json({ error: "Failed to fetch member" });
   }
-  members[index] = { ...members[index], ...req.body };
-  res.json(members[index]);
 };
 
-export const deleteMember: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = members.findIndex((m) => m.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Member not found" });
+export const createMember: RequestHandler = async (req, res) => {
+  try {
+    const { name, email, phone, role, status, joinDate, department, notes } = req.body ?? {};
+    if (!name || !email || !role || !status) {
+      return res.status(400).json({ error: "name, email, role, and status are required" });
+    }
+    await connectMongo();
+    const created = await MemberModel.create({
+      name,
+      email,
+      phone: phone || "",
+      role,
+      status,
+      joinDate: joinDate ? new Date(joinDate) : new Date(),
+      department: department || "",
+      notes: notes || "",
+    });
+    res.status(201).json({
+      id: idOf(created),
+      name: created.name,
+      email: created.email,
+      phone: created.phone || "",
+      role: created.role,
+      status: created.status,
+      joinDate: created.joinDate ? new Date(created.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      department: created.department || "",
+      notes: created.notes || "",
+    });
+  } catch (error: any) {
+    console.error("Error creating member:", error);
+    if (error?.code === 11000) return res.status(400).json({ error: "Member with this email already exists" });
+    res.status(500).json({ error: "Failed to create member" });
   }
-  members.splice(index, 1);
-  res.status(204).send();
+};
+
+export const updateMember: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    const { name, email, phone, role, status, joinDate, department, notes } = req.body ?? {};
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
+    if (phone !== undefined) updateData.phone = phone;
+    if (role !== undefined) updateData.role = role;
+    if (status !== undefined) updateData.status = status;
+    if (joinDate !== undefined) updateData.joinDate = new Date(joinDate);
+    if (department !== undefined) updateData.department = department;
+    if (notes !== undefined) updateData.notes = notes;
+
+    await connectMongo();
+    const updated = await MemberModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    if (!updated) return res.status(404).json({ error: "Member not found" });
+    res.json({
+      id: idOf(updated),
+      name: updated.name,
+      email: updated.email,
+      phone: updated.phone || "",
+      role: updated.role,
+      status: updated.status,
+      joinDate: updated.joinDate ? new Date(updated.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      department: updated.department || "",
+      notes: updated.notes || "",
+    });
+  } catch (error: any) {
+    console.error("Error updating member:", error);
+    if (error?.code === 11000) return res.status(400).json({ error: "Member with this email already exists" });
+    res.status(500).json({ error: "Failed to update member" });
+  }
+};
+
+export const deleteMember: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const deleted = await MemberModel.findByIdAndDelete(id).exec();
+    if (!deleted) return res.status(404).json({ error: "Member not found" });
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting member:", error);
+    res.status(500).json({ error: "Failed to delete member" });
+  }
 };
 
 // News API
@@ -427,109 +513,301 @@ export const deleteProject: RequestHandler = async (req, res) => {
 };
 
 // Events API
-export const getEvents: RequestHandler = (req, res) => {
-  res.json(events);
-};
-
-export const getEvent: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const event = events.find((e) => e.id === id);
-  if (!event) {
-    return res.status(404).json({ error: "Event not found" });
+export const getEvents: RequestHandler = async (req, res) => {
+  try {
+    await connectMongo();
+    const result = await EventModel.find().sort({ date: -1 }).exec();
+    res.json(
+      result.map((e: any) => ({
+        id: idOf(e),
+        title: e.title,
+        description: e.description,
+        date: e.date ? new Date(e.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+        time: e.time,
+        location: e.location,
+        category: e.category,
+        rsvpRequired: !!e.rsvpRequired,
+        rsvpCount: e.rsvpCount || 0,
+        maxAttendees: e.maxAttendees,
+        attendees: e.attendees || [],
+        status: e.status,
+      }))
+    );
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    res.status(500).json({ error: "Failed to fetch events" });
   }
-  res.json(event);
 };
 
-export const createEvent: RequestHandler = (req, res) => {
-  const newEvent: Event = {
-    id: generateId(),
-    rsvpCount: 0,
-    attendees: [],
-    ...req.body,
-  };
-  events.push(newEvent);
-  res.status(201).json(newEvent);
-};
-
-export const updateEvent: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = events.findIndex((e) => e.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Event not found" });
+export const getEvent: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const event = await EventModel.findById(id).exec();
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    res.json({
+      id: idOf(event),
+      title: event.title,
+      description: event.description,
+      date: event.date ? new Date(event.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      time: event.time,
+      location: event.location,
+      category: event.category,
+      rsvpRequired: !!event.rsvpRequired,
+      rsvpCount: event.rsvpCount || 0,
+      maxAttendees: event.maxAttendees,
+      attendees: event.attendees || [],
+      status: event.status,
+    });
+  } catch (error) {
+    console.error("Error fetching event:", error);
+    res.status(500).json({ error: "Failed to fetch event" });
   }
-  events[index] = { ...events[index], ...req.body };
-  res.json(events[index]);
 };
 
-export const deleteEvent: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = events.findIndex((e) => e.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Event not found" });
+export const createEvent: RequestHandler = async (req, res) => {
+  try {
+    const { title, description, date, time, location, category, rsvpRequired, maxAttendees, status } = req.body ?? {};
+    if (!title || !description || !date || !time || !location || !category || !status) {
+      return res.status(400).json({ error: "title, description, date, time, location, category, and status are required" });
+    }
+    await connectMongo();
+    const created = await EventModel.create({
+      title,
+      description,
+      date: new Date(date),
+      time,
+      location,
+      category,
+      rsvpRequired: !!rsvpRequired,
+      maxAttendees: maxAttendees ?? undefined,
+      status,
+      rsvpCount: 0,
+      attendees: [],
+    });
+    res.status(201).json({
+      id: idOf(created),
+      title: created.title,
+      description: created.description,
+      date: new Date(created.date).toISOString().split("T")[0],
+      time: created.time,
+      location: created.location,
+      category: created.category,
+      rsvpRequired: !!created.rsvpRequired,
+      rsvpCount: created.rsvpCount || 0,
+      maxAttendees: created.maxAttendees,
+      attendees: created.attendees || [],
+      status: created.status,
+    });
+  } catch (error) {
+    console.error("Error creating event:", error);
+    res.status(500).json({ error: "Failed to create event" });
   }
-  events.splice(index, 1);
-  res.status(204).send();
+};
+
+export const updateEvent: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    const { title, description, date, time, location, category, rsvpRequired, maxAttendees, status, attendees, rsvpCount } = req.body ?? {};
+    const updateData: any = {};
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (date !== undefined) updateData.date = new Date(date);
+    if (time !== undefined) updateData.time = time;
+    if (location !== undefined) updateData.location = location;
+    if (category !== undefined) updateData.category = category;
+    if (rsvpRequired !== undefined) updateData.rsvpRequired = !!rsvpRequired;
+    if (maxAttendees !== undefined) updateData.maxAttendees = maxAttendees;
+    if (status !== undefined) updateData.status = status;
+    if (attendees !== undefined) updateData.attendees = attendees || [];
+    if (rsvpCount !== undefined) updateData.rsvpCount = rsvpCount;
+
+    await connectMongo();
+    const updated = await EventModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    if (!updated) return res.status(404).json({ error: "Event not found" });
+    res.json({
+      id: idOf(updated),
+      title: updated.title,
+      description: updated.description,
+      date: updated.date ? new Date(updated.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      time: updated.time,
+      location: updated.location,
+      category: updated.category,
+      rsvpRequired: !!updated.rsvpRequired,
+      rsvpCount: updated.rsvpCount || 0,
+      maxAttendees: updated.maxAttendees,
+      attendees: updated.attendees || [],
+      status: updated.status,
+    });
+  } catch (error) {
+    console.error("Error updating event:", error);
+    res.status(500).json({ error: "Failed to update event" });
+  }
+};
+
+export const deleteEvent: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const deleted = await EventModel.findByIdAndDelete(id).exec();
+    if (!deleted) return res.status(404).json({ error: "Event not found" });
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting event:", error);
+    res.status(500).json({ error: "Failed to delete event" });
+  }
 };
 
 // Donations API
-export const getDonations: RequestHandler = (req, res) => {
-  res.json(donations);
+export const getDonations: RequestHandler = async (req, res) => {
+  try {
+    await connectMongo();
+    const result = await DonationModel.find().sort({ date: -1 }).exec();
+    res.json(
+      result.map((d: any) => ({
+        id: idOf(d),
+        donorName: d.donorName,
+        donorEmail: d.donorEmail,
+        amount: d.amount,
+        currency: d.currency || "RWF",
+        date: d.date ? new Date(d.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+        type: d.type,
+        paymentMethod: d.paymentMethod || "",
+        paymentStatus: d.paymentStatus || "unpaid",
+        receiptSent: !!d.receiptSent,
+        notes: d.notes || "",
+        projectId: d.projectId || "",
+      }))
+    );
+  } catch (error) {
+    console.error("Error fetching donations:", error);
+    res.status(500).json({ error: "Failed to fetch donations" });
+  }
 };
 
-export const getDonation: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const donation = donations.find((d) => d.id === id);
-  if (!donation) {
-    return res.status(404).json({ error: "Donation not found" });
+export const getDonation: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const donation = await DonationModel.findById(id).exec();
+    if (!donation) return res.status(404).json({ error: "Donation not found" });
+    res.json({
+      id: idOf(donation),
+      donorName: donation.donorName,
+      donorEmail: donation.donorEmail,
+      amount: donation.amount,
+      currency: donation.currency || "RWF",
+      date: donation.date ? new Date(donation.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      type: donation.type,
+      paymentMethod: donation.paymentMethod || "",
+      paymentStatus: donation.paymentStatus || "unpaid",
+      receiptSent: !!donation.receiptSent,
+      notes: donation.notes || "",
+      projectId: donation.projectId || "",
+    });
+  } catch (error) {
+    console.error("Error fetching donation:", error);
+    res.status(500).json({ error: "Failed to fetch donation" });
   }
-  res.json(donation);
 };
 
-export const createDonation: RequestHandler = (req, res) => {
-  const { donorName, donorEmail, amount, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent } = req.body;
-  
-  if (!donorName || !donorEmail || !amount || !type) {
-    return res.status(400).json({ error: "Donor name, email, amount, and type are required" });
+export const createDonation: RequestHandler = async (req, res) => {
+  try {
+    const { donorName, donorEmail, amount, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent } = req.body ?? {};
+    if (!donorName || !donorEmail || amount === undefined || amount === null || !type) {
+      return res.status(400).json({ error: "Donor name, email, amount, and type are required" });
+    }
+    await connectMongo();
+    const created = await DonationModel.create({
+      donorName,
+      donorEmail,
+      amount: Number(amount) || 0,
+      currency: currency || "RWF",
+      date: date ? new Date(date) : new Date(),
+      type,
+      paymentMethod: paymentMethod || "",
+      paymentStatus: paymentStatus || "unpaid",
+      projectId: projectId || "",
+      receiptSent: !!receiptSent,
+      notes: notes || "",
+    });
+    res.status(201).json({
+      id: idOf(created),
+      donorName: created.donorName,
+      donorEmail: created.donorEmail,
+      amount: created.amount,
+      currency: created.currency || "RWF",
+      date: created.date ? new Date(created.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      type: created.type,
+      paymentMethod: created.paymentMethod || "",
+      paymentStatus: created.paymentStatus || "unpaid",
+      projectId: created.projectId || "",
+      receiptSent: !!created.receiptSent,
+      notes: created.notes || "",
+    });
+  } catch (error) {
+    console.error("Error creating donation:", error);
+    res.status(500).json({ error: "Failed to create donation" });
   }
-  
-  const newDonation: Donation = {
-    id: generateId(),
-    donorName,
-    donorEmail,
-    amount: parseFloat(amount) || 0,
-    currency: currency || "RWF",
-    date: date ? (new Date(date).toISOString()) : new Date().toISOString(),
-    type: type as "one-time" | "monthly" | "project-based",
-    paymentMethod: paymentMethod || undefined,
-    paymentStatus: paymentStatus || "unpaid",
-    projectId: projectId || undefined,
-    receiptSent: receiptSent || false,
-    notes: notes || undefined,
-  };
-  
-  donations.push(newDonation);
-  res.status(201).json(newDonation);
 };
 
-export const updateDonation: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = donations.findIndex((d) => d.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Donation not found" });
+export const updateDonation: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    const { donorName, donorEmail, amount, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent } = req.body ?? {};
+    const updateData: any = {};
+    if (donorName !== undefined) updateData.donorName = donorName;
+    if (donorEmail !== undefined) updateData.donorEmail = donorEmail;
+    if (amount !== undefined) updateData.amount = Number(amount) || 0;
+    if (currency !== undefined) updateData.currency = currency;
+    if (date !== undefined) updateData.date = new Date(date);
+    if (type !== undefined) updateData.type = type;
+    if (paymentMethod !== undefined) updateData.paymentMethod = paymentMethod;
+    if (paymentStatus !== undefined) updateData.paymentStatus = paymentStatus;
+    if (projectId !== undefined) updateData.projectId = projectId;
+    if (notes !== undefined) updateData.notes = notes;
+    if (receiptSent !== undefined) updateData.receiptSent = !!receiptSent;
+
+    await connectMongo();
+    const updated = await DonationModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    if (!updated) return res.status(404).json({ error: "Donation not found" });
+    res.json({
+      id: idOf(updated),
+      donorName: updated.donorName,
+      donorEmail: updated.donorEmail,
+      amount: updated.amount,
+      currency: updated.currency || "RWF",
+      date: updated.date ? new Date(updated.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      type: updated.type,
+      paymentMethod: updated.paymentMethod || "",
+      paymentStatus: updated.paymentStatus || "unpaid",
+      projectId: updated.projectId || "",
+      receiptSent: !!updated.receiptSent,
+      notes: updated.notes || "",
+    });
+  } catch (error) {
+    console.error("Error updating donation:", error);
+    res.status(500).json({ error: "Failed to update donation" });
   }
-  // Update donation with new data, preserving paymentStatus
-  donations[index] = { ...donations[index], ...req.body, paymentStatus: req.body.paymentStatus || donations[index].paymentStatus || "unpaid" };
-  res.json(donations[index]);
 };
 
-export const deleteDonation: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = donations.findIndex((d) => d.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Donation not found" });
+export const deleteDonation: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const deleted = await DonationModel.findByIdAndDelete(id).exec();
+    if (!deleted) return res.status(404).json({ error: "Donation not found" });
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting donation:", error);
+    res.status(500).json({ error: "Failed to delete donation" });
   }
-  donations.splice(index, 1);
-  res.status(204).send();
 };
 
 // FAQs API
@@ -660,87 +938,158 @@ export const deleteFAQ: RequestHandler = async (req, res) => {
 };
 
 // Media API
-export const getMedia: RequestHandler = (req, res) => {
-  let result = [...media];
-  
-  // Filter by category if provided
-  const category = req.query.category as string | undefined;
-  if (category && category !== "all") {
-    const categories = category.split(',').map(c => c.trim().toLowerCase());
-    result = result.filter((m) => {
-      const fileCategory = m.category?.toLowerCase() || "";
-      return categories.some(cat => fileCategory === cat || fileCategory.includes(cat));
+export const getMedia: RequestHandler = async (req, res) => {
+  try {
+    await connectMongo();
+    const category = req.query.category as string | undefined;
+    const type = req.query.type as string | undefined;
+
+    const where: any = {};
+    if (type && type !== "all") where.type = type;
+    if (category && category !== "all") {
+      const categories = category
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean);
+      // match any of the categories loosely (exact or contains) - case-insensitive
+      where.$or = categories.map((c) => ({
+        category: { $regex: c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" },
+      }));
+    }
+
+    const result = await MediaFileModel.find(where).sort({ uploadDate: -1, createdAt: -1 }).exec();
+    res.json(
+      result.map((m: any) => ({
+        id: idOf(m),
+        name: m.name,
+        type: m.type,
+        url: m.url,
+        size: m.size,
+        uploadDate: m.uploadDate ? new Date(m.uploadDate).toISOString() : new Date().toISOString(),
+        category: m.category || undefined,
+        description: m.description || undefined,
+        tags: m.tags || [],
+        thumbnail: m.thumbnail || undefined,
+        youtubeUrl: m.youtubeUrl || undefined,
+      }))
+    );
+  } catch (error) {
+    console.error("Error fetching media files:", error);
+    res.status(500).json({ error: "Failed to fetch media files" });
+  }
+};
+
+export const getMediaFile: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const file = await MediaFileModel.findById(id).exec();
+    if (!file) return res.status(404).json({ error: "Media file not found" });
+    res.json({
+      id: idOf(file),
+      name: file.name,
+      type: file.type,
+      url: file.url,
+      size: file.size,
+      uploadDate: file.uploadDate ? new Date(file.uploadDate).toISOString() : new Date().toISOString(),
+      category: file.category || undefined,
+      description: file.description || undefined,
+      tags: file.tags || [],
+      thumbnail: file.thumbnail || undefined,
+      youtubeUrl: file.youtubeUrl || undefined,
     });
+  } catch (error) {
+    console.error("Error fetching media file:", error);
+    res.status(500).json({ error: "Failed to fetch media file" });
   }
-  
-  // Filter by type if provided
-  const type = req.query.type as string | undefined;
-  if (type && type !== "all") {
-    result = result.filter((m) => m.type === type);
-  }
-  
-  // Sort by upload date (newest first)
-  result.sort((a, b) => {
-    const dateA = new Date(a.uploadDate || 0).getTime();
-    const dateB = new Date(b.uploadDate || 0).getTime();
-    return dateB - dateA;
-  });
-  
-  res.json(result);
 };
 
-export const getMediaFile: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const file = media.find((m) => m.id === id);
-  if (!file) {
-    return res.status(404).json({ error: "Media file not found" });
+export const createMedia: RequestHandler = async (req, res) => {
+  try {
+    const { name, type, url, size, category, description, tags, thumbnail, youtubeUrl } = req.body ?? {};
+    if (!name || !type || !url || size === undefined || size === null) {
+      return res.status(400).json({ error: "Name, type, url, and size are required" });
+    }
+    await connectMongo();
+    const created = await MediaFileModel.create({
+      name,
+      type,
+      url,
+      size: Number(size) || 0,
+      uploadDate: new Date(),
+      category: category || undefined,
+      description: description || undefined,
+      tags: Array.isArray(tags) ? tags : [],
+      thumbnail: thumbnail || undefined,
+      youtubeUrl: youtubeUrl || undefined,
+    });
+    res.status(201).json({
+      id: idOf(created),
+      name: created.name,
+      type: created.type,
+      url: created.url,
+      size: created.size,
+      uploadDate: created.uploadDate ? new Date(created.uploadDate).toISOString() : new Date().toISOString(),
+      category: created.category || undefined,
+      description: created.description || undefined,
+      tags: created.tags || [],
+      thumbnail: created.thumbnail || undefined,
+      youtubeUrl: created.youtubeUrl || undefined,
+    });
+  } catch (error) {
+    console.error("Error creating media file:", error);
+    res.status(500).json({ error: "Failed to create media file" });
   }
-  res.json(file);
 };
 
-export const createMedia: RequestHandler = (req, res) => {
-  const { name, type, url, size, category, description, tags, thumbnail, youtubeUrl } = req.body;
-  
-  if (!name || !type || !url || !size) {
-    return res.status(400).json({ error: "Name, type, url, and size are required" });
+export const updateMedia: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    const { name, category, description, tags, thumbnail, youtubeUrl } = req.body ?? {};
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (category !== undefined) updateData.category = category;
+    if (description !== undefined) updateData.description = description;
+    if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : [];
+    if (thumbnail !== undefined) updateData.thumbnail = thumbnail || undefined;
+    if (youtubeUrl !== undefined) updateData.youtubeUrl = youtubeUrl || undefined;
+
+    await connectMongo();
+    const updated = await MediaFileModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    if (!updated) return res.status(404).json({ error: "Media file not found" });
+    res.json({
+      id: idOf(updated),
+      name: updated.name,
+      type: updated.type,
+      url: updated.url,
+      size: updated.size,
+      uploadDate: updated.uploadDate ? new Date(updated.uploadDate).toISOString() : new Date().toISOString(),
+      category: updated.category || undefined,
+      description: updated.description || undefined,
+      tags: updated.tags || [],
+      thumbnail: updated.thumbnail || undefined,
+      youtubeUrl: updated.youtubeUrl || undefined,
+    });
+  } catch (error) {
+    console.error("Error updating media file:", error);
+    res.status(500).json({ error: "Failed to update media file" });
   }
-  
-  const newFile: MediaFile = {
-    id: generateId(),
-    name,
-    type: type as "image" | "video" | "document",
-    url,
-    size: parseInt(size) || 0,
-    uploadDate: new Date().toISOString(),
-    category: category || undefined,
-    description: description || undefined,
-    tags: tags || [],
-    thumbnail: thumbnail || undefined,
-    youtubeUrl: youtubeUrl || undefined,
-  };
-  
-  media.push(newFile);
-  res.status(201).json(newFile);
 };
 
-export const updateMedia: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = media.findIndex((m) => m.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Media file not found" });
+export const deleteMedia: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const deleted = await MediaFileModel.findByIdAndDelete(id).exec();
+    if (!deleted) return res.status(404).json({ error: "Media file not found" });
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting media file:", error);
+    res.status(500).json({ error: "Failed to delete media file" });
   }
-  media[index] = { ...media[index], ...req.body };
-  res.json(media[index]);
-};
-
-export const deleteMedia: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = media.findIndex((m) => m.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Media file not found" });
-  }
-  media.splice(index, 1);
-  res.status(204).send();
 };
 
 // Books API
@@ -963,104 +1312,180 @@ export const trackBookDownload: RequestHandler = async (req, res) => {
 };
 
 // Email Subscribers API
-export const getSubscribers: RequestHandler = (req, res) => {
-  let result = [...subscribers];
-  
-  // Filter by status if provided
-  const status = req.query.status as string | undefined;
-  if (status) {
-    result = result.filter((s) => s.status === status);
+export const getSubscribers: RequestHandler = async (req, res) => {
+  try {
+    await connectMongo();
+    const status = req.query.status as string | undefined;
+    const where: any = {};
+    if (status) where.status = status;
+    const result = await EmailSubscriberModel.find(where).sort({ subscribedAt: -1 }).exec();
+    res.json(
+      result.map((s: any) => ({
+        id: idOf(s),
+        email: s.email,
+        name: s.name || undefined,
+        subscribedAt: s.subscribedAt ? new Date(s.subscribedAt).toISOString() : new Date().toISOString(),
+        status: s.status || "active",
+        source: s.source || "footer",
+        tags: s.tags || [],
+      }))
+    );
+  } catch (error) {
+    console.error("Error fetching subscribers:", error);
+    res.status(500).json({ error: "Failed to fetch subscribers" });
   }
-  
-  // Sort by subscribed date (newest first)
-  result.sort((a, b) => {
-    const dateA = new Date(a.subscribedAt || 0).getTime();
-    const dateB = new Date(b.subscribedAt || 0).getTime();
-    return dateB - dateA;
-  });
-  
-  res.json(result);
 };
 
-export const getSubscriber: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const subscriber = subscribers.find((s) => s.id === id);
-  if (!subscriber) {
-    return res.status(404).json({ error: "Subscriber not found" });
+export const getSubscriber: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const subscriber = await EmailSubscriberModel.findById(id).exec();
+    if (!subscriber) return res.status(404).json({ error: "Subscriber not found" });
+    res.json({
+      id: idOf(subscriber),
+      email: subscriber.email,
+      name: subscriber.name || undefined,
+      subscribedAt: subscriber.subscribedAt ? new Date(subscriber.subscribedAt).toISOString() : new Date().toISOString(),
+      status: subscriber.status || "active",
+      source: subscriber.source || "footer",
+      tags: subscriber.tags || [],
+    });
+  } catch (error) {
+    console.error("Error fetching subscriber:", error);
+    res.status(500).json({ error: "Failed to fetch subscriber" });
   }
-  res.json(subscriber);
 };
 
-export const createSubscriber: RequestHandler = (req, res) => {
-  const { email, name, source } = req.body;
-  
-  // Validate email
-  if (!email || !email.includes("@")) {
-    return res.status(400).json({ error: "Valid email is required" });
-  }
-  
-  // Check if email already exists
-  const existing = subscribers.find((s) => s.email.toLowerCase() === email.toLowerCase());
-  if (existing) {
-    if (existing.status === "active") {
-      return res.status(400).json({ error: "Email is already subscribed" });
-    } else {
-      // Reactivate unsubscribed user
+export const createSubscriber: RequestHandler = async (req, res) => {
+  try {
+    const { email, name, source, status } = req.body ?? {};
+    if (!email || typeof email !== "string" || !email.includes("@")) {
+      return res.status(400).json({ error: "Valid email is required" });
+    }
+    await connectMongo();
+    const lowerEmail = email.toLowerCase();
+
+    const existing = await EmailSubscriberModel.findOne({ email: lowerEmail }).exec();
+    if (existing) {
+      if (existing.status === "active") {
+        return res.status(400).json({ error: "Email is already subscribed" });
+      }
       existing.status = "active";
-      existing.subscribedAt = new Date().toISOString();
+      existing.subscribedAt = new Date();
       if (name) existing.name = name;
       if (source) existing.source = source;
-      return res.json(existing);
+      await existing.save();
+      return res.json({
+        id: idOf(existing),
+        email: existing.email,
+        name: existing.name || undefined,
+        subscribedAt: existing.subscribedAt ? new Date(existing.subscribedAt).toISOString() : new Date().toISOString(),
+        status: existing.status || "active",
+        source: existing.source || "footer",
+        tags: existing.tags || [],
+      });
     }
+
+    const created = await EmailSubscriberModel.create({
+      email: lowerEmail,
+      name: name || undefined,
+      subscribedAt: new Date(),
+      status: status || "active",
+      source: source || "footer",
+      tags: [],
+    });
+
+    res.status(201).json({
+      id: idOf(created),
+      email: created.email,
+      name: created.name || undefined,
+      subscribedAt: created.subscribedAt ? new Date(created.subscribedAt).toISOString() : new Date().toISOString(),
+      status: created.status || "active",
+      source: created.source || "footer",
+      tags: created.tags || [],
+    });
+  } catch (error: any) {
+    console.error("Error creating subscriber:", error);
+    if (error?.code === 11000) return res.status(400).json({ error: "Email is already subscribed" });
+    res.status(500).json({ error: "Failed to create subscriber" });
   }
-  
-  const newSubscriber: EmailSubscriber = {
-    id: generateId(),
-    email: email.toLowerCase(),
-    name: name || undefined,
-    subscribedAt: new Date().toISOString(),
-    status: "active",
-    source: source || "footer",
-    tags: [],
-  };
-  
-  subscribers.push(newSubscriber);
-  res.status(201).json(newSubscriber);
 };
 
-export const updateSubscriber: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = subscribers.findIndex((s) => s.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Subscriber not found" });
+export const updateSubscriber: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    const { email, name, status, source, tags } = req.body ?? {};
+    const updateData: any = {};
+    if (email !== undefined) updateData.email = String(email).toLowerCase();
+    if (name !== undefined) updateData.name = name || undefined;
+    if (status !== undefined) updateData.status = status;
+    if (source !== undefined) updateData.source = source;
+    if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : [];
+
+    await connectMongo();
+    const updated = await EmailSubscriberModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    if (!updated) return res.status(404).json({ error: "Subscriber not found" });
+    res.json({
+      id: idOf(updated),
+      email: updated.email,
+      name: updated.name || undefined,
+      subscribedAt: updated.subscribedAt ? new Date(updated.subscribedAt).toISOString() : new Date().toISOString(),
+      status: updated.status || "active",
+      source: updated.source || "footer",
+      tags: updated.tags || [],
+    });
+  } catch (error: any) {
+    console.error("Error updating subscriber:", error);
+    if (error?.code === 11000) return res.status(400).json({ error: "Email is already subscribed" });
+    res.status(500).json({ error: "Failed to update subscriber" });
   }
-  subscribers[index] = { ...subscribers[index], ...req.body };
-  res.json(subscribers[index]);
 };
 
-export const deleteSubscriber: RequestHandler = (req, res) => {
-  const { id } = req.params;
-  const index = subscribers.findIndex((s) => s.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Subscriber not found" });
+export const deleteSubscriber: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const deleted = await EmailSubscriberModel.findByIdAndDelete(id).exec();
+    if (!deleted) return res.status(404).json({ error: "Subscriber not found" });
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting subscriber:", error);
+    res.status(500).json({ error: "Failed to delete subscriber" });
   }
-  subscribers.splice(index, 1);
-  res.status(204).send();
 };
 
-export const unsubscribe: RequestHandler = (req, res) => {
-  const { email } = req.body;
-  if (!email) {
-    return res.status(400).json({ error: "Email is required" });
+export const unsubscribe: RequestHandler = async (req, res) => {
+  try {
+    const { email } = req.body ?? {};
+    if (!email) return res.status(400).json({ error: "Email is required" });
+    const lowerEmail = String(email).toLowerCase();
+    await connectMongo();
+    const updated = await EmailSubscriberModel.findOneAndUpdate(
+      { email: lowerEmail },
+      { status: "unsubscribed" },
+      { new: true }
+    ).exec();
+    if (!updated) return res.status(404).json({ error: "Email not found in our subscribers list" });
+    res.json({
+      message: "Successfully unsubscribed",
+      subscriber: {
+        id: idOf(updated),
+        email: updated.email,
+        name: updated.name || undefined,
+        subscribedAt: updated.subscribedAt ? new Date(updated.subscribedAt).toISOString() : new Date().toISOString(),
+        status: updated.status || "unsubscribed",
+        source: updated.source || "footer",
+        tags: updated.tags || [],
+      },
+    });
+  } catch (error) {
+    console.error("Error unsubscribing:", error);
+    res.status(500).json({ error: "Failed to unsubscribe" });
   }
-  
-  const subscriber = subscribers.find((s) => s.email.toLowerCase() === email.toLowerCase());
-  if (!subscriber) {
-    return res.status(404).json({ error: "Email not found in our subscribers list" });
-  }
-  
-  subscriber.status = "unsubscribed";
-  res.json({ message: "Successfully unsubscribed", subscriber });
 };
 
 // Committee Members API
@@ -1666,15 +2091,48 @@ export const getAnalytics: RequestHandler = async (req, res) => {
       // Continue with default values (0) if database queries fail
     }
     
-    // Get counts from in-memory arrays for models not yet migrated
-    const totalMembers = members?.length || 0;
-    const activeMembers = members?.filter((m) => m.status === "Active").length || 0;
-    const totalDonations = donations?.length || 0;
-    const totalDonationAmount = donations?.reduce((sum, d) => sum + (d.amount || 0), 0) || 0;
-    const totalEvents = events?.length || 0;
-    const upcomingEvents = events?.filter((e) => e.status === "upcoming").length || 0;
-    const totalSubscribers = subscribers?.length || 0;
-    const activeSubscribers = subscribers?.filter((s) => s.status === "active").length || 0;
+    // Get counts from database for migrated models
+    let totalMembers = 0;
+    let activeMembers = 0;
+    let totalDonations = 0;
+    let totalDonationAmount = 0;
+    let totalEvents = 0;
+    let upcomingEvents = 0;
+    let totalSubscribers = 0;
+    let activeSubscribers = 0;
+
+    try {
+      const [
+        membersCount,
+        activeMembersCount,
+        donationsCount,
+        donationsSum,
+        eventsCount,
+        upcomingEventsCount,
+        subscribersCount,
+        activeSubscribersCount,
+      ] = await Promise.all([
+        MemberModel.countDocuments({}).exec().catch(() => 0),
+        MemberModel.countDocuments({ status: "Active" }).exec().catch(() => 0),
+        DonationModel.countDocuments({}).exec().catch(() => 0),
+        DonationModel.aggregate([{ $group: { _id: null, total: { $sum: "$amount" } } }]).catch(() => []),
+        EventModel.countDocuments({}).exec().catch(() => 0),
+        EventModel.countDocuments({ status: "upcoming" }).exec().catch(() => 0),
+        EmailSubscriberModel.countDocuments({}).exec().catch(() => 0),
+        EmailSubscriberModel.countDocuments({ status: "active" }).exec().catch(() => 0),
+      ]);
+
+      totalMembers = membersCount;
+      activeMembers = activeMembersCount;
+      totalDonations = donationsCount;
+      totalDonationAmount = Array.isArray(donationsSum) && donationsSum[0]?.total ? Number(donationsSum[0].total) : 0;
+      totalEvents = eventsCount;
+      upcomingEvents = upcomingEventsCount;
+      totalSubscribers = subscribersCount;
+      activeSubscribers = activeSubscribersCount;
+    } catch (e) {
+      console.error("Error counting migrated models for analytics:", e);
+    }
     
     const analytics = {
       totalMembers,

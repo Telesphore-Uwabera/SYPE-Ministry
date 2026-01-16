@@ -144,3 +144,121 @@ export const ContactSubmissionModel =
     )
   );
 
+export const MemberModel =
+  mongoose.models.Member ??
+  mongoose.model(
+    "Member",
+    new Schema(
+      {
+        name: { type: String, required: true },
+        email: { type: String, required: true, unique: true },
+        phone: { type: String },
+        role: { type: String, required: true }, // Student | Alumni | Admin
+        status: { type: String, required: true }, // Active | Inactive | Pending
+        joinDate: { type: Date, default: () => new Date() },
+        department: { type: String },
+        notes: { type: String },
+      },
+      { timestamps: true, collection: "members" }
+    )
+  );
+
+export const EventModel =
+  mongoose.models.Event ??
+  mongoose.model(
+    "Event",
+    new Schema(
+      {
+        title: { type: String, required: true },
+        description: { type: String, required: true },
+        date: { type: Date, required: true },
+        time: { type: String, required: true },
+        location: { type: String, required: true },
+        category: { type: String, required: true },
+        rsvpRequired: { type: Boolean, default: false },
+        rsvpCount: { type: Number, default: 0 },
+        maxAttendees: { type: Number },
+        attendees: strArr,
+        status: { type: String, required: true },
+      },
+      { timestamps: true, collection: "events" }
+    )
+  );
+
+export const DonationModel =
+  mongoose.models.Donation ??
+  mongoose.model(
+    "Donation",
+    new Schema(
+      {
+        donorName: { type: String, required: true },
+        donorEmail: { type: String, required: true },
+        amount: { type: Number, required: true },
+        currency: { type: String, default: "RWF" },
+        date: { type: Date, default: () => new Date() },
+        type: { type: String, required: true }, // one-time|monthly|project-based
+        projectId: { type: String },
+        paymentMethod: { type: String },
+        paymentStatus: { type: String, default: "unpaid" }, // paid|unpaid|installment
+        receiptSent: { type: Boolean, default: false },
+        notes: { type: String },
+      },
+      { timestamps: true, collection: "donations" }
+    )
+  );
+
+export const MediaFileModel =
+  mongoose.models.MediaFile ??
+  mongoose.model(
+    "MediaFile",
+    new Schema(
+      {
+        name: { type: String, required: true },
+        type: { type: String, required: true }, // image|video|document
+        url: { type: String, required: true },
+        thumbnail: { type: String },
+        youtubeUrl: { type: String },
+        size: { type: Number, required: true },
+        uploadDate: { type: Date, default: () => new Date() },
+        category: { type: String },
+        tags: strArr,
+        description: { type: String },
+      },
+      { timestamps: true, collection: "media_files" }
+    )
+  );
+
+export const EmailSubscriberModel =
+  mongoose.models.EmailSubscriber ??
+  mongoose.model(
+    "EmailSubscriber",
+    new Schema(
+      {
+        email: { type: String, required: true, unique: true },
+        name: { type: String },
+        subscribedAt: { type: Date, default: () => new Date() },
+        status: { type: String, default: "active" }, // active|unsubscribed
+        source: { type: String },
+        tags: strArr,
+      },
+      { timestamps: true, collection: "email_subscribers" }
+    )
+  );
+
+export const EmailCampaignModel =
+  mongoose.models.EmailCampaign ??
+  mongoose.model(
+    "EmailCampaign",
+    new Schema(
+      {
+        subject: { type: String, required: true },
+        body: { type: String, required: true },
+        recipients: strArr,
+        sentDate: { type: Date },
+        status: { type: String, required: true }, // draft|scheduled|sent
+        scheduledDate: { type: Date },
+      },
+      { timestamps: true, collection: "email_campaigns" }
+    )
+  );
+

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { FAQ } from "@/types/admin";
-import { faqStore } from "@/lib/adminStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,25 +40,58 @@ export default function FAQManagement() {
   });
 
   useEffect(() => {
-    loadFAQs();
+    void loadFAQs();
   }, []);
 
-  const loadFAQs = () => {
-    setFaqs(faqStore.getAll());
+  const loadFAQs = async () => {
+    try {
+      const response = await fetch("/api/admin/faqs", { cache: "no-store" });
+      if (!response.ok) throw new Error(`Failed to load FAQs (${response.status})`);
+      const data = await response.json();
+      setFaqs(Array.isArray(data) ? data : []);
+    } catch (error: any) {
+      console.error("Error loading FAQs:", error);
+      setFaqs([]);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to load FAQs. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingFAQ) {
-      faqStore.update(editingFAQ.id, formData);
-      toast({ title: "FAQ updated", description: "FAQ has been updated successfully." });
-    } else {
-      faqStore.create(formData);
-      toast({ title: "FAQ created", description: "New FAQ has been created successfully." });
+    try {
+      if (editingFAQ) {
+        const response = await fetch(`/api/admin/faqs/${editingFAQ.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+        if (!response.ok) throw new Error("Failed to update FAQ");
+        toast({ title: "FAQ updated", description: "FAQ has been updated successfully." });
+      } else {
+        const response = await fetch("/api/admin/faqs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+        if (!response.ok) throw new Error("Failed to create FAQ");
+        toast({ title: "FAQ created", description: "New FAQ has been created successfully." });
+      }
+
+      window.dispatchEvent(new Event("admin-data-changed"));
+      setIsDialogOpen(false);
+      resetForm();
+      await loadFAQs();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to save FAQ. Please try again.",
+        variant: "destructive",
+      });
     }
-    setIsDialogOpen(false);
-    resetForm();
-    loadFAQs();
   };
 
   const handleEdit = (faq: FAQ) => {
@@ -73,10 +105,20 @@ export default function FAQManagement() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    faqStore.delete(id);
-    toast({ title: "FAQ deleted", description: "FAQ has been deleted successfully." });
-    loadFAQs();
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/admin/faqs/${id}`, { method: "DELETE" });
+      if (!response.ok && response.status !== 204) throw new Error("Failed to delete FAQ");
+      toast({ title: "FAQ deleted", description: "FAQ has been deleted successfully." });
+      window.dispatchEvent(new Event("admin-data-changed"));
+      await loadFAQs();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to delete FAQ. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const resetForm = () => {

@@ -171,5 +171,13 @@ export interface Analytics {
   totalEvents: number;
   upcomingEvents: number;
   totalNewsArticles: number;
+  totalBooks?: number;
+  totalSubscribers?: number;
+  activeSubscribers?: number;
+  totalCommitteeMembers?: number;
+  activeCommitteeMembers?: number;
+  totalDevotions?: number;
+  totalContactSubmissions?: number;
+  newContactSubmissions?: number;
   websiteViews?: number;
 }

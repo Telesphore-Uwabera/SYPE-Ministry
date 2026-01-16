@@ -42,7 +42,7 @@ export default function EventManagement() {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const { toast } = useToast();
 
-  const [formData, setFormData] = useState<Omit<Event, "id" | "rsvpCount" | "attendees">>({
+  const [formData, setFormData] = useState<Omit<Event, "id">>({
     title: "",
     description: "",
     date: new Date().toISOString().split("T")[0],

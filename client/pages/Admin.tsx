@@ -66,6 +66,13 @@ export default function Admin() {
     setIsLoading(false);
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const handler = () => loadAnalytics();
+    window.addEventListener("admin-data-changed", handler);
+    return () => window.removeEventListener("admin-data-changed", handler);
+  }, [isAuthenticated]);
+
   const loadAnalytics = async () => {
     try {
       const response = await fetch(buildApiUrl("/api/admin/analytics"));

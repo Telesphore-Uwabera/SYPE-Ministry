@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { NewsArticle } from "@/types/admin";
-import { newsStore } from "@/lib/adminStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +35,7 @@ import { Newspaper, Plus, Search, Edit, Trash2, Eye } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import ImageUpload from "./ImageUpload";
+import { buildApiUrl } from "@/lib/apiConfig";
 
 export default function NewsManagement() {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
@@ -57,31 +57,65 @@ export default function NewsManagement() {
   });
 
   useEffect(() => {
-    loadArticles();
+    void loadArticles();
   }, []);
 
-  const loadArticles = () => {
-    setArticles(newsStore.getAll());
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingArticle) {
-      newsStore.update(editingArticle.id, formData);
+  const loadArticles = async () => {
+    try {
+      const apiUrl = buildApiUrl("/api/admin/news");
+      const response = await fetch(apiUrl, { cache: "no-store" });
+      if (!response.ok) throw new Error(`Failed to load articles (${response.status})`);
+      const data = await response.json();
+      setArticles(Array.isArray(data) ? data : []);
+    } catch (error: any) {
+      console.error("Failed to load news articles:", error);
+      setArticles([]);
       toast({
-        title: "Article updated",
-        description: "News article has been updated successfully.",
-      });
-    } else {
-      newsStore.create(formData);
-      toast({
-        title: "Article created",
-        description: "New article has been created successfully.",
+        title: "Failed to load articles",
+        description: error?.message || "Please refresh and try again.",
+        variant: "destructive",
       });
     }
-    setIsDialogOpen(false);
-    resetForm();
-    loadArticles();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      if (editingArticle) {
+        const apiUrl = buildApiUrl(`/api/admin/news/${editingArticle.id}`);
+        const response = await fetch(apiUrl, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+        if (!response.ok) throw new Error(`Update failed (${response.status})`);
+        toast({ title: "Article updated", description: "News article has been updated successfully." });
+      } else {
+        const apiUrl = buildApiUrl("/api/admin/news");
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+        if (!response.ok) throw new Error(`Create failed (${response.status})`);
+        toast({ title: "Article created", description: "New article has been created successfully." });
+      }
+
+      // Let dashboard/analytics know data changed
+      window.dispatchEvent(new Event("admin-data-changed"));
+
+      setIsDialogOpen(false);
+      resetForm();
+      await loadArticles();
+    } catch (error: any) {
+      console.error("Failed to save news article:", error);
+      toast({
+        title: "Save failed",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEdit = (article: NewsArticle) => {
@@ -100,13 +134,24 @@ export default function NewsManagement() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    newsStore.delete(id);
-    toast({
-      title: "Article deleted",
-      description: "News article has been deleted successfully.",
-    });
-    loadArticles();
+  const handleDelete = async (id: string) => {
+    try {
+      const apiUrl = buildApiUrl(`/api/admin/news/${id}`);
+      const response = await fetch(apiUrl, { method: "DELETE" });
+      if (!response.ok && response.status !== 204) {
+        throw new Error(`Delete failed (${response.status})`);
+      }
+      toast({ title: "Article deleted", description: "News article has been deleted successfully." });
+      window.dispatchEvent(new Event("admin-data-changed"));
+      await loadArticles();
+    } catch (error: any) {
+      console.error("Failed to delete news article:", error);
+      toast({
+        title: "Delete failed",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const resetForm = () => {

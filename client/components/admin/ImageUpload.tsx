@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 interface ImageUploadProps {
   value?: string;
   onChange: (url: string) => void;
-  category?: "news" | "projects" | "members" | "events" | "media" | "committee";
+  category?: "news" | "projects" | "members" | "events" | "media" | "committee" | "books" | "devotions";
   label?: string;
   className?: string;
 }

@@ -58,7 +58,8 @@ export default function ContactInfoBar() {
           exit={{ y: -100, opacity: 0 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
           className={`
-            fixed top-0 left-0 right-0 z-[60] 
+            // On small screens, keep contact bar BELOW the yellow MTN bar (which is 40px tall)
+            fixed top-10 md:top-0 left-0 right-0 z-[60] 
             bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 
             text-white border-b border-primary/20
             ${isScrolled ? "shadow-lg" : "shadow-sm"}

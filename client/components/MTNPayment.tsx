@@ -115,12 +115,13 @@ export default function MTNPayment({ variant = "bar", className = "" }: MTNPayme
 
   // Default bar variant
   return (
-    <div className={`fixed top-10 md:top-12 left-0 right-0 z-[55] bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-white ${className}`}>
+    // On small screens, keep the yellow bar ABOVE the contact bar
+    <div className={`fixed top-0 md:top-12 left-0 right-0 z-[70] bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-white ${className}`}>
       <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-1 md:gap-0 py-2 md:py-0 h-auto md:h-10 lg:h-12">
+        <div className="flex items-center justify-between gap-2 h-10 md:h-10 lg:h-12">
           <div className="flex items-center gap-2 md:gap-3 flex-1 w-full md:w-auto">
             <Smartphone className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
-            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3 flex-1">
+            <div className="flex items-center gap-2 md:gap-3 flex-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <span className="text-xs md:text-sm font-semibold whitespace-nowrap">
                 Support via MTN:
               </span>
@@ -129,7 +130,7 @@ export default function MTNPayment({ variant = "bar", className = "" }: MTNPayme
                   {paymentCode}
                 </p>
               </div>
-              <span className="text-xs opacity-90 whitespace-nowrap">
+              <span className="hidden md:inline text-xs opacity-90 whitespace-nowrap">
                 (Registered to: Niyonkuru Simeon)
               </span>
             </div>

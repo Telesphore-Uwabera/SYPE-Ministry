@@ -224,6 +224,7 @@ export default function Navigation() {
           mass: 0.8,
         }}
         className={cn(
+          // Keep navbar/menu BELOW the MTN bar so the yellow content stays on top
           "fixed left-0 right-0 z-50 transition-all duration-500",
           isScrolled
             ? "bg-white/95 backdrop-blur-xl border-b border-border/50 shadow-lg top-[80px] md:top-[96px]"
@@ -441,7 +442,11 @@ export default function Navigation() {
             {/* Mobile Menu Button with zoom animation */}
             <motion.button
               onClick={() => setIsOpen(!isOpen)}
-              className="lg:hidden p-2 rounded-lg hover:bg-muted transition-colors text-foreground relative"
+              className={cn(
+                "lg:hidden p-2 rounded-lg transition-colors relative shadow-sm",
+                // Make the toggle clearly visible (not white/yellow)
+                "bg-primary text-white hover:bg-primary/90"
+              )}
               aria-label="Toggle menu"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}

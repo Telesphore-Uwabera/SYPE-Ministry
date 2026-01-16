@@ -40,7 +40,7 @@ export function createServer() {
 
   // Middleware - CORS Configuration
   const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim())
+    ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean)
     : process.env.NODE_ENV === "production"
     ? [] // In production, specify allowed origins
     : [
@@ -53,6 +53,8 @@ export function createServer() {
         "http://127.0.0.1:8081",
         "http://127.0.0.1:8082",
       ];
+
+  const normalizedSiteUrl = (process.env.SITE_URL || "").trim().replace(/\/+$/, "");
 
   app.use(
     cors({
@@ -67,15 +69,15 @@ export function createServer() {
             return callback(null, true);
           }
         }
-        
-        // In production, if ALLOWED_ORIGINS is not set, allow common production domains
-        if (process.env.NODE_ENV === "production" && allowedOrigins.length === 0) {
-          // Allow Netlify and common production domains
-          const isNetlify = /^https?:\/\/[^/]+\.netlify\.app/.test(origin);
-          const isRender = /^https?:\/\/[^/]+\.onrender\.com/.test(origin);
-          if (isNetlify || isRender) {
-            return callback(null, true);
-          }
+
+        // Always allow Netlify preview/production domains (common for this project)
+        const isNetlify = /^https?:\/\/[^/]+\.netlify\.app$/.test(origin);
+        if (isNetlify) {
+          return callback(null, true);
+        }
+        // Also allow the configured SITE_URL if present
+        if (normalizedSiteUrl && origin === normalizedSiteUrl) {
+          return callback(null, true);
         }
         
         // Check against explicit allowed origins

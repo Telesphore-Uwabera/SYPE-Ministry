@@ -8,16 +8,19 @@ import { Play, FileText, Image as ImageIcon, Video, CheckCircle2, Clock, Trendin
 import { motion } from "framer-motion";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 import { useEffect, useState } from "react";
-import { Project } from "@/types/admin";
+import { Event, Project } from "@/types/admin";
 import { buildApiUrl } from "@/lib/apiConfig";
 
 export default function Projects() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState<"all" | "past" | "ongoing" | "future">("all");
 
   useEffect(() => {
     fetchProjects();
+    fetchEvents();
   }, []);
 
   const fetchProjects = async () => {
@@ -47,6 +50,21 @@ export default function Projects() {
       setProjects([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEvents = async () => {
+    try {
+      const apiUrl = buildApiUrl("/api/events?upcoming=true&limit=6");
+      const response = await fetch(apiUrl, { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      setEvents(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      setEvents([]);
+    } finally {
+      setEventsLoading(false);
     }
   };
 
@@ -258,6 +276,64 @@ export default function Projects() {
           </div>
         </section>
       )}
+
+      {/* Upcoming Events Section */}
+      <section className="py-16 md:py-20 bg-muted/30 border-b border-border">
+        <div className="container mx-auto px-4">
+          <ScrollAnimation direction="up" delay={0.2}>
+            <div className="mb-8">
+              <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary mb-2">
+                Upcoming Events
+              </h2>
+              <p className="text-foreground/70">
+                Join us in upcoming programs and ministry activities
+              </p>
+            </div>
+          </ScrollAnimation>
+
+          {eventsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-40 bg-muted animate-pulse rounded-lg" />
+              ))}
+            </div>
+          ) : events.length === 0 ? (
+            <div className="text-center py-10 text-foreground/70">
+              No upcoming events yet.
+            </div>
+          ) : (
+            <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" staggerDelay={0.15} direction="up" detectScrollDirection>
+              {events.map((event) => (
+                <HoverAnimation key={event.id} scale={1.02} y={-6}>
+                  <Card className="h-full border-2 hover:border-primary/50 hover:shadow-lg transition-all">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-primary line-clamp-2">
+                        {event.title}
+                      </CardTitle>
+                      <CardDescription className="text-sm">
+                        {new Date(event.date).toLocaleDateString()} • {event.time} • {event.location}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-foreground/80 text-sm leading-relaxed line-clamp-3 mb-3">
+                        {event.description}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-xs">
+                          {event.category}
+                        </Badge>
+                        <Button asChild size="sm" variant="outline">
+                          <Link to="/contact">Learn more</Link>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </HoverAnimation>
+              ))}
+            </StaggerContainer>
+          )}
+        </div>
+      </section>
 
       {/* Featured Projects Section */}
       {featuredProjects.length > 0 && (

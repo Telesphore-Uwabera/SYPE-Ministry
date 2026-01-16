@@ -516,7 +516,27 @@ export const deleteProject: RequestHandler = async (req, res) => {
 export const getEvents: RequestHandler = async (req, res) => {
   try {
     await connectMongo();
-    const result = await EventModel.find().sort({ date: -1 }).exec();
+    const status = (req.query.status as string | undefined) || undefined;
+    const upcoming = req.query.upcoming === "true";
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+
+    const where: any = {};
+    if (status) where.status = status;
+    if (upcoming) {
+      where.status = "upcoming";
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      where.date = { $gte: startOfToday };
+    }
+
+    const sort =
+      where.status === "upcoming"
+        ? { date: 1 } // soonest first
+        : { date: -1 }; // latest first
+
+    const query = EventModel.find(where).sort(sort);
+    if (limit && Number.isFinite(limit)) query.limit(limit);
+    const result = await query.exec();
     res.json(
       result.map((e: any) => ({
         id: idOf(e),

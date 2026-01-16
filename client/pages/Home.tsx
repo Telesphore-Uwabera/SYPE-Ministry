@@ -18,7 +18,7 @@ import {
 import { motion } from "framer-motion";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 import { useEffect, useState } from "react";
-import { NewsArticle, Devotion } from "@/types/admin";
+import { NewsArticle, Devotion, Event } from "@/types/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildApiUrl } from "@/lib/apiConfig";
 
@@ -326,6 +326,84 @@ function LatestVideosCards() {
               </CardContent>
             </Card>
           </a>
+        </HoverAnimation>
+      ))}
+    </StaggerContainer>
+  );
+}
+
+function UpcomingEventsCards() {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const apiUrl = buildApiUrl("/api/events?upcoming=true&limit=3");
+        const res = await fetch(apiUrl, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const data = await res.json();
+        setEvents(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+        setEvents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
+
+  if (loading) {
+    return (
+      <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />
+        ))}
+      </StaggerContainer>
+    );
+  }
+
+  if (events.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <Calendar className="w-14 h-14 text-muted-foreground mx-auto mb-3 opacity-40" />
+        <p className="text-foreground/70">No upcoming events yet.</p>
+      </div>
+    );
+  }
+
+  return (
+    <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
+      {events.map((event) => (
+        <HoverAnimation key={event.id} scale={1.02} y={-8}>
+          <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300">
+            <CardHeader>
+              <CardTitle className="line-clamp-2">{event.title}</CardTitle>
+              <CardDescription className="flex flex-col gap-1 text-xs">
+                <span className="inline-flex items-center gap-2">
+                  <Calendar className="w-3 h-3" />
+                  {new Date(event.date).toLocaleDateString()} • {event.time}
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <Clock className="w-3 h-3" />
+                  {event.location}
+                </span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-foreground/70 line-clamp-3 mb-3">{event.description}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-foreground/60">{event.category}</span>
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/contact" className="inline-flex items-center gap-2">
+                    Learn more
+                    <ExternalLink className="w-3 h-3" />
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </HoverAnimation>
       ))}
     </StaggerContainer>
@@ -681,6 +759,20 @@ export default function Home() {
           </motion.div>
         </div>
       </motion.section>
+
+      {/* Upcoming Events Section */}
+      <section className="py-16 md:py-24 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <ScrollAnimation direction="fade" delay={0.4}>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary">
+                Upcoming Events
+              </h2>
+            </div>
+          </ScrollAnimation>
+          <UpcomingEventsCards />
+        </div>
+      </section>
 
       {/* Featured Content Section - Latest News */}
       <section className="py-16 md:py-24 bg-muted/30">

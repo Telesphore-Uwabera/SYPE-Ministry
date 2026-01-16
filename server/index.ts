@@ -149,6 +149,10 @@ export function createServer() {
   app.put("/api/admin/events/:id", adminRoutes.updateEvent);
   app.delete("/api/admin/events/:id", adminRoutes.deleteEvent);
 
+  // Public API Routes - Events (for Home/Projects display)
+  app.get("/api/events", adminRoutes.getEvents);
+  app.get("/api/events/:id", adminRoutes.getEvent);
+
   // Admin API Routes - Donations
   app.get("/api/admin/donations", adminRoutes.getDonations);
   app.get("/api/admin/donations/:id", adminRoutes.getDonation);

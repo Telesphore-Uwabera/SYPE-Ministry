@@ -221,6 +221,10 @@ export function createServer() {
 
   // Public API Routes - Devotions (for Devotions page)
   app.get("/api/devotions", adminRoutes.getDevotions);
+  app.get("/api/devotions/:id", adminRoutes.getDevotion);
+
+  // Public API Routes - Book download (force PDF filename/content-type)
+  app.get("/api/books/:id/download", adminRoutes.downloadBookPdf);
 
   // Admin API Routes - Analytics
   app.get("/api/admin/analytics", adminRoutes.getAnalytics);

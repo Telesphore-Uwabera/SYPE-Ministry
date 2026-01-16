@@ -1,4 +1,5 @@
 import { RequestHandler, Request, Response } from "express";
+import { Readable } from "stream";
 import { Member, NewsArticle, Project, Event, Donation, FAQ, MediaFile, EmailCampaign, Book, EmailSubscriber, CommitteeMember, Devotion } from "../../client/types/admin";
 import { connectMongo, isValidObjectId } from "../lib/mongoose";
 import {
@@ -1328,6 +1329,55 @@ export const trackBookDownload: RequestHandler = async (req, res) => {
   } catch (error: any) {
     console.error("Error tracking book download:", error);
     res.status(500).json({ error: "Failed to track book download" });
+  }
+};
+
+function safePdfFilename(title: string | undefined) {
+  const base = (title || "book")
+    .toString()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .slice(0, 80);
+  return `${base || "book"}.pdf`;
+}
+
+export const downloadBookPdf: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+
+    await connectMongo();
+    const book = await BookModel.findByIdAndUpdate(id, { $inc: { downloads: 1 } }, { new: true }).exec();
+    if (!book) return res.status(404).json({ error: "Book not found" });
+    if (!book.fileUrl) return res.status(400).json({ error: "Book fileUrl is missing" });
+
+    const upstream = await fetch(book.fileUrl, { cache: "no-store" as any });
+    if (!upstream.ok || !upstream.body) {
+      return res.status(502).json({ error: "Failed to fetch PDF from storage" });
+    }
+
+    const filename = safePdfFilename(book.title);
+    const contentType =
+      upstream.headers.get("content-type") ||
+      "application/pdf";
+
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Content-Disposition", `attachment; filename=\"${filename}\"`);
+    res.setHeader("Cache-Control", "no-store");
+
+    // Stream response
+    const nodeStream = Readable.fromWeb(upstream.body as any);
+    nodeStream.on("error", (e) => {
+      console.error("PDF stream error:", e);
+      try {
+        res.end();
+      } catch {}
+    });
+    nodeStream.pipe(res);
+  } catch (error) {
+    console.error("Error downloading book PDF:", error);
+    res.status(500).json({ error: "Failed to download PDF" });
   }
 };
 

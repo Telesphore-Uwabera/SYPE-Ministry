@@ -13,7 +13,10 @@ import Membership from "./pages/Membership";
 import Donations from "./pages/Donations";
 import Library from "./pages/Library";
 import News from "./pages/News";
+import NewsArticlePage from "./pages/NewsArticle";
 import Devotions from "./pages/Devotions";
+import DevotionDetailPage from "./pages/DevotionDetail";
+import EventDetailPage from "./pages/EventDetail";
 import Videos from "./pages/Videos";
 import Departments from "./pages/Departments";
 import Projects from "./pages/Projects";
@@ -41,7 +44,10 @@ export default function App() {
             <Route path="/donations" element={<Donations />} />
             <Route path="/library" element={<Library />} />
             <Route path="/news" element={<News />} />
+            <Route path="/news/:id" element={<NewsArticlePage />} />
             <Route path="/devotions" element={<Devotions />} />
+            <Route path="/devotions/:id" element={<DevotionDetailPage />} />
+            <Route path="/events/:id" element={<EventDetailPage />} />
             <Route path="/videos" element={<Videos />} />
             <Route path="/departments" element={<Departments />} />
             <Route path="/projects" element={<Projects />} />

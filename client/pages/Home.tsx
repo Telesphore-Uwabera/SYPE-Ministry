@@ -82,7 +82,7 @@ function LatestNewsCards() {
     <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
       {news.map((article) => (
         <HoverAnimation key={article.id} scale={1.02} y={-8}>
-          <Link to={`/news#${article.id}`}>
+          <Link to={`/news/${article.id}`}>
             <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer">
               {article.image ? (
                 <div className="relative h-48 overflow-hidden">
@@ -178,7 +178,7 @@ function LatestDevotionsCards() {
     <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
       {devotions.map((devotion) => (
         <HoverAnimation key={devotion.id} scale={1.02} y={-8}>
-          <Link to={`/devotions#${devotion.id}`}>
+          <Link to={`/devotions/${devotion.id}`}>
             <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer">
               {devotion.image ? (
                 <div className="relative h-48 overflow-hidden">
@@ -332,14 +332,14 @@ function LatestVideosCards() {
   );
 }
 
-function UpcomingEventsCards() {
+function LatestEventsCards() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const apiUrl = buildApiUrl("/api/events?upcoming=true&limit=3");
+        const apiUrl = buildApiUrl("/api/events?limit=3");
         const res = await fetch(apiUrl, { cache: "no-store" });
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
@@ -368,7 +368,7 @@ function UpcomingEventsCards() {
     return (
       <div className="text-center py-8">
         <Calendar className="w-14 h-14 text-muted-foreground mx-auto mb-3 opacity-40" />
-        <p className="text-foreground/70">No upcoming events yet.</p>
+        <p className="text-foreground/70">No events yet.</p>
       </div>
     );
   }
@@ -396,7 +396,7 @@ function UpcomingEventsCards() {
               <div className="flex items-center justify-between">
                 <span className="text-xs text-foreground/60">{event.category}</span>
                 <Button asChild size="sm" variant="outline">
-                  <Link to="/contact" className="inline-flex items-center gap-2">
+                  <Link to={`/events/${event.id}`} className="inline-flex items-center gap-2">
                     Learn more
                     <ExternalLink className="w-3 h-3" />
                   </Link>
@@ -766,11 +766,11 @@ export default function Home() {
           <ScrollAnimation direction="fade" delay={0.4}>
             <div className="flex items-center justify-between mb-8">
               <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary">
-                Upcoming Events
+                Latest Events
               </h2>
             </div>
           </ScrollAnimation>
-          <UpcomingEventsCards />
+          <LatestEventsCards />
         </div>
       </section>
 

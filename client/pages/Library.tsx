@@ -212,15 +212,9 @@ export default function Library() {
                       className="flex items-center gap-2"
                     >
                       <a
-                        href={book.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={buildApiUrl(`/api/books/${book.id}/download`)}
                         onClick={(e) => {
                           e.stopPropagation();
-                          // Track download
-                          fetch(`/api/admin/books/${book.id}/download`, {
-                            method: "POST",
-                          }).catch(() => {});
                         }}
                       >
                         <Download className="w-3 h-3" />

@@ -323,7 +323,7 @@ export default function Projects() {
                           {event.category}
                         </Badge>
                         <Button asChild size="sm" variant="outline">
-                          <Link to="/contact">Learn more</Link>
+                          <Link to={`/events/${event.id}`}>Read More</Link>
                         </Button>
                       </div>
                     </CardContent>

@@ -1,18 +1,22 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Newspaper, ExternalLink, ArrowLeft } from "lucide-react";
+import { Calendar, Newspaper, ArrowLeft, ArrowRight, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 import { NewsArticle } from "@/types/admin";
 import { Input } from "@/components/ui/input";
 import { buildApiUrl } from "@/lib/apiConfig";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function News() {
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -52,6 +56,17 @@ export default function News() {
     
     fetchNews();
   }, []);
+
+  // Support deep linking from Home cards: /news#<articleId>
+  useEffect(() => {
+    if (!news.length) return;
+    const hash = (location.hash || "").replace("#", "").trim();
+    if (!hash) return;
+    const match = news.find((a) => a.id === hash);
+    if (match) {
+      setSelectedArticle(match);
+    }
+  }, [location.hash, news]);
 
   const filteredNews = news.filter((article) => {
     const query = searchQuery.toLowerCase();
@@ -208,9 +223,13 @@ export default function News() {
                           variant="outline"
                           size="sm"
                           className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                          onClick={() => {
+                            setSelectedArticle(article);
+                            navigate({ pathname: "/news", hash: `#${article.id}` }, { replace: false });
+                          }}
                         >
                           Read More
-                          <ExternalLink className="w-3 h-3 ml-2" />
+                          <ArrowRight className="w-3 h-3 ml-2" />
                         </Button>
                       </CardContent>
                     </Card>
@@ -221,6 +240,91 @@ export default function News() {
           )}
         </div>
       </section>
+
+      <Dialog
+        open={!!selectedArticle}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedArticle(null);
+            // Clear hash when closing so refresh doesn't re-open
+            navigate({ pathname: "/news" }, { replace: true });
+          }
+        }}
+      >
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          {selectedArticle && (
+            <>
+              <DialogHeader>
+                <div className="flex items-start justify-between gap-4">
+                  <DialogTitle className="text-2xl font-bold text-primary">
+                    {selectedArticle.title}
+                  </DialogTitle>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setSelectedArticle(null);
+                      navigate({ pathname: "/news" }, { replace: true });
+                    }}
+                    aria-label="Close"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="text-sm text-foreground/70 flex flex-wrap items-center gap-2 mt-2">
+                  <span className="inline-flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    {new Date(selectedArticle.publishDate).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </span>
+                  {selectedArticle.author && (
+                    <>
+                      <span className="text-foreground/40">•</span>
+                      <span>{selectedArticle.author}</span>
+                    </>
+                  )}
+                  {selectedArticle.category && (
+                    <>
+                      <span className="text-foreground/40">•</span>
+                      <span className="text-xs bg-muted px-2 py-1 rounded">
+                        {selectedArticle.category}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </DialogHeader>
+
+              {selectedArticle.image && (
+                <div className="mt-4 rounded-lg overflow-hidden border">
+                  <img
+                    src={selectedArticle.image}
+                    alt={selectedArticle.title}
+                    className="w-full max-h-[360px] object-cover"
+                  />
+                </div>
+              )}
+
+              <div className="mt-4 space-y-4">
+                {selectedArticle.excerpt && (
+                  <p className="text-foreground/80 font-medium">
+                    {selectedArticle.excerpt}
+                  </p>
+                )}
+                {selectedArticle.body && (
+                  <div className="prose prose-slate max-w-none">
+                    <p className="whitespace-pre-wrap text-foreground/80 leading-relaxed">
+                      {selectedArticle.body}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

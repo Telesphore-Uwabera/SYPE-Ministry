@@ -53,17 +53,8 @@ export default function Layout({ children }: LayoutProps) {
         // Hash IDs may start with digits (e.g. Mongo ObjectId), which are not valid CSS selectors.
         // Prefer getElementById to avoid querySelector selector syntax issues.
         let element: Element | null = document.getElementById(id);
-        if (!element) {
-          try {
-            const cssEscape =
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (window as any).CSS?.escape?.bind((window as any).CSS) ??
-              ((value: string) => value.replace(/([ #;?%&,.+*~\\':!^$\\[\\]()=>|/@])/g, "\\$1"));
-            element = document.querySelector(`#${cssEscape(id)}`);
-          } catch {
-            // ignore
-          }
-        }
+        // Note: we intentionally avoid `document.querySelector(hash)` here because
+        // hashes like `#696...` (Mongo ObjectId) are not valid CSS selectors and can crash the app.
         if (element) {
           setTimeout(() => {
             element.scrollIntoView({

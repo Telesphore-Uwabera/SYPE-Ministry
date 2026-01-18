@@ -13,11 +13,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
+import pdfWorkerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url
-).toString();
+// Ensure the worker is bundled by Vite and served as a real JS asset (not SPA fallback HTML)
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
 
 const BOOK_CATEGORIES: Book["category"][] = [
   "Bible",

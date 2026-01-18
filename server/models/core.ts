@@ -2,9 +2,9 @@ import mongoose, { Schema } from "mongoose";
 
 const strArr = { type: [String], default: [] as string[] };
 
-export const NewsArticleModel =
-  mongoose.models.NewsArticle ??
-  mongoose.model(
+export const NewsArticleModel: any =
+  (mongoose.models.NewsArticle as any) ??
+  (mongoose.model(
     "NewsArticle",
     new Schema(
       {
@@ -21,11 +21,11 @@ export const NewsArticleModel =
       },
       { timestamps: true, collection: "news_articles" }
     )
-  );
+  ) as any);
 
-export const ProjectModel =
-  mongoose.models.Project ??
-  mongoose.model(
+export const ProjectModel: any =
+  (mongoose.models.Project as any) ??
+  (mongoose.model(
     "Project",
     new Schema(
       {
@@ -43,11 +43,11 @@ export const ProjectModel =
       },
       { timestamps: true, collection: "projects" }
     )
-  );
+  ) as any);
 
-export const BookModel =
-  mongoose.models.Book ??
-  mongoose.model(
+export const BookModel: any =
+  (mongoose.models.Book as any) ??
+  (mongoose.model(
     "Book",
     new Schema(
       {
@@ -69,11 +69,11 @@ export const BookModel =
       },
       { timestamps: true, collection: "books" }
     )
-  );
+  ) as any);
 
-export const CommitteeMemberModel =
-  mongoose.models.CommitteeMember ??
-  mongoose.model(
+export const CommitteeMemberModel: any =
+  (mongoose.models.CommitteeMember as any) ??
+  (mongoose.model(
     "CommitteeMember",
     new Schema(
       {
@@ -89,11 +89,11 @@ export const CommitteeMemberModel =
       },
       { timestamps: true, collection: "committee_members" }
     )
-  );
+  ) as any);
 
-export const DevotionModel =
-  mongoose.models.Devotion ??
-  mongoose.model(
+export const DevotionModel: any =
+  (mongoose.models.Devotion as any) ??
+  (mongoose.model(
     "Devotion",
     new Schema(
       {
@@ -108,11 +108,11 @@ export const DevotionModel =
       },
       { timestamps: true, collection: "devotions" }
     )
-  );
+  ) as any);
 
-export const FAQModel =
-  mongoose.models.FAQ ??
-  mongoose.model(
+export const FAQModel: any =
+  (mongoose.models.FAQ as any) ??
+  (mongoose.model(
     "FAQ",
     new Schema(
       {
@@ -123,11 +123,11 @@ export const FAQModel =
       },
       { timestamps: true, collection: "faqs" }
     )
-  );
+  ) as any);
 
-export const ContactSubmissionModel =
-  mongoose.models.ContactSubmission ??
-  mongoose.model(
+export const ContactSubmissionModel: any =
+  (mongoose.models.ContactSubmission as any) ??
+  (mongoose.model(
     "ContactSubmission",
     new Schema(
       {
@@ -142,11 +142,11 @@ export const ContactSubmissionModel =
       },
       { timestamps: true, collection: "contact_submissions" }
     )
-  );
+  ) as any);
 
-export const MemberModel =
-  mongoose.models.Member ??
-  mongoose.model(
+export const MemberModel: any =
+  (mongoose.models.Member as any) ??
+  (mongoose.model(
     "Member",
     new Schema(
       {
@@ -161,11 +161,11 @@ export const MemberModel =
       },
       { timestamps: true, collection: "members" }
     )
-  );
+  ) as any);
 
-export const EventModel =
-  mongoose.models.Event ??
-  mongoose.model(
+export const EventModel: any =
+  (mongoose.models.Event as any) ??
+  (mongoose.model(
     "Event",
     new Schema(
       {
@@ -183,16 +183,17 @@ export const EventModel =
       },
       { timestamps: true, collection: "events" }
     )
-  );
+  ) as any);
 
-export const DonationModel =
-  mongoose.models.Donation ??
-  mongoose.model(
+export const DonationModel: any =
+  (mongoose.models.Donation as any) ??
+  (mongoose.model(
     "Donation",
     new Schema(
       {
         donorName: { type: String, required: true },
         donorEmail: { type: String, required: true },
+        donorPhone: { type: String },
         amount: { type: Number, required: true },
         currency: { type: String, default: "RWF" },
         date: { type: Date, default: () => new Date() },
@@ -205,11 +206,11 @@ export const DonationModel =
       },
       { timestamps: true, collection: "donations" }
     )
-  );
+  ) as any);
 
-export const MediaFileModel =
-  mongoose.models.MediaFile ??
-  mongoose.model(
+export const MediaFileModel: any =
+  (mongoose.models.MediaFile as any) ??
+  (mongoose.model(
     "MediaFile",
     new Schema(
       {
@@ -226,11 +227,11 @@ export const MediaFileModel =
       },
       { timestamps: true, collection: "media_files" }
     )
-  );
+  ) as any);
 
-export const EmailSubscriberModel =
-  mongoose.models.EmailSubscriber ??
-  mongoose.model(
+export const EmailSubscriberModel: any =
+  (mongoose.models.EmailSubscriber as any) ??
+  (mongoose.model(
     "EmailSubscriber",
     new Schema(
       {
@@ -243,11 +244,11 @@ export const EmailSubscriberModel =
       },
       { timestamps: true, collection: "email_subscribers" }
     )
-  );
+  ) as any);
 
-export const EmailCampaignModel =
-  mongoose.models.EmailCampaign ??
-  mongoose.model(
+export const EmailCampaignModel: any =
+  (mongoose.models.EmailCampaign as any) ??
+  (mongoose.model(
     "EmailCampaign",
     new Schema(
       {
@@ -260,5 +261,5 @@ export const EmailCampaignModel =
       },
       { timestamps: true, collection: "email_campaigns" }
     )
-  );
+  ) as any);
 

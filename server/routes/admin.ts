@@ -17,11 +17,21 @@ import {
   NewsArticleModel,
   ProjectModel,
 } from "../models/core";
+import { sendMail } from "../lib/mailer";
 
 // All data is persisted in MongoDB via Mongoose models.
 
 function idOf(doc: any): string {
   return String(doc?._id ?? doc?.id ?? "");
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 // Members API
@@ -692,6 +702,7 @@ export const getDonations: RequestHandler = async (req, res) => {
         id: idOf(d),
         donorName: d.donorName,
         donorEmail: d.donorEmail,
+        donorPhone: d.donorPhone || "",
         amount: d.amount,
         currency: d.currency || "RWF",
         date: d.date ? new Date(d.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
@@ -720,6 +731,7 @@ export const getDonation: RequestHandler = async (req, res) => {
       id: idOf(donation),
       donorName: donation.donorName,
       donorEmail: donation.donorEmail,
+      donorPhone: donation.donorPhone || "",
       amount: donation.amount,
       currency: donation.currency || "RWF",
       date: donation.date ? new Date(donation.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
@@ -738,7 +750,7 @@ export const getDonation: RequestHandler = async (req, res) => {
 
 export const createDonation: RequestHandler = async (req, res) => {
   try {
-    const { donorName, donorEmail, amount, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent } = req.body ?? {};
+    const { donorName, donorEmail, donorPhone, amount, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent } = req.body ?? {};
     if (!donorName || !donorEmail || amount === undefined || amount === null || !type) {
       return res.status(400).json({ error: "Donor name, email, amount, and type are required" });
     }
@@ -746,6 +758,7 @@ export const createDonation: RequestHandler = async (req, res) => {
     const created = await DonationModel.create({
       donorName,
       donorEmail,
+      donorPhone: donorPhone || "",
       amount: Number(amount) || 0,
       currency: currency || "RWF",
       date: date ? new Date(date) : new Date(),
@@ -760,6 +773,7 @@ export const createDonation: RequestHandler = async (req, res) => {
       id: idOf(created),
       donorName: created.donorName,
       donorEmail: created.donorEmail,
+      donorPhone: created.donorPhone || "",
       amount: created.amount,
       currency: created.currency || "RWF",
       date: created.date ? new Date(created.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
@@ -780,10 +794,11 @@ export const updateDonation: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
     if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    const { donorName, donorEmail, amount, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent } = req.body ?? {};
+    const { donorName, donorEmail, donorPhone, amount, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent } = req.body ?? {};
     const updateData: any = {};
     if (donorName !== undefined) updateData.donorName = donorName;
     if (donorEmail !== undefined) updateData.donorEmail = donorEmail;
+    if (donorPhone !== undefined) updateData.donorPhone = donorPhone || "";
     if (amount !== undefined) updateData.amount = Number(amount) || 0;
     if (currency !== undefined) updateData.currency = currency;
     if (date !== undefined) updateData.date = new Date(date);
@@ -801,6 +816,7 @@ export const updateDonation: RequestHandler = async (req, res) => {
       id: idOf(updated),
       donorName: updated.donorName,
       donorEmail: updated.donorEmail,
+      donorPhone: updated.donorPhone || "",
       amount: updated.amount,
       currency: updated.currency || "RWF",
       date: updated.date ? new Date(updated.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
@@ -828,6 +844,91 @@ export const deleteDonation: RequestHandler = async (req, res) => {
   } catch (error) {
     console.error("Error deleting donation:", error);
     res.status(500).json({ error: "Failed to delete donation" });
+  }
+};
+
+export const sendDonationReceipt: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+
+    await connectMongo();
+    const donation = await DonationModel.findById(id).exec();
+    if (!donation) return res.status(404).json({ error: "Donation not found" });
+
+    const donorEmail = String(donation.donorEmail || "").trim();
+    const donorName = String(donation.donorName || "").trim();
+    if (!donorEmail) return res.status(400).json({ error: "Donor email is missing" });
+
+    const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
+    const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").trim().replace(/\/+$/, "");
+    const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
+    const contactPhone = (process.env.CONTACT_PHONE || "").trim();
+
+    const receiptNo = idOf(donation);
+    const amount = Number(donation.amount || 0);
+    const currency = String(donation.currency || "RWF");
+    const donationDate = donation.date ? new Date(donation.date) : new Date();
+    const donationDateText = donationDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+
+    const subject = `Donation Receipt - ${siteName}`;
+    const safeName = escapeHtml(donorName || "Donor");
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
+        <h2 style="margin: 0 0 8px;">${escapeHtml(siteName)} - Donation Receipt</h2>
+        <p style="margin: 0 0 16px;">Hello ${safeName},</p>
+        <p style="margin: 0 0 16px;">
+          Thank you for your generous support. This email confirms we received your donation.
+        </p>
+
+        <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #ffffff;">
+          <p style="margin: 0 0 6px;"><strong>Receipt #:</strong> ${escapeHtml(receiptNo)}</p>
+          <p style="margin: 0 0 6px;"><strong>Date:</strong> ${escapeHtml(donationDateText)}</p>
+          <p style="margin: 0 0 6px;"><strong>Amount:</strong> ${escapeHtml(amount.toLocaleString())} ${escapeHtml(currency)}</p>
+          <p style="margin: 0 0 6px;"><strong>Donation type:</strong> ${escapeHtml(String(donation.type || ""))}</p>
+          <p style="margin: 0;"><strong>Payment status:</strong> ${escapeHtml(String(donation.paymentStatus || ""))}</p>
+        </div>
+
+        <p style="margin: 16px 0 0;">
+          If you have any questions, reply to this email or contact us at
+          <a href="mailto:${escapeHtml(contactEmail)}">${escapeHtml(contactEmail)}</a>
+          ${contactPhone ? ` or ${escapeHtml(contactPhone)}` : ""}.
+        </p>
+        <p style="margin: 8px 0 0;">
+          Website: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a>
+        </p>
+        <p style="margin: 16px 0 0;">Blessings,<br />${escapeHtml(siteName)}</p>
+      </div>
+    `;
+
+    const text = `Donation Receipt - ${siteName}
+Receipt #: ${receiptNo}
+Date: ${donationDateText}
+Amount: ${amount.toLocaleString()} ${currency}
+Donation type: ${String(donation.type || "")}
+Payment status: ${String(donation.paymentStatus || "")}
+
+Questions? Contact: ${contactEmail}${contactPhone ? `, ${contactPhone}` : ""}
+Website: ${siteUrl}
+`;
+
+    const { messageId } = await sendMail({
+      to: donorEmail,
+      subject,
+      html,
+      text,
+      replyTo: contactEmail || undefined,
+    });
+
+    // Mark as sent only after successful email send
+    donation.receiptSent = true;
+    await donation.save();
+
+    res.json({ ok: true, messageId });
+  } catch (error: any) {
+    console.error("Error sending donation receipt:", error);
+    res.status(500).json({ error: error?.message || "Failed to send receipt" });
   }
 };
 

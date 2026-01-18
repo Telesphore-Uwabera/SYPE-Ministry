@@ -30,7 +30,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { DollarSign, Plus, Search, Edit, Trash2, Download } from "lucide-react";
+import { DollarSign, Plus, Search, Edit, Trash2, Download, Mail } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 
@@ -39,6 +39,7 @@ export default function DonationManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingDonation, setEditingDonation] = useState<Donation | null>(null);
+  const [sendingReceiptId, setSendingReceiptId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState<Partial<Omit<Donation, "id">>>({
@@ -163,6 +164,34 @@ export default function DonationManagement() {
         description: "Failed to delete donation. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleSendReceipt = async (donation: Donation) => {
+    if (!donation?.id) return;
+    try {
+      setSendingReceiptId(donation.id);
+      const response = await fetch(`/api/admin/donations/${donation.id}/send-receipt`, {
+        method: "POST",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to send receipt");
+      }
+
+      toast({
+        title: "Receipt sent",
+        description: `Receipt sent to ${donation.donorEmail}.`,
+      });
+      await loadDonations();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to send receipt. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingReceiptId(null);
     }
   };
 
@@ -505,6 +534,17 @@ export default function DonationManagement() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {!donation.receiptSent && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={sendingReceiptId === donation.id}
+                              onClick={() => handleSendReceipt(donation)}
+                              title="Send receipt"
+                            >
+                              <Mail className="w-4 h-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"

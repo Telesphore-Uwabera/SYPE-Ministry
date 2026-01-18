@@ -22,6 +22,7 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
   const [formData, setFormData] = useState({
     donorName: "",
     donorEmail: "",
+    donorPhone: "",
     amount: "",
     currency: "RWF",
     type: "one-time",
@@ -44,6 +45,7 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
           body: JSON.stringify({
             donorName: formData.donorName,
             donorEmail: formData.donorEmail,
+            donorPhone: formData.donorPhone,
             amount: parseFloat(formData.amount),
             currency: formData.currency,
             type: formData.type,
@@ -70,6 +72,7 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
       setFormData({
         donorName: "",
         donorEmail: "",
+        donorPhone: "",
         amount: "",
         currency: "RWF",
         type: "one-time",
@@ -132,6 +135,24 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
+              <Label htmlFor="donorPhone">Phone Number *</Label>
+              <Input
+                id="donorPhone"
+                type="tel"
+                inputMode="numeric"
+                value={formData.donorPhone}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    donorPhone: e.target.value.replace(/[^\d]/g, ""),
+                  })
+                }
+                placeholder="0780XXXXXX"
+                pattern="[0-9]*"
+                required
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="amount">Amount *</Label>
               <Input
                 id="amount"
@@ -140,7 +161,7 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                 placeholder="1000"
                 min="1"
-                step="100"
+                step="1"
                 required
               />
             </div>

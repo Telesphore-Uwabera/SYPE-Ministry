@@ -161,6 +161,7 @@ export function createServer() {
   app.post("/api/admin/donations", adminRoutes.createDonation);
   app.put("/api/admin/donations/:id", adminRoutes.updateDonation);
   app.delete("/api/admin/donations/:id", adminRoutes.deleteDonation);
+  app.post("/api/admin/donations/:id/send-receipt", adminRoutes.sendDonationReceipt);
 
   // Admin API Routes - FAQs
   app.get("/api/admin/faqs", adminRoutes.getFAQs);

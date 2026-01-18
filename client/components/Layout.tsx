@@ -14,6 +14,7 @@ declare global {
       on: (event: string, callback: (user: any) => void) => void;
       currentUser: () => any;
       logout: () => void;
+      open?: (type?: string) => void;
     };
   }
 }

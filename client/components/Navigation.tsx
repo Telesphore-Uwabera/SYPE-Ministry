@@ -11,7 +11,8 @@ interface SearchResult {
   href: string;
   description: string;
   category: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  // lucide-react icons accept size as number | string
+  icon: React.ComponentType<{ size?: number | string; className?: string }>;
 }
 
 export default function Navigation() {
@@ -670,8 +671,136 @@ export default function Navigation() {
                 </motion.div>
               </div>
             </div>
+
+            {/* Duplicate Mobile Menu Button (needed on scroll-down) */}
+            <motion.button
+              onClick={() => setIsOpen(!isOpen)}
+              className={cn(
+                "lg:hidden p-2 rounded-lg transition-colors relative shadow-sm",
+                "bg-primary text-white hover:bg-primary/90"
+              )}
+              aria-label="Toggle menu"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <AnimatePresence mode="wait">
+                {isOpen ? (
+                  <motion.div
+                    key="close"
+                    initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                    exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 20,
+                    }}
+                  >
+                    <X size={24} />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="menu"
+                    initial={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                    exit={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 20,
+                    }}
+                  >
+                    <Menu size={24} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.button>
           </div>
         </div>
+
+        {/* Duplicate Mobile Menu (needed on scroll-down) */}
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{
+                duration: 0.4,
+                ease: [0.4, 0, 0.2, 1],
+              }}
+              className="lg:hidden overflow-hidden border-t border-border/50 bg-white/95 backdrop-blur-xl"
+            >
+              <div className="container mx-auto px-4 py-4 space-y-1">
+                {navLinks.map((link, index) => {
+                  const active = isActive(link.href);
+                  return (
+                    <motion.div
+                      key={link.href}
+                      initial={{ x: -30, opacity: 0, scale: 0.9 }}
+                      animate={{ x: 0, opacity: 1, scale: 1 }}
+                      exit={{ x: -30, opacity: 0, scale: 0.9 }}
+                      transition={{
+                        delay: index * 0.05,
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 25,
+                      }}
+                    >
+                      <Link
+                        to={link.href}
+                        onClick={() => setIsOpen(false)}
+                        className={cn(
+                          "block px-4 py-3 text-sm font-medium rounded-lg transition-all duration-300 relative overflow-hidden group",
+                          active
+                            ? "bg-gradient-to-r from-primary/15 to-primary/10 text-primary font-semibold"
+                            : "text-foreground/80 hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:text-primary"
+                        )}
+                      >
+                        <motion.span
+                          className="relative z-10 block"
+                          whileHover={{ x: 5 }}
+                          transition={{ type: "spring", stiffness: 400 }}
+                        >
+                          {link.label}
+                        </motion.span>
+                        {active && (
+                          <motion.div
+                            className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full"
+                            layoutId="duplicateMobileActive"
+                            transition={{ type: "spring", stiffness: 300 }}
+                          />
+                        )}
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+
+                {/* Mobile Donate Button */}
+                <motion.div
+                  initial={{ x: -30, opacity: 0, scale: 0.9 }}
+                  animate={{ x: 0, opacity: 1, scale: 1 }}
+                  transition={{
+                    delay: navLinks.length * 0.05,
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 25,
+                  }}
+                  className="pt-2"
+                >
+                  <Link
+                    to="/donations"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-primary to-primary/90 text-white rounded-lg font-semibold text-sm shadow-lg hover:shadow-xl transition-all"
+                  >
+                    <Heart size={16} className="fill-current" />
+                    <span>Support Evangelism</span>
+                  </Link>
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.nav>
 
       {/* Search Modal */}

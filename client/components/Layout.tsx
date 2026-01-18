@@ -5,6 +5,7 @@ import Footer from "./Footer";
 import BackToTop from "./BackToTop";
 import SEO from "./SEO";
 import MTNPayment from "./MTNPayment";
+import CookieConsent from "./CookieConsent";
 
 // Initialize Netlify Identity
 declare global {
@@ -193,6 +194,7 @@ export default function Layout({ children }: LayoutProps) {
       <BackToTop />
       {/* Floating MTN Payment - Appears on all pages */}
       <MTNPayment variant="floating" className="hidden md:block" />
+      <CookieConsent />
     </div>
   );
 }

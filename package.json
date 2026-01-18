@@ -24,6 +24,7 @@
     "postinstall": "echo \"postinstall ok\""
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.90.1",
     "@types/multer": "^2.0.0",
     "cloudinary": "^2.7.0",
     "cors": "^2.8.5",

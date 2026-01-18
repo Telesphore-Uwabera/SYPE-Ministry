@@ -76,12 +76,8 @@ function expressPlugin(): Plugin {
           expressApp(req, res, next);
         } catch (error) {
           console.error("Error loading Express server:", error);
-          if (res.status && res.json) {
-            res.status(500).json({ error: "Server initialization failed" });
-          } else {
-            res.writeHead(500, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Server initialization failed" }));
-          }
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Server initialization failed" }));
         }
       });
     },

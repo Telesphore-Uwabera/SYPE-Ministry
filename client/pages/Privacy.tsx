@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
 
 export default function Privacy() {
+  const lastUpdated = "January 18, 2026";
   return (
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-muted/50 to-background py-12 md:py-20">
@@ -21,7 +22,7 @@ export default function Privacy() {
               Your privacy is important to us. This policy explains how we collect, use, and protect your information.
             </p>
             <p className="text-sm text-foreground/60 mt-2">
-              Last updated: {new Date().toLocaleDateString()}
+              Last updated: {lastUpdated}
             </p>
           </motion.div>
 
@@ -95,6 +96,9 @@ export default function Privacy() {
                   <li>To protect our rights, property, or safety</li>
                   <li>With service providers who assist us in operating our website (under strict confidentiality agreements)</li>
                 </ul>
+                <p className="mt-4">
+                  Examples of service providers may include email delivery services used to send confirmations, newsletters, and donation receipts.
+                </p>
               </CardContent>
             </Card>
 

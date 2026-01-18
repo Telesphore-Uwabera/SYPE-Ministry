@@ -34,6 +34,10 @@ function escapeHtml(value: string) {
     .replace(/'/g, "&#039;");
 }
 
+function getAdminNotifyEmail(): string {
+  return String(process.env.ADMIN_NOTIFY_EMAIL || process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
+}
+
 // Members API
 export const getMembers: RequestHandler = async (req, res) => {
   try {
@@ -804,6 +808,173 @@ export const createDonation: RequestHandler = async (req, res) => {
   }
 };
 
+// Public Donations API (used by the public donation form)
+// Sends:
+// - Acknowledgement email to the donor
+// - Notification email to admins
+export const createPublicDonation: RequestHandler = async (req, res) => {
+  try {
+    const { donorName, donorEmail, donorPhone, amount, amountPaid, currency, date, type, paymentMethod, paymentStatus, projectId, notes } = req.body ?? {};
+    if (!donorName || !donorEmail || amount === undefined || amount === null || !type || !paymentMethod) {
+      return res.status(400).json({ error: "Donor name, email, amount, type, and payment method are required" });
+    }
+
+    const baseAmount = Number(amount) || 0;
+    const status = String(paymentStatus || "unpaid");
+    let paid = Number(amountPaid || 0) || 0;
+    if (status === "paid") paid = baseAmount;
+    if (status === "unpaid") paid = 0;
+    if (paid < 0 || paid > baseAmount) {
+      return res.status(400).json({ error: "amountPaid must be between 0 and amount" });
+    }
+
+    await connectMongo();
+    const created = await DonationModel.create({
+      donorName,
+      donorEmail,
+      donorPhone: donorPhone || "",
+      amount: baseAmount,
+      amountPaid: paid,
+      currency: currency || "RWF",
+      date: date ? new Date(date) : new Date(),
+      type,
+      paymentMethod: String(paymentMethod),
+      paymentStatus: status,
+      projectId: projectId || "",
+      receiptSent: false,
+      notes: notes || "",
+    });
+
+    // Fire-and-forget emails (do not fail donation creation if email fails)
+    const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
+    const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").trim().replace(/\/+$/, "");
+    const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
+    const contactPhone = (process.env.CONTACT_PHONE || "").trim();
+    const adminNotifyEmail = getAdminNotifyEmail();
+
+    const donationId = idOf(created);
+    const donorEmailTrim = String(donorEmail || "").trim();
+    const donorNameTrim = String(donorName || "").trim();
+    const currencyText = String(created.currency || "RWF");
+
+    const donorSubject = `Donation submission received - ${siteName}`;
+    const donorHtml = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
+        <h2 style="margin: 0 0 8px;">${escapeHtml(siteName)} - Donation Submission</h2>
+        <p style="margin: 0 0 16px;">Hello ${escapeHtml(donorNameTrim || "Donor")},</p>
+        <p style="margin: 0 0 16px;">
+          Thank you for supporting our ministry. We have received your donation submission and will review/confirm it.
+        </p>
+        <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #ffffff;">
+          <p style="margin: 0 0 6px;"><strong>Reference #:</strong> ${escapeHtml(donationId)}</p>
+          <p style="margin: 0 0 6px;"><strong>Amount:</strong> ${escapeHtml(baseAmount.toLocaleString())} ${escapeHtml(currencyText)}</p>
+          <p style="margin: 0 0 6px;"><strong>Payment method:</strong> ${escapeHtml(String(paymentMethod))}</p>
+          <p style="margin: 0;"><strong>Status:</strong> ${escapeHtml(status)}</p>
+        </div>
+        <p style="margin: 16px 0 0;">
+          <strong>Note:</strong> This is not an official receipt. An official receipt will be sent after payment is confirmed by our administrators.
+        </p>
+        <p style="margin: 16px 0 0;">
+          Questions? Reply to this email or contact us at
+          <a href="mailto:${escapeHtml(contactEmail)}">${escapeHtml(contactEmail)}</a>
+          ${contactPhone ? ` or ${escapeHtml(contactPhone)}` : ""}.
+        </p>
+        <p style="margin: 8px 0 0;">
+          Website: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a>
+        </p>
+        <p style="margin: 16px 0 0;">Blessings,<br />${escapeHtml(siteName)}</p>
+      </div>
+    `;
+    const donorText = `Donation submission received - ${siteName}
+Reference #: ${donationId}
+Amount: ${baseAmount.toLocaleString()} ${currencyText}
+Payment method: ${String(paymentMethod)}
+Status: ${status}
+
+Note: This is not an official receipt. An official receipt will be sent after payment is confirmed.
+
+Questions? Contact: ${contactEmail}${contactPhone ? `, ${contactPhone}` : ""}
+Website: ${siteUrl}
+`;
+
+    const adminSubject = `New donation submission - ${siteName}`;
+    const adminHtml = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
+        <h2 style="margin: 0 0 8px;">New Donation Submission</h2>
+        <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #ffffff;">
+          <p style="margin: 0 0 6px;"><strong>Reference #:</strong> ${escapeHtml(donationId)}</p>
+          <p style="margin: 0 0 6px;"><strong>Donor:</strong> ${escapeHtml(donorNameTrim)} (${escapeHtml(donorEmailTrim)})</p>
+          <p style="margin: 0 0 6px;"><strong>Phone:</strong> ${escapeHtml(String(donorPhone || ""))}</p>
+          <p style="margin: 0 0 6px;"><strong>Amount:</strong> ${escapeHtml(baseAmount.toLocaleString())} ${escapeHtml(currencyText)}</p>
+          <p style="margin: 0 0 6px;"><strong>Type:</strong> ${escapeHtml(String(type))}</p>
+          <p style="margin: 0 0 6px;"><strong>Payment method:</strong> ${escapeHtml(String(paymentMethod))}</p>
+          <p style="margin: 0 0 6px;"><strong>Status:</strong> ${escapeHtml(status)}</p>
+          <p style="margin: 0;"><strong>Project:</strong> ${escapeHtml(String(projectId || ""))}</p>
+        </div>
+        ${notes ? `<p style="margin: 16px 0 0;"><strong>Notes:</strong><br />${escapeHtml(String(notes))}</p>` : ""}
+      </div>
+    `;
+    const adminText = `New donation submission - ${siteName}
+Reference #: ${donationId}
+Donor: ${donorNameTrim} (${donorEmailTrim})
+Phone: ${String(donorPhone || "")}
+Amount: ${baseAmount.toLocaleString()} ${currencyText}
+Type: ${String(type)}
+Payment method: ${String(paymentMethod)}
+Status: ${status}
+Project: ${String(projectId || "")}
+${notes ? `Notes: ${String(notes)}` : ""}
+`;
+
+    const mailPromises: Promise<any>[] = [];
+    if (adminNotifyEmail) {
+      mailPromises.push(
+        sendMail({
+          to: adminNotifyEmail,
+          subject: adminSubject,
+          html: adminHtml,
+          text: adminText,
+          replyTo: donorEmailTrim || undefined,
+        })
+      );
+    }
+    if (donorEmailTrim) {
+      mailPromises.push(
+        sendMail({
+          to: donorEmailTrim,
+          subject: donorSubject,
+          html: donorHtml,
+          text: donorText,
+          replyTo: contactEmail || undefined,
+        })
+      );
+    }
+    if (mailPromises.length) {
+      await Promise.allSettled(mailPromises);
+    }
+
+    res.status(201).json({
+      id: idOf(created),
+      donorName: created.donorName,
+      donorEmail: created.donorEmail,
+      donorPhone: created.donorPhone || "",
+      amount: created.amount,
+      amountPaid: Number(created.amountPaid || 0),
+      currency: created.currency || "RWF",
+      date: created.date ? new Date(created.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      type: created.type,
+      paymentMethod: created.paymentMethod || "",
+      paymentStatus: created.paymentStatus || "unpaid",
+      projectId: created.projectId || "",
+      receiptSent: !!created.receiptSent,
+      notes: created.notes || "",
+    });
+  } catch (error) {
+    console.error("Error creating public donation:", error);
+    res.status(500).json({ error: "Failed to create donation" });
+  }
+};
+
 export const updateDonation: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
@@ -971,7 +1142,11 @@ Website: ${siteUrl}
     res.json({ ok: true, messageId });
   } catch (error: any) {
     console.error("Error sending donation receipt:", error);
-    res.status(500).json({ error: error?.message || "Failed to send receipt" });
+    res.status(500).json({
+      error: error?.message || "Failed to send receipt",
+      code: error?.code,
+      responseCode: error?.responseCode,
+    });
   }
 };
 
@@ -1619,6 +1794,11 @@ export const createSubscriber: RequestHandler = async (req, res) => {
     const lowerEmail = email.toLowerCase();
 
     const existing = await EmailSubscriberModel.findOne({ email: lowerEmail }).exec();
+    const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
+    const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").trim().replace(/\/+$/, "");
+    const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
+    const adminNotifyEmail = getAdminNotifyEmail();
+
     if (existing) {
       if (existing.status === "active") {
         return res.status(400).json({ error: "Email is already subscribed" });
@@ -1628,7 +1808,7 @@ export const createSubscriber: RequestHandler = async (req, res) => {
       if (name) existing.name = name;
       if (source) existing.source = source;
       await existing.save();
-      return res.json({
+      const payload = {
         id: idOf(existing),
         email: existing.email,
         name: existing.name || undefined,
@@ -1636,7 +1816,42 @@ export const createSubscriber: RequestHandler = async (req, res) => {
         status: existing.status || "active",
         source: existing.source || "footer",
         tags: existing.tags || [],
-      });
+      };
+
+      // Emails (non-blocking)
+      const subscriberName = String(existing.name || "").trim();
+      const welcomeSubject = `Welcome to ${siteName}`;
+      const welcomeHtml = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
+          <h2 style="margin: 0 0 8px;">Welcome to ${escapeHtml(siteName)}</h2>
+          <p style="margin: 0 0 16px;">Hello ${escapeHtml(subscriberName || "Friend")},</p>
+          <p style="margin: 0 0 16px;">Thank you for subscribing. You’ll now receive updates and resources from us.</p>
+          <p style="margin: 0 0 16px;">Website: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a></p>
+          <p style="margin: 0;">If you didn’t subscribe, you can ignore this email.</p>
+        </div>
+      `;
+      const welcomeText = `Welcome to ${siteName}
+Thanks for subscribing. You’ll now receive updates and resources from us.
+Website: ${siteUrl}
+If you didn’t subscribe, you can ignore this email.
+`;
+      const mails: Promise<any>[] = [
+        sendMail({ to: existing.email, subject: welcomeSubject, html: welcomeHtml, text: welcomeText, replyTo: contactEmail || undefined }),
+      ];
+      if (adminNotifyEmail) {
+        mails.push(
+          sendMail({
+            to: adminNotifyEmail,
+            subject: `New subscriber - ${siteName}`,
+            html: `<p><strong>New subscriber:</strong> ${escapeHtml(existing.email)}${subscriberName ? ` (${escapeHtml(subscriberName)})` : ""}</p>`,
+            text: `New subscriber: ${existing.email}${subscriberName ? ` (${subscriberName})` : ""}`,
+            replyTo: existing.email,
+          })
+        );
+      }
+      await Promise.allSettled(mails);
+
+      return res.json(payload);
     }
 
     const created = await EmailSubscriberModel.create({
@@ -1647,8 +1862,7 @@ export const createSubscriber: RequestHandler = async (req, res) => {
       source: source || "footer",
       tags: [],
     });
-
-    res.status(201).json({
+    const payload = {
       id: idOf(created),
       email: created.email,
       name: created.name || undefined,
@@ -1656,7 +1870,42 @@ export const createSubscriber: RequestHandler = async (req, res) => {
       status: created.status || "active",
       source: created.source || "footer",
       tags: created.tags || [],
-    });
+    };
+
+    // Emails (non-blocking)
+    const subscriberName = String(created.name || "").trim();
+    const welcomeSubject = `Welcome to ${siteName}`;
+    const welcomeHtml = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
+        <h2 style="margin: 0 0 8px;">Welcome to ${escapeHtml(siteName)}</h2>
+        <p style="margin: 0 0 16px;">Hello ${escapeHtml(subscriberName || "Friend")},</p>
+        <p style="margin: 0 0 16px;">Thank you for subscribing. You’ll now receive updates and resources from us.</p>
+        <p style="margin: 0 0 16px;">Website: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a></p>
+        <p style="margin: 0;">If you didn’t subscribe, you can ignore this email.</p>
+      </div>
+    `;
+    const welcomeText = `Welcome to ${siteName}
+Thanks for subscribing. You’ll now receive updates and resources from us.
+Website: ${siteUrl}
+If you didn’t subscribe, you can ignore this email.
+`;
+    const mails: Promise<any>[] = [
+      sendMail({ to: created.email, subject: welcomeSubject, html: welcomeHtml, text: welcomeText, replyTo: contactEmail || undefined }),
+    ];
+    if (adminNotifyEmail) {
+      mails.push(
+        sendMail({
+          to: adminNotifyEmail,
+          subject: `New subscriber - ${siteName}`,
+          html: `<p><strong>New subscriber:</strong> ${escapeHtml(created.email)}${subscriberName ? ` (${escapeHtml(subscriberName)})` : ""}</p>`,
+          text: `New subscriber: ${created.email}${subscriberName ? ` (${subscriberName})` : ""}`,
+          replyTo: created.email,
+        })
+      );
+    }
+    await Promise.allSettled(mails);
+
+    res.status(201).json(payload);
   } catch (error: any) {
     console.error("Error creating subscriber:", error);
     if (error?.code === 11000) return res.status(400).json({ error: "Email is already subscribed" });
@@ -1721,6 +1970,28 @@ export const unsubscribe: RequestHandler = async (req, res) => {
       { new: true }
     ).exec();
     if (!updated) return res.status(404).json({ error: "Email not found in our subscribers list" });
+
+    // Confirmation email (non-blocking)
+    const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
+    const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").trim().replace(/\/+$/, "");
+    const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
+    await Promise.allSettled([
+      sendMail({
+        to: updated.email,
+        subject: `You’ve been unsubscribed - ${siteName}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
+            <h2 style="margin: 0 0 8px;">Unsubscribed</h2>
+            <p style="margin: 0 0 16px;">You will no longer receive newsletter emails from ${escapeHtml(siteName)}.</p>
+            <p style="margin: 0 0 16px;">Website: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a></p>
+            <p style="margin: 0;">If this was a mistake, you can subscribe again on our website.</p>
+          </div>
+        `,
+        text: `You’ve been unsubscribed - ${siteName}\nYou will no longer receive newsletter emails.\nWebsite: ${siteUrl}\nIf this was a mistake, you can subscribe again on our website.\n`,
+        replyTo: contactEmail || undefined,
+      }),
+    ]);
+
     res.json({
       message: "Successfully unsubscribed",
       subscriber: {
@@ -2195,6 +2466,98 @@ export const createContactSubmission: RequestHandler = async (req, res) => {
       message,
       status: "new",
     });
+
+    // Emails (non-blocking)
+    const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
+    const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").trim().replace(/\/+$/, "");
+    const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
+    const contactPhone = (process.env.CONTACT_PHONE || "").trim();
+    const adminNotifyEmail = getAdminNotifyEmail();
+
+    const submissionId = idOf(newSubmission);
+    const safeName = escapeHtml(String(name || "").trim() || "Friend");
+    const safeEmail = String(email || "").trim();
+    const safeSubject = escapeHtml(String(subject || "").trim());
+    const safeMessage = escapeHtml(String(message || "").trim());
+
+    const adminSubject = `New contact submission - ${siteName}`;
+    const adminHtml = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
+        <h2 style="margin: 0 0 8px;">New Contact Submission</h2>
+        <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #ffffff;">
+          <p style="margin: 0 0 6px;"><strong>Reference #:</strong> ${escapeHtml(submissionId)}</p>
+          <p style="margin: 0 0 6px;"><strong>Name:</strong> ${safeName}</p>
+          <p style="margin: 0 0 6px;"><strong>Email:</strong> ${escapeHtml(safeEmail)}</p>
+          <p style="margin: 0 0 6px;"><strong>Subject:</strong> ${safeSubject}</p>
+          <p style="margin: 0;"><strong>Message:</strong><br />${safeMessage.replace(/\n/g, "<br />")}</p>
+        </div>
+      </div>
+    `;
+    const adminText = `New contact submission - ${siteName}
+Reference #: ${submissionId}
+Name: ${String(name || "")}
+Email: ${safeEmail}
+Subject: ${String(subject || "")}
+Message:
+${String(message || "")}
+`;
+
+    const donorSubject = `We received your message - ${siteName}`;
+    const donorHtml = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
+        <h2 style="margin: 0 0 8px;">${escapeHtml(siteName)} - Message received</h2>
+        <p style="margin: 0 0 16px;">Hello ${safeName},</p>
+        <p style="margin: 0 0 16px;">Thank you for contacting us. We’ve received your message and will get back to you as soon as possible.</p>
+        <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #ffffff;">
+          <p style="margin: 0 0 6px;"><strong>Your reference #:</strong> ${escapeHtml(submissionId)}</p>
+          <p style="margin: 0 0 6px;"><strong>Subject:</strong> ${safeSubject}</p>
+          <p style="margin: 0;"><strong>Message:</strong><br />${safeMessage.replace(/\n/g, "<br />")}</p>
+        </div>
+        <p style="margin: 16px 0 0;">
+          If you need to add more information, reply to this email.
+          You can also reach us at <a href="mailto:${escapeHtml(contactEmail)}">${escapeHtml(contactEmail)}</a>
+          ${contactPhone ? ` or ${escapeHtml(contactPhone)}` : ""}.
+        </p>
+        <p style="margin: 8px 0 0;">
+          Website: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a>
+        </p>
+      </div>
+    `;
+    const donorText = `We received your message - ${siteName}
+Reference #: ${submissionId}
+Subject: ${String(subject || "")}
+Message:
+${String(message || "")}
+
+If you need to add more information, reply to this email.
+Contact: ${contactEmail}${contactPhone ? `, ${contactPhone}` : ""}
+Website: ${siteUrl}
+`;
+
+    const mails: Promise<any>[] = [];
+    if (adminNotifyEmail) {
+      mails.push(
+        sendMail({
+          to: adminNotifyEmail,
+          subject: adminSubject,
+          html: adminHtml,
+          text: adminText,
+          replyTo: safeEmail || undefined,
+        })
+      );
+    }
+    if (safeEmail) {
+      mails.push(
+        sendMail({
+          to: safeEmail,
+          subject: donorSubject,
+          html: donorHtml,
+          text: donorText,
+          replyTo: contactEmail || undefined,
+        })
+      );
+    }
+    if (mails.length) await Promise.allSettled(mails);
     
     res.status(201).json({
       id: idOf(newSubmission),

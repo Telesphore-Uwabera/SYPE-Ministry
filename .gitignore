@@ -24,6 +24,9 @@ dist-ssr
 *.sw?
 
 .config/
-!.env
+
+# Environment files (never commit secrets)
+.env
+.env.*
 
 /generated/prisma

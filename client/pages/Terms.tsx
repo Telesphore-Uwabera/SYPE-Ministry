@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
 
 export default function Terms() {
+  const lastUpdated = "January 18, 2026";
   return (
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-muted/50 to-background py-12 md:py-20">
@@ -21,7 +22,7 @@ export default function Terms() {
               Please read these terms carefully before using our website and services.
             </p>
             <p className="text-sm text-foreground/60 mt-2">
-              Last updated: {new Date().toLocaleDateString()}
+              Last updated: {lastUpdated}
             </p>
           </motion.div>
 
@@ -118,6 +119,9 @@ export default function Terms() {
                 </p>
                 <p>
                   SYPE Ministry is committed to transparency and will use donated funds in accordance with our stated mission and purpose.
+                </p>
+                <p>
+                  When you submit a donation form on our website, we may send you a confirmation email and (after verification) an official receipt.
                 </p>
               </CardContent>
             </Card>

@@ -48,7 +48,7 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
         return;
       }
 
-      const response = await fetch("/api/admin/donations", {
+      const response = await fetch("/api/donations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -63,7 +63,6 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
             projectId: formData.projectId || undefined,
             notes: formData.message || undefined,
             date: new Date().toISOString(),
-            receiptSent: false,
           }),
       });
 
@@ -74,7 +73,7 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
 
       toast({
         title: "Donation submitted successfully",
-        description: "Thank you for your generous donation! We will contact you shortly.",
+        description: "Thank you for your generous donation! We have emailed you a confirmation.",
       });
 
       // Reset form

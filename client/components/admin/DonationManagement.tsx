@@ -511,31 +511,31 @@ export default function DonationManagement() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Amount</CardDescription>
-            <CardTitle className="text-3xl">{totalAmount.toLocaleString()} RWF</CardTitle>
+            <CardTitle className="text-2xl whitespace-nowrap">{totalAmount.toLocaleString()} RWF</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Paid Amount</CardDescription>
-            <CardTitle className="text-3xl">{paidAmount.toLocaleString()} RWF</CardTitle>
+            <CardTitle className="text-2xl whitespace-nowrap">{paidAmount.toLocaleString()} RWF</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Unpaid Amount</CardDescription>
-            <CardTitle className="text-3xl">{unpaidAmount.toLocaleString()} RWF</CardTitle>
+            <CardTitle className="text-2xl whitespace-nowrap">{unpaidAmount.toLocaleString()} RWF</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Installments Received</CardDescription>
-            <CardTitle className="text-3xl">{installmentReceived.toLocaleString()} RWF</CardTitle>
+            <CardTitle className="text-2xl whitespace-nowrap">{installmentReceived.toLocaleString()} RWF</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Installments Remaining</CardDescription>
-            <CardTitle className="text-3xl">{installmentRemaining.toLocaleString()} RWF</CardTitle>
+            <CardTitle className="text-2xl whitespace-nowrap">{installmentRemaining.toLocaleString()} RWF</CardTitle>
           </CardHeader>
         </Card>
         <Card>

@@ -1,8 +1,11 @@
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { resetCookieConsent } from "@/components/CookieConsent";
 
 export default function Cookies() {
+  const lastUpdated = "January 18, 2026";
   return (
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-muted/50 to-background py-12 md:py-20">
@@ -21,7 +24,7 @@ export default function Cookies() {
               Learn about how we use cookies and similar technologies on our website.
             </p>
             <p className="text-sm text-foreground/60 mt-2">
-              Last updated: {new Date().toLocaleDateString()}
+              Last updated: {lastUpdated}
             </p>
           </motion.div>
 
@@ -32,6 +35,26 @@ export default function Cookies() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
+            <Card>
+              <CardHeader>
+                <CardTitle>Cookie Preferences</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 text-foreground/80">
+                <p>
+                  You can reset your cookie preference at any time. After resetting, the cookie banner will appear again on your next visit.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    resetCookieConsent();
+                    window.location.reload();
+                  }}
+                >
+                  Reset cookie preference
+                </Button>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>1. What Are Cookies?</CardTitle>
@@ -162,7 +185,7 @@ export default function Cookies() {
               </CardHeader>
               <CardContent className="space-y-4 text-foreground/80">
                 <p>
-                  By continuing to use our website, you consent to our use of cookies as described in this policy. If you do not agree to our use of cookies, you should set your browser settings accordingly or refrain from using our website.
+                  We display a cookie consent banner to help you understand and control non-essential cookies/technologies. You can accept or reject non-essential cookies at any time using the banner (or by resetting your preference above).
                 </p>
               </CardContent>
             </Card>

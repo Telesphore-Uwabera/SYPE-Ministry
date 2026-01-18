@@ -31,7 +31,7 @@ import { Label } from "@/components/ui/label";
 import { Mail, Plus, Search, Edit, Trash2, Download, Users, UserCheck, UserX, MessageSquare } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { EmailSubscriber } from "@/types/admin";
+import { EmailCampaign, EmailSubscriber } from "@/types/admin";
 import { Textarea } from "@/components/ui/textarea";
 
 interface ContactSubmission {
@@ -51,12 +51,16 @@ interface ContactSubmission {
 export default function Communication() {
   const [subscribers, setSubscribers] = useState<EmailSubscriber[]>([]);
   const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
+  const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSubscriber, setEditingSubscriber] = useState<EmailSubscriber | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<ContactSubmission | null>(null);
   const [submissionNotes, setSubmissionNotes] = useState("");
+  const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<EmailCampaign | null>(null);
+  const [sendingCampaignId, setSendingCampaignId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState<Omit<EmailSubscriber, "id" | "subscribedAt">>({
@@ -70,6 +74,7 @@ export default function Communication() {
   useEffect(() => {
     loadSubscribers();
     loadContactSubmissions();
+    loadCampaigns();
   }, []);
 
   const loadContactSubmissions = async () => {
@@ -140,6 +145,16 @@ export default function Communication() {
         description: "Failed to load subscribers. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+
+  const loadCampaigns = async () => {
+    try {
+      const response = await fetch("/api/admin/campaigns");
+      const data = await response.json().catch(() => []);
+      if (Array.isArray(data)) setCampaigns(data);
+    } catch (error) {
+      console.error("Error loading campaigns:", error);
     }
   };
 
@@ -260,6 +275,85 @@ export default function Communication() {
       source: "admin",
       tags: [],
     });
+  };
+
+  const [campaignForm, setCampaignForm] = useState({
+    subject: "",
+    body: "",
+  });
+
+  const resetCampaignForm = () => {
+    setEditingCampaign(null);
+    setCampaignForm({ subject: "", body: "" });
+  };
+
+  const handleCampaignEdit = (c: EmailCampaign) => {
+    setEditingCampaign(c);
+    setCampaignForm({ subject: c.subject || "", body: c.body || "" });
+    setCampaignDialogOpen(true);
+  };
+
+  const handleCampaignSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload = { subject: campaignForm.subject, body: campaignForm.body, status: "draft" };
+      const url = editingCampaign ? `/api/admin/campaigns/${editingCampaign.id}` : "/api/admin/campaigns";
+      const method = editingCampaign ? "PUT" : "POST";
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.error || "Failed to save campaign");
+      toast({
+        title: editingCampaign ? "Campaign updated" : "Campaign created",
+        description: "Your campaign has been saved as a draft.",
+      });
+      setCampaignDialogOpen(false);
+      resetCampaignForm();
+      loadCampaigns();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to save campaign.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCampaignDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/admin/campaigns/${id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Failed to delete campaign");
+      toast({ title: "Campaign deleted", description: "Campaign removed successfully." });
+      loadCampaigns();
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to delete campaign.", variant: "destructive" });
+    }
+  };
+
+  const handleCampaignSend = async (c: EmailCampaign) => {
+    if (!c?.id) return;
+    try {
+      setSendingCampaignId(c.id);
+      const response = await fetch(`/api/admin/campaigns/${c.id}/send`, { method: "POST" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.error || "Failed to send campaign");
+      toast({
+        title: "Campaign sent",
+        description: `Sent: ${data?.sent ?? "?"} • Failed: ${data?.failed ?? "?"} • Recipients: ${data?.recipients ?? "?"}`,
+      });
+      loadCampaigns();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to send campaign.",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingCampaignId(null);
+    }
   };
 
   const filteredSubscribers = subscribers.filter((subscriber) => {
@@ -711,7 +805,124 @@ export default function Communication() {
           <CardDescription>Manage email campaigns and newsletters</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-foreground/50 text-center py-8">Email campaign management coming soon...</p>
+          <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between mb-4">
+            <div className="text-sm text-foreground/70">
+              Sends to <strong>active subscribers</strong> only.
+            </div>
+            <Dialog open={campaignDialogOpen} onOpenChange={(open) => {
+              setCampaignDialogOpen(open);
+              if (!open) resetCampaignForm();
+            }}>
+              <DialogTrigger asChild>
+                <Button className="w-full md:w-auto">
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Campaign
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[720px]">
+                <DialogHeader>
+                  <DialogTitle>{editingCampaign ? "Edit Campaign" : "Create Campaign"}</DialogTitle>
+                  <DialogDescription>Write your message. This will be sent to all active subscribers when you click “Send”.</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleCampaignSave} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="campaignSubject">Subject *</Label>
+                    <Input
+                      id="campaignSubject"
+                      value={campaignForm.subject}
+                      onChange={(e) => setCampaignForm((p) => ({ ...p, subject: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="campaignBody">Body *</Label>
+                    <Textarea
+                      id="campaignBody"
+                      value={campaignForm.body}
+                      onChange={(e) => setCampaignForm((p) => ({ ...p, body: e.target.value }))}
+                      placeholder="You can paste plain text or HTML here."
+                      rows={10}
+                      required
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setCampaignDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">Save Draft</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Subject</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Recipients</TableHead>
+                <TableHead>Sent</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {campaigns.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-foreground/60 py-8">
+                    No campaigns yet
+                  </TableCell>
+                </TableRow>
+              ) : (
+                campaigns.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell className="font-medium">{c.subject}</TableCell>
+                    <TableCell>
+                      <Badge variant={c.status === "sent" ? "default" : "secondary"}>{c.status}</Badge>
+                    </TableCell>
+                    <TableCell>{(c.recipients || []).length}</TableCell>
+                    <TableCell>{c.sentDate ? new Date(c.sentDate).toLocaleString() : "-"}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleCampaignEdit(c)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleCampaignSend(c)}
+                          disabled={sendingCampaignId === c.id || c.status === "sent"}
+                        >
+                          <Mail className="w-4 h-4 mr-2" />
+                          {sendingCampaignId === c.id ? "Sending..." : c.status === "sent" ? "Sent" : "Send"}
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete campaign?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the campaign draft/history.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleCampaignDelete(c.id)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

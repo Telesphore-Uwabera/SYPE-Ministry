@@ -207,6 +207,14 @@ export function createServer() {
   app.put("/api/admin/subscribers/:id", adminRoutes.updateSubscriber);
   app.delete("/api/admin/subscribers/:id", adminRoutes.deleteSubscriber);
 
+  // Admin API Routes - Email Campaigns
+  app.get("/api/admin/campaigns", adminRoutes.getEmailCampaigns);
+  app.get("/api/admin/campaigns/:id", adminRoutes.getEmailCampaign);
+  app.post("/api/admin/campaigns", adminRoutes.createEmailCampaign);
+  app.put("/api/admin/campaigns/:id", adminRoutes.updateEmailCampaign);
+  app.delete("/api/admin/campaigns/:id", adminRoutes.deleteEmailCampaign);
+  app.post("/api/admin/campaigns/:id/send", adminRoutes.sendEmailCampaign);
+
   // Admin API Routes - Committee Members
   app.get("/api/admin/committee", adminRoutes.getCommitteeMembers);
   app.get("/api/admin/committee/:id", adminRoutes.getCommitteeMember);

@@ -2057,6 +2057,232 @@ export const unsubscribe: RequestHandler = async (req, res) => {
   }
 };
 
+// Email Campaigns API
+function stripHtmlToText(html: string): string {
+  const v = String(html || "");
+  // Very small best-effort conversion.
+  return v
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#0?39;/g, "'")
+    .trim();
+}
+
+async function sendInBatches<T>(
+  items: T[],
+  batchSize: number,
+  handler: (item: T) => Promise<any>
+): Promise<{ ok: number; failed: number }> {
+  let ok = 0;
+  let failed = 0;
+  const size = Math.max(1, Math.floor(batchSize || 1));
+  for (let i = 0; i < items.length; i += size) {
+    const batch = items.slice(i, i + size);
+    const results = await Promise.allSettled(batch.map((x) => handler(x)));
+    for (const r of results) {
+      if (r.status === "fulfilled") ok += 1;
+      else failed += 1;
+    }
+  }
+  return { ok, failed };
+}
+
+export const getEmailCampaigns: RequestHandler = async (_req, res) => {
+  try {
+    await connectMongo();
+    const result = await EmailCampaignModel.find().sort({ createdAt: -1 }).exec();
+    res.json(
+      result.map((c: any) => ({
+        id: idOf(c),
+        subject: c.subject,
+        body: c.body,
+        recipients: c.recipients || [],
+        sentDate: c.sentDate ? new Date(c.sentDate).toISOString() : undefined,
+        status: c.status || "draft",
+        scheduledDate: c.scheduledDate ? new Date(c.scheduledDate).toISOString() : undefined,
+        openRate: c.openRate ?? undefined,
+        clickRate: c.clickRate ?? undefined,
+      }))
+    );
+  } catch (error) {
+    console.error("Error fetching email campaigns:", error);
+    res.status(500).json({ error: "Failed to fetch email campaigns" });
+  }
+};
+
+export const getEmailCampaign: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const c = await EmailCampaignModel.findById(id).exec();
+    if (!c) return res.status(404).json({ error: "Campaign not found" });
+    res.json({
+      id: idOf(c),
+      subject: c.subject,
+      body: c.body,
+      recipients: c.recipients || [],
+      sentDate: c.sentDate ? new Date(c.sentDate).toISOString() : undefined,
+      status: c.status || "draft",
+      scheduledDate: c.scheduledDate ? new Date(c.scheduledDate).toISOString() : undefined,
+      openRate: c.openRate ?? undefined,
+      clickRate: c.clickRate ?? undefined,
+    });
+  } catch (error) {
+    console.error("Error fetching email campaign:", error);
+    res.status(500).json({ error: "Failed to fetch email campaign" });
+  }
+};
+
+export const createEmailCampaign: RequestHandler = async (req, res) => {
+  try {
+    const { subject, body, status, scheduledDate, recipients } = req.body ?? {};
+    if (!subject || !body) return res.status(400).json({ error: "subject and body are required" });
+    const nextStatus = String(status || "draft");
+    if (!["draft", "scheduled", "sent"].includes(nextStatus)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+    const recips = Array.isArray(recipients) ? recipients.map(String).map((x) => x.trim()).filter(Boolean) : [];
+    await connectMongo();
+    const created = await EmailCampaignModel.create({
+      subject: String(subject),
+      body: String(body),
+      recipients: recips,
+      status: nextStatus,
+      scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
+      sentDate: nextStatus === "sent" ? new Date() : undefined,
+    });
+    res.status(201).json({
+      id: idOf(created),
+      subject: created.subject,
+      body: created.body,
+      recipients: created.recipients || [],
+      sentDate: created.sentDate ? new Date(created.sentDate).toISOString() : undefined,
+      status: created.status || "draft",
+      scheduledDate: created.scheduledDate ? new Date(created.scheduledDate).toISOString() : undefined,
+    });
+  } catch (error) {
+    console.error("Error creating email campaign:", error);
+    res.status(500).json({ error: "Failed to create email campaign" });
+  }
+};
+
+export const updateEmailCampaign: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    const { subject, body, status, scheduledDate, recipients } = req.body ?? {};
+    const updateData: any = {};
+    if (subject !== undefined) updateData.subject = String(subject);
+    if (body !== undefined) updateData.body = String(body);
+    if (status !== undefined) {
+      const nextStatus = String(status || "draft");
+      if (!["draft", "scheduled", "sent"].includes(nextStatus)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+      updateData.status = nextStatus;
+      if (nextStatus === "sent") updateData.sentDate = new Date();
+    }
+    if (scheduledDate !== undefined) updateData.scheduledDate = scheduledDate ? new Date(scheduledDate) : undefined;
+    if (recipients !== undefined) updateData.recipients = Array.isArray(recipients) ? recipients.map(String).map((x) => x.trim()).filter(Boolean) : [];
+
+    await connectMongo();
+    const updated = await EmailCampaignModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    if (!updated) return res.status(404).json({ error: "Campaign not found" });
+    res.json({
+      id: idOf(updated),
+      subject: updated.subject,
+      body: updated.body,
+      recipients: updated.recipients || [],
+      sentDate: updated.sentDate ? new Date(updated.sentDate).toISOString() : undefined,
+      status: updated.status || "draft",
+      scheduledDate: updated.scheduledDate ? new Date(updated.scheduledDate).toISOString() : undefined,
+    });
+  } catch (error) {
+    console.error("Error updating email campaign:", error);
+    res.status(500).json({ error: "Failed to update email campaign" });
+  }
+};
+
+export const deleteEmailCampaign: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+    await connectMongo();
+    const deleted = await EmailCampaignModel.findByIdAndDelete(id).exec();
+    if (!deleted) return res.status(404).json({ error: "Campaign not found" });
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting email campaign:", error);
+    res.status(500).json({ error: "Failed to delete email campaign" });
+  }
+};
+
+export const sendEmailCampaign: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+
+    await connectMongo();
+    const campaign = await EmailCampaignModel.findById(id).exec();
+    if (!campaign) return res.status(404).json({ error: "Campaign not found" });
+    if (String(campaign.status || "draft") === "sent") {
+      return res.status(400).json({ error: "Campaign already sent" });
+    }
+
+    // Determine recipients
+    let recipients: string[] = Array.isArray(campaign.recipients) ? campaign.recipients.map(String) : [];
+    recipients = recipients.map((x) => x.trim()).filter(Boolean);
+    if (recipients.length === 0) {
+      const subs = await EmailSubscriberModel.find({ status: "active" }).select({ email: 1 }).exec();
+      recipients = subs.map((s: any) => String(s.email || "").trim()).filter(Boolean);
+    }
+    // de-dup
+    recipients = Array.from(new Set(recipients)).filter((e) => e.includes("@"));
+    if (recipients.length === 0) return res.status(400).json({ error: "No recipients found (need active subscribers)" });
+
+    const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
+    const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
+    const subject = String(campaign.subject || "").trim() || `Newsletter - ${siteName}`;
+    const body = String(campaign.body || "");
+
+    // If admin pasted plain text, wrap it as HTML.
+    const isHtml = /<\/?[a-z][\s\S]*>/i.test(body);
+    const html = isHtml
+      ? body
+      : `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827; white-space: pre-wrap;">${escapeHtml(body)}</div>`;
+    const text = isHtml ? stripHtmlToText(body) : String(body || "");
+
+    // Send (rate-friendly batching)
+    const { ok, failed } = await sendInBatches(recipients, 5, async (to) => {
+      await sendMail({
+        to,
+        subject,
+        html,
+        text,
+        replyTo: contactEmail || undefined,
+      });
+    });
+
+    // Mark campaign as sent and persist recipients used
+    campaign.status = "sent";
+    campaign.sentDate = new Date();
+    campaign.recipients = recipients;
+    await campaign.save();
+
+    res.json({ ok: true, recipients: recipients.length, sent: ok, failed });
+  } catch (error: any) {
+    console.error("Error sending email campaign:", error);
+    res.status(500).json({ error: error?.message || "Failed to send campaign" });
+  }
+};
+
 // Committee Members API
 export const getCommitteeMembers: RequestHandler = async (req, res) => {
   try {

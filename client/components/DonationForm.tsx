@@ -39,6 +39,15 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
     setIsSubmitting(true);
 
     try {
+      if (!formData.paymentMethod) {
+        toast({
+          title: "Payment method required",
+          description: "Please select a payment method to continue.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const response = await fetch("/api/admin/donations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -49,7 +58,7 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
             amount: parseFloat(formData.amount),
             currency: formData.currency,
             type: formData.type,
-            paymentMethod: formData.paymentMethod || undefined,
+            paymentMethod: formData.paymentMethod,
             paymentStatus: formData.paymentStatus || "unpaid",
             projectId: formData.projectId || undefined,
             notes: formData.message || undefined,
@@ -201,7 +210,7 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="paymentMethod">Payment Method</Label>
+              <Label htmlFor="paymentMethod">Payment Method *</Label>
               <Select
                 value={formData.paymentMethod}
                 onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}

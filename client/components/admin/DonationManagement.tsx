@@ -46,6 +46,7 @@ export default function DonationManagement() {
     donorName: "",
     donorEmail: "",
     amount: 0,
+    amountPaid: 0,
     currency: "RWF",
     date: new Date().toISOString().split("T")[0],
     type: "one-time",
@@ -80,6 +81,27 @@ export default function DonationManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      if (!formData.paymentMethod) {
+        toast({
+          title: "Payment method required",
+          description: "Please select a payment method to continue.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (formData.paymentStatus === "installment") {
+        const amount = Number(formData.amount || 0);
+        const received = Number(formData.amountPaid || 0);
+        if (received < 0 || received > amount) {
+          toast({
+            title: "Invalid received amount",
+            description: "Amount received must be between 0 and the total amount.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       if (editingDonation) {
         const response = await fetch(`/api/admin/donations/${editingDonation.id}`, {
           method: "PUT",
@@ -133,6 +155,7 @@ export default function DonationManagement() {
       donorName: donation.donorName,
       donorEmail: donation.donorEmail,
       amount: donation.amount,
+      amountPaid: donation.amountPaid ?? (donation.paymentStatus === "paid" ? donation.amount : 0),
       currency: donation.currency,
       date: donationDate,
       type: donation.type,
@@ -201,6 +224,7 @@ export default function DonationManagement() {
       donorName: "",
       donorEmail: "",
       amount: 0,
+      amountPaid: 0,
       currency: "RWF",
       date: new Date().toISOString().split("T")[0],
       type: "one-time",
@@ -218,9 +242,21 @@ export default function DonationManagement() {
   );
 
   const totalAmount = filteredDonations.reduce((sum, d) => sum + d.amount, 0);
+  const paidAmount = filteredDonations
+    .filter((d) => d.paymentStatus === "paid")
+    .reduce((sum, d) => sum + d.amount, 0);
+  const unpaidAmount = filteredDonations
+    .filter((d) => (d.paymentStatus || "unpaid") === "unpaid")
+    .reduce((sum, d) => sum + d.amount, 0);
+  const installmentReceived = filteredDonations
+    .filter((d) => d.paymentStatus === "installment")
+    .reduce((sum, d) => sum + (d.amountPaid || 0), 0);
+  const installmentRemaining = filteredDonations
+    .filter((d) => d.paymentStatus === "installment")
+    .reduce((sum, d) => sum + Math.max(0, d.amount - (d.amountPaid || 0)), 0);
 
   const exportToCSV = () => {
-    const headers = ["Date", "Donor Name", "Donor Email", "Amount", "Currency", "Type", "Payment Method", "Payment Status", "Receipt Sent"];
+    const headers = ["Date", "Donor Name", "Donor Email", "Amount", "Currency", "Type", "Payment Method", "Payment Status", "Amount Received", "Amount Remaining", "Receipt Sent"];
     const rows = filteredDonations.map((d) => [
       d.date,
       d.donorName,
@@ -230,6 +266,8 @@ export default function DonationManagement() {
       d.type,
       d.paymentMethod || "",
       d.paymentStatus || "unpaid",
+      (d.paymentStatus === "paid" ? d.amount : d.paymentStatus === "installment" ? (d.amountPaid || 0) : 0).toString(),
+      Math.max(0, d.amount - (d.paymentStatus === "paid" ? d.amount : d.paymentStatus === "installment" ? (d.amountPaid || 0) : 0)).toString(),
       d.receiptSent ? "Yes" : "No",
     ]);
     const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
@@ -278,7 +316,7 @@ export default function DonationManagement() {
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="donorName">Donor Name *</Label>
                     <Input
@@ -358,7 +396,7 @@ export default function DonationManagement() {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="paymentMethod">Payment Method</Label>
+                    <Label htmlFor="paymentMethod">Payment Method *</Label>
                     <Select
                       value={formData.paymentMethod || ""}
                       onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}
@@ -405,6 +443,31 @@ export default function DonationManagement() {
                     />
                   </div>
                 </div>
+                {formData.paymentStatus === "installment" && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="amountPaid">Amount Received *</Label>
+                      <Input
+                        id="amountPaid"
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        value={Number(formData.amountPaid || 0)}
+                        onChange={(e) =>
+                          setFormData({ ...formData, amountPaid: parseFloat(e.target.value) || 0 })
+                        }
+                        required
+                      />
+                    </div>
+                    <div className="flex flex-col justify-end">
+                      <p className="text-sm text-foreground/70">
+                        Remaining:{" "}
+                        {Math.max(0, Number(formData.amount || 0) - Number(formData.amountPaid || 0)).toLocaleString()}{" "}
+                        {formData.currency || "RWF"}
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <Label htmlFor="notes">Notes</Label>
                   <textarea
@@ -438,7 +501,7 @@ export default function DonationManagement() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Donations</CardDescription>
@@ -449,6 +512,30 @@ export default function DonationManagement() {
           <CardHeader className="pb-2">
             <CardDescription>Total Amount</CardDescription>
             <CardTitle className="text-3xl">{totalAmount.toLocaleString()} RWF</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Paid Amount</CardDescription>
+            <CardTitle className="text-3xl">{paidAmount.toLocaleString()} RWF</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Unpaid Amount</CardDescription>
+            <CardTitle className="text-3xl">{unpaidAmount.toLocaleString()} RWF</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Installments Received</CardDescription>
+            <CardTitle className="text-3xl">{installmentReceived.toLocaleString()} RWF</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Installments Remaining</CardDescription>
+            <CardTitle className="text-3xl">{installmentRemaining.toLocaleString()} RWF</CardTitle>
           </CardHeader>
         </Card>
         <Card>
@@ -493,6 +580,8 @@ export default function DonationManagement() {
                   <TableHead>Amount</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Payment Status</TableHead>
+                  <TableHead>Received</TableHead>
+                  <TableHead>Remaining</TableHead>
                   <TableHead>Receipt</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -500,7 +589,7 @@ export default function DonationManagement() {
               <TableBody>
                 {filteredDonations.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-foreground/50">
+                    <TableCell colSpan={10} className="text-center py-8 text-foreground/50">
                       No donations found
                     </TableCell>
                   </TableRow>
@@ -524,6 +613,28 @@ export default function DonationManagement() {
                         ) : (
                           <Badge className="bg-red-500">Unpaid</Badge>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        {(
+                          donation.paymentStatus === "paid"
+                            ? donation.amount
+                            : donation.paymentStatus === "installment"
+                            ? donation.amountPaid || 0
+                            : 0
+                        ).toLocaleString()}{" "}
+                        {donation.currency}
+                      </TableCell>
+                      <TableCell>
+                        {Math.max(
+                          0,
+                          donation.amount -
+                            (donation.paymentStatus === "paid"
+                              ? donation.amount
+                              : donation.paymentStatus === "installment"
+                              ? donation.amountPaid || 0
+                              : 0)
+                        ).toLocaleString()}{" "}
+                        {donation.currency}
                       </TableCell>
                       <TableCell>
                         {donation.receiptSent ? (

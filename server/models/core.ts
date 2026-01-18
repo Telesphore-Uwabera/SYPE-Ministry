@@ -195,6 +195,7 @@ export const DonationModel: any =
         donorEmail: { type: String, required: true },
         donorPhone: { type: String },
         amount: { type: Number, required: true },
+        amountPaid: { type: Number, default: 0 },
         currency: { type: String, default: "RWF" },
         date: { type: Date, default: () => new Date() },
         type: { type: String, required: true }, // one-time|monthly|project-based

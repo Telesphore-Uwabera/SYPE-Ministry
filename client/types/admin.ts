@@ -63,6 +63,7 @@ export interface Donation {
   donorEmail: string;
   donorPhone?: string;
   amount: number;
+  amountPaid?: number; // For installments: amount received so far
   currency: string;
   date: string;
   type: "one-time" | "monthly" | "project-based";

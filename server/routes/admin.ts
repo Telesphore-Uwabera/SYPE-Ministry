@@ -704,6 +704,7 @@ export const getDonations: RequestHandler = async (req, res) => {
         donorEmail: d.donorEmail,
         donorPhone: d.donorPhone || "",
         amount: d.amount,
+        amountPaid: Number(d.amountPaid || 0),
         currency: d.currency || "RWF",
         date: d.date ? new Date(d.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
         type: d.type,
@@ -733,6 +734,7 @@ export const getDonation: RequestHandler = async (req, res) => {
       donorEmail: donation.donorEmail,
       donorPhone: donation.donorPhone || "",
       amount: donation.amount,
+      amountPaid: Number(donation.amountPaid || 0),
       currency: donation.currency || "RWF",
       date: donation.date ? new Date(donation.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
       type: donation.type,
@@ -750,21 +752,32 @@ export const getDonation: RequestHandler = async (req, res) => {
 
 export const createDonation: RequestHandler = async (req, res) => {
   try {
-    const { donorName, donorEmail, donorPhone, amount, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent } = req.body ?? {};
-    if (!donorName || !donorEmail || amount === undefined || amount === null || !type) {
-      return res.status(400).json({ error: "Donor name, email, amount, and type are required" });
+    const { donorName, donorEmail, donorPhone, amount, amountPaid, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent } = req.body ?? {};
+    if (!donorName || !donorEmail || amount === undefined || amount === null || !type || !paymentMethod) {
+      return res.status(400).json({ error: "Donor name, email, amount, type, and payment method are required" });
     }
+
+    const baseAmount = Number(amount) || 0;
+    const status = String(paymentStatus || "unpaid");
+    let paid = Number(amountPaid || 0) || 0;
+    if (status === "paid") paid = baseAmount;
+    if (status === "unpaid") paid = 0;
+    if (paid < 0 || paid > baseAmount) {
+      return res.status(400).json({ error: "amountPaid must be between 0 and amount" });
+    }
+
     await connectMongo();
     const created = await DonationModel.create({
       donorName,
       donorEmail,
       donorPhone: donorPhone || "",
-      amount: Number(amount) || 0,
+      amount: baseAmount,
+      amountPaid: paid,
       currency: currency || "RWF",
       date: date ? new Date(date) : new Date(),
       type,
-      paymentMethod: paymentMethod || "",
-      paymentStatus: paymentStatus || "unpaid",
+      paymentMethod: String(paymentMethod),
+      paymentStatus: status,
       projectId: projectId || "",
       receiptSent: !!receiptSent,
       notes: notes || "",
@@ -775,6 +788,7 @@ export const createDonation: RequestHandler = async (req, res) => {
       donorEmail: created.donorEmail,
       donorPhone: created.donorPhone || "",
       amount: created.amount,
+      amountPaid: Number(created.amountPaid || 0),
       currency: created.currency || "RWF",
       date: created.date ? new Date(created.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
       type: created.type,
@@ -794,22 +808,42 @@ export const updateDonation: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
     if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    const { donorName, donorEmail, donorPhone, amount, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent } = req.body ?? {};
+    const { donorName, donorEmail, donorPhone, amount, amountPaid, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent } = req.body ?? {};
+
+    await connectMongo();
+
+    const existing = await DonationModel.findById(id).exec();
+    if (!existing) return res.status(404).json({ error: "Donation not found" });
+
+    const baseAmount = amount !== undefined ? Number(amount) || 0 : Number(existing.amount || 0);
+    const nextStatus = paymentStatus !== undefined ? String(paymentStatus) : String(existing.paymentStatus || "unpaid");
+
+    let nextPaid = amountPaid !== undefined ? Number(amountPaid) || 0 : Number(existing.amountPaid || 0);
+    if (nextStatus === "paid") nextPaid = baseAmount;
+    if (nextStatus === "unpaid") nextPaid = 0;
+    if (nextPaid < 0 || nextPaid > baseAmount) {
+      return res.status(400).json({ error: "amountPaid must be between 0 and amount" });
+    }
+
     const updateData: any = {};
     if (donorName !== undefined) updateData.donorName = donorName;
     if (donorEmail !== undefined) updateData.donorEmail = donorEmail;
     if (donorPhone !== undefined) updateData.donorPhone = donorPhone || "";
-    if (amount !== undefined) updateData.amount = Number(amount) || 0;
+    if (amount !== undefined) updateData.amount = baseAmount;
     if (currency !== undefined) updateData.currency = currency;
     if (date !== undefined) updateData.date = new Date(date);
     if (type !== undefined) updateData.type = type;
-    if (paymentMethod !== undefined) updateData.paymentMethod = paymentMethod;
-    if (paymentStatus !== undefined) updateData.paymentStatus = paymentStatus;
+    if (paymentMethod !== undefined) {
+      if (!paymentMethod) return res.status(400).json({ error: "paymentMethod is required" });
+      updateData.paymentMethod = String(paymentMethod);
+    }
+    if (paymentStatus !== undefined) updateData.paymentStatus = String(paymentStatus);
     if (projectId !== undefined) updateData.projectId = projectId;
     if (notes !== undefined) updateData.notes = notes;
     if (receiptSent !== undefined) updateData.receiptSent = !!receiptSent;
 
-    await connectMongo();
+    updateData.amountPaid = nextPaid;
+
     const updated = await DonationModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
     if (!updated) return res.status(404).json({ error: "Donation not found" });
     res.json({
@@ -818,6 +852,7 @@ export const updateDonation: RequestHandler = async (req, res) => {
       donorEmail: updated.donorEmail,
       donorPhone: updated.donorPhone || "",
       amount: updated.amount,
+      amountPaid: Number(updated.amountPaid || 0),
       currency: updated.currency || "RWF",
       date: updated.date ? new Date(updated.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
       type: updated.type,
@@ -867,9 +902,13 @@ export const sendDonationReceipt: RequestHandler = async (req, res) => {
 
     const receiptNo = idOf(donation);
     const amount = Number(donation.amount || 0);
+    const amountPaid = Number(donation.amountPaid || 0);
     const currency = String(donation.currency || "RWF");
     const donationDate = donation.date ? new Date(donation.date) : new Date();
     const donationDateText = donationDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    const status = String(donation.paymentStatus || "unpaid");
+    const received = status === "paid" ? amount : status === "installment" ? amountPaid : 0;
+    const remaining = Math.max(0, amount - received);
 
     const subject = `Donation Receipt - ${siteName}`;
     const safeName = escapeHtml(donorName || "Donor");
@@ -886,6 +925,8 @@ export const sendDonationReceipt: RequestHandler = async (req, res) => {
           <p style="margin: 0 0 6px;"><strong>Receipt #:</strong> ${escapeHtml(receiptNo)}</p>
           <p style="margin: 0 0 6px;"><strong>Date:</strong> ${escapeHtml(donationDateText)}</p>
           <p style="margin: 0 0 6px;"><strong>Amount:</strong> ${escapeHtml(amount.toLocaleString())} ${escapeHtml(currency)}</p>
+          <p style="margin: 0 0 6px;"><strong>Received:</strong> ${escapeHtml(received.toLocaleString())} ${escapeHtml(currency)}</p>
+          <p style="margin: 0 0 6px;"><strong>Remaining:</strong> ${escapeHtml(remaining.toLocaleString())} ${escapeHtml(currency)}</p>
           <p style="margin: 0 0 6px;"><strong>Donation type:</strong> ${escapeHtml(String(donation.type || ""))}</p>
           <p style="margin: 0;"><strong>Payment status:</strong> ${escapeHtml(String(donation.paymentStatus || ""))}</p>
         </div>
@@ -906,6 +947,8 @@ export const sendDonationReceipt: RequestHandler = async (req, res) => {
 Receipt #: ${receiptNo}
 Date: ${donationDateText}
 Amount: ${amount.toLocaleString()} ${currency}
+Received: ${received.toLocaleString()} ${currency}
+Remaining: ${remaining.toLocaleString()} ${currency}
 Donation type: ${String(donation.type || "")}
 Payment status: ${String(donation.paymentStatus || "")}
 

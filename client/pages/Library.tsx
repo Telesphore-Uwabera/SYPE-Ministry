@@ -1,15 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Download, Calendar, User, Search as SearchIcon, Filter as FilterIcon } from "lucide-react";
+import { BookOpen, Download, Calendar, User, Search as SearchIcon, Filter as FilterIcon, Minus, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 import { Book } from "@/types/admin";
 import { Input } from "@/components/ui/input";
 import { buildApiUrl } from "@/lib/apiConfig";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url
+).toString();
 
 const BOOK_CATEGORIES: Book["category"][] = [
   "Bible",
@@ -29,6 +37,10 @@ export default function Library() {
   const [dateFilter, setDateFilter] = useState<"all" | "past" | "ongoing" | "future">("all");
   const [readerOpen, setReaderOpen] = useState(false);
   const [readerBook, setReaderBook] = useState<Book | null>(null);
+  const [pdfNumPages, setPdfNumPages] = useState<number>(0);
+  const [pdfPage, setPdfPage] = useState<number>(1);
+  const [pdfScale, setPdfScale] = useState<number>(1.1);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -112,8 +124,17 @@ export default function Library() {
   const openReader = (book: Book) => {
     if (!book.fileUrl) return;
     setReaderBook(book);
+    setPdfNumPages(0);
+    setPdfPage(1);
+    setPdfScale(1.1);
+    setPdfError(null);
     setReaderOpen(true);
   };
+
+  const pdfUrl = useMemo(() => {
+    if (!readerBook) return "";
+    return buildApiUrl(`/api/books/${readerBook.id}/view`);
+  }, [readerBook]);
 
   const renderBooks = () => {
     if (loading) {
@@ -366,14 +387,93 @@ export default function Library() {
             </DialogHeader>
           </div>
 
-          <div className="w-full h-[80vh] bg-muted">
+          <div className="px-4 py-3 border-b flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!pdfNumPages || pdfPage <= 1}
+                onClick={() => setPdfPage((p) => Math.max(1, p - 1))}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <div className="text-sm text-foreground/70 min-w-[110px] text-center">
+                Page {pdfNumPages ? pdfPage : "-"} / {pdfNumPages || "-"}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!pdfNumPages || pdfPage >= pdfNumPages}
+                onClick={() => setPdfPage((p) => Math.min(pdfNumPages, p + 1))}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setPdfScale((s) => Math.max(0.7, Math.round((s - 0.1) * 10) / 10))}
+              >
+                <Minus className="w-4 h-4" />
+              </Button>
+              <div className="text-sm text-foreground/70 min-w-[70px] text-center">
+                {Math.round(pdfScale * 100)}%
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setPdfScale((s) => Math.min(2.0, Math.round((s + 0.1) * 10) / 10))}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="w-full h-[80vh] bg-muted overflow-auto flex justify-center">
             {readerBook ? (
-              <iframe
-                key={readerBook.id}
-                title={readerBook.title}
-                src={buildApiUrl(`/api/books/${readerBook.id}/view`)}
-                className="w-full h-full"
-              />
+              <div className="py-6">
+                <Document
+                  file={pdfUrl}
+                  onLoadSuccess={({ numPages }) => {
+                    setPdfNumPages(numPages);
+                    setPdfPage(1);
+                    setPdfError(null);
+                  }}
+                  onLoadError={(err: any) => {
+                    console.error("PDF load error:", err);
+                    setPdfError("Failed to load this book. Please try again.");
+                  }}
+                  loading={
+                    <div className="w-full h-[60vh] flex items-center justify-center text-sm text-muted-foreground">
+                      Loading book...
+                    </div>
+                  }
+                  error={
+                    <div className="w-full h-[60vh] flex items-center justify-center text-sm text-destructive">
+                      Failed to load book.
+                    </div>
+                  }
+                >
+                  {pdfError ? (
+                    <div className="w-full h-[60vh] flex items-center justify-center text-sm text-destructive">
+                      {pdfError}
+                    </div>
+                  ) : (
+                    <Page
+                      pageNumber={pdfPage}
+                      scale={pdfScale}
+                      renderAnnotationLayer={false}
+                      renderTextLayer={false}
+                    />
+                  )}
+                </Document>
+              </div>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground">
                 No book selected.

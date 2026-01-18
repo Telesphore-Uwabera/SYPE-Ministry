@@ -162,6 +162,7 @@ export function createServer() {
   app.put("/api/admin/donations/:id", adminRoutes.updateDonation);
   app.delete("/api/admin/donations/:id", adminRoutes.deleteDonation);
   app.post("/api/admin/donations/:id/send-receipt", adminRoutes.sendDonationReceipt);
+  app.post("/api/admin/test-email", adminRoutes.sendTestEmail);
 
   // Public Donations API (for public donation form submissions)
   app.post("/api/donations", adminRoutes.createPublicDonation);

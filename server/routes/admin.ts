@@ -38,6 +38,53 @@ function getAdminNotifyEmail(): string {
   return String(process.env.ADMIN_NOTIFY_EMAIL || process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
 }
 
+function assertTestEmailAuth(req: Request, res: Response): boolean {
+  const expected = String(process.env.ADMIN_TEST_TOKEN || "").trim();
+  if (!expected) {
+    res.status(500).json({ error: "ADMIN_TEST_TOKEN is not configured on the server" });
+    return false;
+  }
+  const provided = String(req.header("x-admin-test-token") || "").trim();
+  if (!provided || provided !== expected) {
+    res.status(403).json({ error: "Forbidden" });
+    return false;
+  }
+  return true;
+}
+
+// Test Email (Admin) - sends a real email using configured mailer.
+export const sendTestEmail: RequestHandler = async (req, res) => {
+  try {
+    if (!assertTestEmailAuth(req, res)) return;
+
+    const to = String(req.body?.to || "").trim();
+    if (!to || !to.includes("@")) return res.status(400).json({ error: "Valid 'to' email is required" });
+
+    const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
+    const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").trim().replace(/\/+$/, "");
+    const when = new Date().toISOString();
+
+    const subject = `Test email - ${siteName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
+        <h2 style="margin: 0 0 8px;">${escapeHtml(siteName)} - Test Email</h2>
+        <p style="margin: 0 0 16px;">If you received this email, your mailing configuration is working.</p>
+        <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #ffffff;">
+          <p style="margin: 0 0 6px;"><strong>Sent at:</strong> ${escapeHtml(when)}</p>
+          <p style="margin: 0;"><strong>Website:</strong> <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a></p>
+        </div>
+      </div>
+    `;
+    const text = `Test email - ${siteName}\n\nIf you received this email, your mailing configuration is working.\nSent at: ${when}\nWebsite: ${siteUrl}\n`;
+
+    const { messageId } = await sendMail({ to, subject, html, text });
+    res.json({ ok: true, messageId });
+  } catch (error: any) {
+    console.error("Error sending test email:", error);
+    res.status(500).json({ error: error?.message || "Failed to send test email" });
+  }
+};
+
 // Members API
 export const getMembers: RequestHandler = async (req, res) => {
   try {

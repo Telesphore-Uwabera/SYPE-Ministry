@@ -9,6 +9,7 @@ import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/
 import { Book } from "@/types/admin";
 import { Input } from "@/components/ui/input";
 import { buildApiUrl } from "@/lib/apiConfig";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const BOOK_CATEGORIES: Book["category"][] = [
   "Bible",
@@ -26,6 +27,8 @@ export default function Library() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFilter, setDateFilter] = useState<"all" | "past" | "ongoing" | "future">("all");
+  const [readerOpen, setReaderOpen] = useState(false);
+  const [readerBook, setReaderBook] = useState<Book | null>(null);
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -106,6 +109,12 @@ export default function Library() {
 
   const filteredBooks = getFilteredBooks();
 
+  const openReader = (book: Book) => {
+    if (!book.fileUrl) return;
+    setReaderBook(book);
+    setReaderOpen(true);
+  };
+
   const renderBooks = () => {
     if (loading) {
       return (
@@ -151,7 +160,7 @@ export default function Library() {
         {filteredBooks.map((book) => (
           <HoverAnimation key={book.id} scale={1.02} y={-8}>
             <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group">
-              <div className="relative h-64 overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
+              <div className="relative h-64 overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20 group/image">
                 {book.coverImage ? (
                   <img
                     src={book.coverImage}
@@ -163,6 +172,23 @@ export default function Library() {
                     <BookOpen className="w-20 h-20 text-primary opacity-40" />
                   </div>
                 )}
+
+                {book.fileUrl && (
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/image:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                    <Button
+                      size="sm"
+                      className="flex items-center gap-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openReader(book);
+                      }}
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      Read
+                    </Button>
+                  </div>
+                )}
+
                 {book.featured && (
                   <div className="absolute top-2 right-2 bg-accent text-accent-foreground text-xs font-semibold px-2 py-1 rounded">
                     Featured
@@ -205,22 +231,31 @@ export default function Library() {
                     {book.category}
                   </span>
                   {book.fileUrl && (
-                    <Button
-                      asChild
-                      size="sm"
-                      variant="outline"
-                      className="flex items-center gap-2"
-                    >
-                      <a
-                        href={buildApiUrl(`/api/books/${book.id}/download`)}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center gap-2"
                         onClick={(e) => {
                           e.stopPropagation();
+                          openReader(book);
                         }}
                       >
-                        <Download className="w-3 h-3" />
-                        Download
-                      </a>
-                    </Button>
+                        <BookOpen className="w-3 h-3" />
+                        Read
+                      </Button>
+                      <Button asChild size="sm" variant="outline" className="flex items-center gap-2">
+                        <a
+                          href={buildApiUrl(`/api/books/${book.id}/download`)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                          }}
+                        >
+                          <Download className="w-3 h-3" />
+                          Download
+                        </a>
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardContent>
@@ -314,6 +349,39 @@ export default function Library() {
           </ScrollAnimation>
         </div>
       </section>
+
+      <Dialog
+        open={readerOpen}
+        onOpenChange={(open) => {
+          setReaderOpen(open);
+          if (!open) setReaderBook(null);
+        }}
+      >
+        <DialogContent className="max-w-5xl p-0 overflow-hidden">
+          <div className="p-4 border-b">
+            <DialogHeader>
+              <DialogTitle className="text-base">
+                {readerBook?.title || "Book Reader"}
+              </DialogTitle>
+            </DialogHeader>
+          </div>
+
+          <div className="w-full h-[80vh] bg-muted">
+            {readerBook ? (
+              <iframe
+                key={readerBook.id}
+                title={readerBook.title}
+                src={buildApiUrl(`/api/books/${readerBook.id}/view`)}
+                className="w-full h-full"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground">
+                No book selected.
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

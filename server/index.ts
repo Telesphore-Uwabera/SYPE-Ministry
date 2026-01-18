@@ -225,6 +225,8 @@ export function createServer() {
 
   // Public API Routes - Book download (force PDF filename/content-type)
   app.get("/api/books/:id/download", adminRoutes.downloadBookPdf);
+  // Public API Routes - Book inline view (PDF reader)
+  app.get("/api/books/:id/view", adminRoutes.viewBookPdf);
 
   // Admin API Routes - Analytics
   app.get("/api/admin/analytics", adminRoutes.getAnalytics);

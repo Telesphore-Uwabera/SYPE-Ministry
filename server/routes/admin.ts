@@ -1381,6 +1381,43 @@ export const downloadBookPdf: RequestHandler = async (req, res) => {
   }
 };
 
+export const viewBookPdf: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+
+    await connectMongo();
+    const book = await BookModel.findById(id).exec();
+    if (!book) return res.status(404).json({ error: "Book not found" });
+    if (!book.fileUrl) return res.status(400).json({ error: "Book fileUrl is missing" });
+
+    const upstream = await fetch(book.fileUrl, { cache: "no-store" as any });
+    if (!upstream.ok || !upstream.body) {
+      return res.status(502).json({ error: "Failed to fetch PDF from storage" });
+    }
+
+    const filename = safePdfFilename(book.title);
+    const contentType = upstream.headers.get("content-type") || "application/pdf";
+
+    res.setHeader("Content-Type", contentType);
+    // Inline disposition lets browsers render PDFs without downloading
+    res.setHeader("Content-Disposition", `inline; filename=\"${filename}\"`);
+    res.setHeader("Cache-Control", "no-store");
+
+    const nodeStream = Readable.fromWeb(upstream.body as any);
+    nodeStream.on("error", (e) => {
+      console.error("PDF stream error:", e);
+      try {
+        res.end();
+      } catch {}
+    });
+    nodeStream.pipe(res);
+  } catch (error) {
+    console.error("Error viewing book PDF:", error);
+    res.status(500).json({ error: "Failed to view PDF" });
+  }
+};
+
 // Email Subscribers API
 export const getSubscribers: RequestHandler = async (req, res) => {
   try {

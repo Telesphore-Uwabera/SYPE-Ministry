@@ -138,7 +138,7 @@ export default function Library() {
   const renderBooks = () => {
     if (loading) {
       return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <div key={i} className="h-96 bg-muted animate-pulse rounded-lg" />
           ))}
@@ -173,7 +173,7 @@ export default function Library() {
     return (
       <StaggerContainer
         detectScrollDirection
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
         staggerDelay={0.15}
         direction="up"
       >
@@ -246,16 +246,16 @@ export default function Library() {
                     {book.description}
                   </p>
                 )}
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full font-medium">
+                <div className="flex items-center justify-between gap-2 flex-nowrap">
+                  <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full font-medium whitespace-nowrap">
                     {book.category}
                   </span>
                   {book.fileUrl && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-nowrap">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 whitespace-nowrap"
                         onClick={(e) => {
                           e.stopPropagation();
                           openReader(book);
@@ -264,7 +264,7 @@ export default function Library() {
                         <BookOpen className="w-3 h-3" />
                         Read
                       </Button>
-                      <Button asChild size="sm" variant="outline" className="flex items-center gap-2">
+                      <Button asChild size="sm" variant="outline" className="flex items-center gap-2 whitespace-nowrap">
                         <a
                           href={buildApiUrl(`/api/books/${book.id}/download`)}
                           onClick={(e) => {

@@ -340,10 +340,19 @@ export default function Communication() {
       const response = await fetch(`/api/admin/campaigns/${c.id}/send`, { method: "POST" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data?.error || "Failed to send campaign");
-      toast({
-        title: "Campaign sent",
-        description: `Sent: ${data?.sent ?? "?"} • Failed: ${data?.failed ?? "?"} • Recipients: ${data?.recipients ?? "?"}`,
-      });
+      const firstError = Array.isArray(data?.errors) ? data.errors?.[0]?.error : undefined;
+      if (data?.ok === false || (data?.failed ?? 0) > 0) {
+        toast({
+          title: "Campaign completed with errors",
+          description: `${firstError ? `Reason: ${firstError} • ` : ""}Sent: ${data?.sent ?? "?"} • Failed: ${data?.failed ?? "?"} • Recipients: ${data?.recipients ?? "?"}`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Campaign sent",
+          description: `Sent: ${data?.sent ?? "?"} • Failed: ${data?.failed ?? "?"} • Recipients: ${data?.recipients ?? "?"}`,
+        });
+      }
       loadCampaigns();
     } catch (error: any) {
       toast({

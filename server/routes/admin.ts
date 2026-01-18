@@ -2074,25 +2074,6 @@ function stripHtmlToText(html: string): string {
     .trim();
 }
 
-async function sendInBatches<T>(
-  items: T[],
-  batchSize: number,
-  handler: (item: T) => Promise<any>
-): Promise<{ ok: number; failed: number }> {
-  let ok = 0;
-  let failed = 0;
-  const size = Math.max(1, Math.floor(batchSize || 1));
-  for (let i = 0; i < items.length; i += size) {
-    const batch = items.slice(i, i + size);
-    const results = await Promise.allSettled(batch.map((x) => handler(x)));
-    for (const r of results) {
-      if (r.status === "fulfilled") ok += 1;
-      else failed += 1;
-    }
-  }
-  return { ok, failed };
-}
-
 export const getEmailCampaigns: RequestHandler = async (_req, res) => {
   try {
     await connectMongo();
@@ -2259,24 +2240,70 @@ export const sendEmailCampaign: RequestHandler = async (req, res) => {
       : `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827; white-space: pre-wrap;">${escapeHtml(body)}</div>`;
     const text = isHtml ? stripHtmlToText(body) : String(body || "");
 
-    // Send (rate-friendly batching)
-    const { ok, failed } = await sendInBatches(recipients, 5, async (to) => {
-      await sendMail({
-        to,
-        subject,
-        html,
-        text,
-        replyTo: contactEmail || undefined,
+    // Send (rate-friendly batching) + collect failure reasons
+    let sent = 0;
+    let failed = 0;
+    const errors: Array<{ to: string; error: string }> = [];
+
+    const batchSize = 5;
+    for (let i = 0; i < recipients.length; i += batchSize) {
+      const batch = recipients.slice(i, i + batchSize);
+      const results = await Promise.allSettled(
+        batch.map((to) =>
+          sendMail({
+            to,
+            subject,
+            html,
+            text,
+            replyTo: contactEmail || undefined,
+          })
+        )
+      );
+
+      results.forEach((r, idx) => {
+        if (r.status === "fulfilled") {
+          sent += 1;
+          return;
+        }
+        failed += 1;
+        const reason: any = r.reason;
+        const msg = String(reason?.message || reason?.error || reason || "Failed to send");
+        if (errors.length < 5) {
+          errors.push({ to: batch[idx], error: msg });
+        }
       });
+    }
+
+    // Only mark as sent if all recipients succeeded.
+    if (failed === 0) {
+      campaign.status = "sent";
+      campaign.sentDate = new Date();
+      campaign.recipients = recipients;
+      await campaign.save();
+      return res.json({ ok: true, recipients: recipients.length, sent, failed, errors: [] });
+    }
+
+    // If everything failed, return 500 so the UI shows an error toast.
+    if (sent === 0) {
+      return res.status(500).json({
+        ok: false,
+        error: errors[0]?.error || "Campaign failed to send",
+        recipients: recipients.length,
+        sent,
+        failed,
+        errors,
+      });
+    }
+
+    // Partial success: keep as draft so admin can retry if needed.
+    return res.json({
+      ok: false,
+      error: errors[0]?.error || "Some emails failed to send",
+      recipients: recipients.length,
+      sent,
+      failed,
+      errors,
     });
-
-    // Mark campaign as sent and persist recipients used
-    campaign.status = "sent";
-    campaign.sentDate = new Date();
-    campaign.recipients = recipients;
-    await campaign.save();
-
-    res.json({ ok: true, recipients: recipients.length, sent: ok, failed });
   } catch (error: any) {
     console.error("Error sending email campaign:", error);
     res.status(500).json({ error: error?.message || "Failed to send campaign" });

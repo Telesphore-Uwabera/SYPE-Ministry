@@ -792,6 +792,21 @@ export default function Home() {
               <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary">
                 Latest Events
               </h2>
+              <Button
+                asChild
+                variant="outline"
+                className="border-accent text-accent hover:bg-accent hover:text-accent-foreground transition-all duration-300 rounded-md"
+              >
+                <Link to="/projects" className="inline-flex items-center gap-2">
+                  View All
+                  <motion.span
+                    animate={{ x: [0, 5, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    →
+                  </motion.span>
+                </Link>
+              </Button>
             </div>
           </ScrollAnimation>
           <LatestEventsCards />
@@ -806,18 +821,21 @@ export default function Home() {
               <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary">
                 Latest News
               </h2>
-              <Link
-                to="/news"
-                className="text-accent font-semibold hover:text-accent-foreground transition-colors inline-flex items-center gap-2"
+              <Button
+                asChild
+                variant="outline"
+                className="border-accent text-accent hover:bg-accent hover:text-accent-foreground transition-all duration-300 rounded-md"
               >
-                View All
-                <motion.span
-                  animate={{ x: [0, 5, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  →
-                </motion.span>
-              </Link>
+                <Link to="/news" className="inline-flex items-center gap-2">
+                  View All
+                  <motion.span
+                    animate={{ x: [0, 5, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    →
+                  </motion.span>
+                </Link>
+              </Button>
             </div>
           </ScrollAnimation>
 
@@ -833,18 +851,21 @@ export default function Home() {
               <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary">
                 Devotions
               </h2>
-              <Link
-                to="/devotions"
-                className="text-accent font-semibold hover:text-accent-foreground transition-colors inline-flex items-center gap-2"
+              <Button
+                asChild
+                variant="outline"
+                className="border-accent text-accent hover:bg-accent hover:text-accent-foreground transition-all duration-300 rounded-md"
               >
-                View All
-                <motion.span
-                  animate={{ x: [0, 5, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  →
-                </motion.span>
-              </Link>
+                <Link to="/devotions" className="inline-flex items-center gap-2">
+                  View All
+                  <motion.span
+                    animate={{ x: [0, 5, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    →
+                  </motion.span>
+                </Link>
+              </Button>
             </div>
           </ScrollAnimation>
 
@@ -860,18 +881,21 @@ export default function Home() {
               <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary">
                 Videos & Multimedia
               </h2>
-              <Link
-                to="/videos"
-                className="text-accent font-semibold hover:text-accent-foreground transition-colors inline-flex items-center gap-2"
+              <Button
+                asChild
+                variant="outline"
+                className="border-accent text-accent hover:bg-accent hover:text-accent-foreground transition-all duration-300 rounded-md"
               >
-                View All
-                <motion.span
-                  animate={{ x: [0, 5, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  →
-                </motion.span>
-              </Link>
+                <Link to="/videos" className="inline-flex items-center gap-2">
+                  View All
+                  <motion.span
+                    animate={{ x: [0, 5, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    →
+                  </motion.span>
+                </Link>
+              </Button>
             </div>
           </ScrollAnimation>
 

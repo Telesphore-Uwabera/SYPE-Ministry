@@ -6,6 +6,7 @@ import { NewsArticle } from "@/types/admin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, ArrowLeft } from "lucide-react";
+import SEO from "@/components/SEO";
 
 export default function NewsArticlePage() {
   const { id } = useParams<{ id: string }>();
@@ -46,56 +47,75 @@ export default function NewsArticlePage() {
           ) : !article ? (
             <div className="text-foreground/70">Article not found.</div>
           ) : (
-            <Card>
-              {article.image && (
-                <div className="border-b">
-                  <img
-                    src={article.image}
-                    alt={article.title}
-                    className="w-full max-h-[420px] object-cover"
-                  />
-                </div>
-              )}
-              <CardHeader>
-                <CardTitle className="text-3xl text-primary">{article.title}</CardTitle>
-                <div className="text-sm text-foreground/70 flex flex-wrap items-center gap-2 mt-2">
-                  <span className="inline-flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    {new Date(article.publishDate).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </span>
-                  {article.author && (
-                    <>
-                      <span className="text-foreground/40">•</span>
-                      <span>{article.author}</span>
-                    </>
-                  )}
-                  {article.category && (
-                    <>
-                      <span className="text-foreground/40">•</span>
-                      <span className="text-xs bg-muted px-2 py-1 rounded">
-                        {article.category}
-                      </span>
-                    </>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {article.excerpt && (
-                  <p className="text-foreground/80 font-medium">{article.excerpt}</p>
-                )}
-                {article.body && (
-                  <div className="prose prose-slate max-w-none">
-                    <p className="whitespace-pre-wrap text-foreground/80 leading-relaxed">
-                      {article.body}
-                    </p>
+            <>
+              <SEO
+                title={article.title}
+                description={article.excerpt || article.body?.substring(0, 160)}
+                image={article.image}
+                type="article"
+                schema={{
+                  "@context": "https://schema.org",
+                  "@type": "NewsArticle",
+                  "headline": article.title,
+                  "image": article.image ? [article.image] : [],
+                  "datePublished": article.publishDate,
+                  "author": [{
+                    "@type": "Person",
+                    "name": article.author || "SYPE Ministry"
+                  }]
+                }}
+              />
+              <Card>
+                {article.image && (
+                  <div className="border-b">
+                    <img
+                      src={article.image}
+                      alt={article.title}
+                      className="w-full max-h-[420px] object-cover"
+                    />
                   </div>
                 )}
-              </CardContent>
-            </Card>
+                <CardHeader>
+                  <CardTitle className="text-3xl text-primary">{article.title}</CardTitle>
+                  <div className="text-sm text-foreground/70 flex flex-wrap items-center gap-2 mt-2">
+                    <span className="inline-flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      {new Date(article.publishDate).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </span>
+                    {article.author && (
+                      <>
+                        <span className="text-foreground/40">•</span>
+                        <span>{article.author}</span>
+                      </>
+                    )}
+                    {article.category && (
+                      <>
+                        <span className="text-foreground/40">•</span>
+                        <span className="text-xs bg-muted px-2 py-1 rounded">
+                          {article.category}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {article.excerpt && (
+                    <p className="text-foreground/80 font-medium">{article.excerpt}</p>
+                  )}
+                  {article.body && (
+                    <div className="prose prose-slate max-w-none">
+                      <p className="whitespace-pre-wrap text-foreground/80 leading-relaxed">
+                        {article.body}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </>
           )}
         </div>
       </section>

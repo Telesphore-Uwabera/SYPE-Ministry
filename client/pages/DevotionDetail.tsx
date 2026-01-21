@@ -6,6 +6,7 @@ import { Devotion } from "@/types/admin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, ArrowLeft } from "lucide-react";
+import SEO from "@/components/SEO";
 
 export default function DevotionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -46,40 +47,59 @@ export default function DevotionDetailPage() {
           ) : !devotion ? (
             <div className="text-foreground/70">Devotion not found.</div>
           ) : (
-            <Card>
-              {devotion.image && (
-                <div className="border-b">
-                  <img
-                    src={devotion.image}
-                    alt={devotion.title}
-                    className="w-full max-h-[420px] object-cover"
-                  />
-                </div>
-              )}
-              <CardHeader>
-                <CardTitle className="text-3xl text-primary">{devotion.title}</CardTitle>
-                <div className="text-sm text-foreground/70 flex items-center gap-2 mt-2">
-                  <Calendar className="w-4 h-4" />
-                  {new Date(devotion.date).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {devotion.excerpt && (
-                  <p className="text-foreground/80 font-medium">{devotion.excerpt}</p>
-                )}
-                {devotion.content && (
-                  <div className="prose prose-slate max-w-none">
-                    <p className="whitespace-pre-wrap text-foreground/80 leading-relaxed">
-                      {devotion.content}
-                    </p>
+            <>
+              <SEO
+                title={devotion.title}
+                description={devotion.excerpt || devotion.content?.substring(0, 160)}
+                image={devotion.image}
+                type="article"
+                schema={{
+                  "@context": "https://schema.org",
+                  "@type": "NewsArticle",
+                  "headline": devotion.title,
+                  "image": devotion.image ? [devotion.image] : [],
+                  "datePublished": devotion.date,
+                  "author": [{
+                    "@type": "Person",
+                    "name": "SYPE Ministry"
+                  }]
+                }}
+              />
+              <Card>
+                {devotion.image && (
+                  <div className="border-b">
+                    <img
+                      src={devotion.image}
+                      alt={devotion.title}
+                      className="w-full max-h-[420px] object-cover"
+                    />
                   </div>
                 )}
-              </CardContent>
-            </Card>
+                <CardHeader>
+                  <CardTitle className="text-3xl text-primary">{devotion.title}</CardTitle>
+                  <div className="text-sm text-foreground/70 flex items-center gap-2 mt-2">
+                    <Calendar className="w-4 h-4" />
+                    {new Date(devotion.date).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {devotion.excerpt && (
+                    <p className="text-foreground/80 font-medium">{devotion.excerpt}</p>
+                  )}
+                  {devotion.content && (
+                    <div className="prose prose-slate max-w-none">
+                      <p className="whitespace-pre-wrap text-foreground/80 leading-relaxed">
+                        {devotion.content}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </>
           )}
         </div>
       </section>

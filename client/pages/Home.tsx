@@ -125,18 +125,18 @@ function LatestDevotionsCards() {
       try {
         const apiUrl = buildApiUrl("/api/devotions?days=7");
         console.log("Fetching devotions from:", apiUrl);
-        
+
         const res = await fetch(apiUrl);
-        
+
         if (!res.ok) {
           console.error(`HTTP error! status: ${res.status}`);
           setLoading(false);
           return;
         }
-        
+
         const data = await res.json();
         console.log("Devotions data received:", data);
-        
+
         // Get latest 3 devotions
         const devotionsData = (Array.isArray(data) ? data : [])
           .sort((a: Devotion, b: Devotion) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -150,7 +150,7 @@ function LatestDevotionsCards() {
         setDevotions([]);
       }
     };
-    
+
     fetchDevotions();
   }, []);
 
@@ -410,6 +410,8 @@ function LatestEventsCards() {
   );
 }
 
+import SEO from "@/components/SEO";
+
 export default function Home() {
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -448,6 +450,26 @@ export default function Home() {
 
   return (
     <Layout>
+      <SEO
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "SYPE Ministry",
+          "url": "https://sypeministry.org",
+          "logo": "https://sypeministry.org/Sype%20logo.png",
+          "sameAs": [
+            "https://www.facebook.com/sypesda",
+            "https://www.youtube.com/@sypeministry5276",
+            "https://www.instagram.com/sype_ministry/"
+          ],
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+250780430990",
+            "contactType": "customer service",
+            "email": "sypeministry@gmail.com"
+          }
+        }}
+      />
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-r from-primary via-secondary to-primary py-20 md:py-32 text-primary-foreground">
         <div className="absolute inset-0 opacity-10">

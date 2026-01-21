@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import StructuredData from "./StructuredData";
 
 interface SEOProps {
   title?: string;
@@ -8,6 +9,7 @@ interface SEOProps {
   image?: string;
   url?: string;
   type?: string;
+  schema?: Record<string, any>;
 }
 
 const getSiteOrigin = (): string => {
@@ -40,6 +42,7 @@ export default function SEO({
   image = defaultSEO.image,
   url,
   type = defaultSEO.type,
+  schema,
 }: SEOProps) {
   const location = useLocation();
   const currentUrl = url || `${defaultSEO.url}${location.pathname}`;
@@ -95,6 +98,23 @@ export default function SEO({
     canonical.setAttribute("href", currentUrl);
   }, [title, description, keywords, image, currentUrl, type, fullTitle]);
 
-  return null;
+  // Generate breadcrumb schema automatically for most pages
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": location.pathname.split("/").filter(Boolean).map((segment, index, array) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "name": segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " "),
+      "item": `${SITE_ORIGIN}/${array.slice(0, index + 1).join("/")}`
+    }))
+  };
+
+  return (
+    <>
+      <StructuredData data={breadcrumbSchema} />
+      {schema && <StructuredData data={schema} />}
+    </>
+  );
 }
 

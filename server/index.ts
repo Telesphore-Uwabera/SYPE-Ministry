@@ -5,9 +5,11 @@ import cors from "cors";
 import path from "path";
 import { handleDemo } from "./routes/demo";
 import * as adminRoutes from "./routes/admin";
+import { runReminders } from "./lib/reminders";
 import * as uploadRoutes from "./routes/upload";
 import * as mediaUploadRoutes from "./routes/mediaUpload";
 import * as youtubeRoutes from "./routes/youtube";
+import * as seoRoutes from "./routes/seo";
 import mongoose from "mongoose";
 import { connectMongo } from "./lib/mongoose";
 
@@ -155,6 +157,10 @@ export function createServer() {
   app.get("/api/events", adminRoutes.getEvents);
   app.get("/api/events/:id", adminRoutes.getEvent);
 
+  // SEO & Sitemap
+  app.get("/sitemap.xml", seoRoutes.getSitemap);
+  app.get("/api/sitemap.xml", seoRoutes.getSitemap);
+
   // Admin API Routes - Donations
   app.get("/api/admin/donations", adminRoutes.getDonations);
   app.get("/api/admin/donations/:id", adminRoutes.getDonation);
@@ -300,7 +306,6 @@ export function createServer() {
 
   // Start background jobs
   if (process.env.NODE_ENV !== "development" || process.env.ENABLE_REMINDERS === "true") {
-    const { runReminders } = require("./lib/reminders");
     // Run once on startup
     setTimeout(() => runReminders().catch(console.error), 10000);
     // Then run every hour

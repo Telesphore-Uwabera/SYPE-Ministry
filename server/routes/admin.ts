@@ -222,16 +222,16 @@ export const deleteMember: RequestHandler = async (req, res) => {
 export const getNews: RequestHandler = async (req, res) => {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
-    
+
     console.log("Fetching news articles, limit:", limit);
 
     await connectMongo();
     const query = NewsArticleModel.find().sort({ publishDate: -1 });
     if (limit) query.limit(limit);
     const result = await query.exec();
-    
+
     console.log(`Found ${result.length} news articles in database`);
-    
+
     // Convert DB format to API format
     const formattedResult = result.map((article) => ({
       id: idOf(article),
@@ -247,13 +247,13 @@ export const getNews: RequestHandler = async (req, res) => {
       views: article.views,
       createdAt: (article.createdAt ? new Date(article.createdAt) : new Date()).toISOString(),
     }));
-    
+
     console.log(`Returning ${formattedResult.length} formatted news articles`);
     res.json(formattedResult);
   } catch (error: any) {
     console.error("Error fetching news:", error);
     console.error("Error details:", error.message, error.stack);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to fetch news",
       details: process.env.NODE_ENV === "development" ? error.message : undefined
     });
@@ -266,11 +266,11 @@ export const getNewsArticle: RequestHandler = async (req, res) => {
     if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     await connectMongo();
     const article = await NewsArticleModel.findById(id).exec();
-    
+
     if (!article) {
       return res.status(404).json({ error: "Article not found" });
     }
-    
+
     res.json({
       id: idOf(article),
       title: article.title,
@@ -294,7 +294,7 @@ export const getNewsArticle: RequestHandler = async (req, res) => {
 export const createNews: RequestHandler = async (req, res) => {
   try {
     const { title, author, publishDate, excerpt, body, image, featured, category, tags } = req.body;
-    
+
     if (!title || !author || !excerpt || !body) {
       return res.status(400).json({ error: "Title, author, excerpt, and body are required" });
     }
@@ -312,7 +312,7 @@ export const createNews: RequestHandler = async (req, res) => {
       tags: tags || [],
       views: 0,
     });
-    
+
     res.status(201).json({
       id: idOf(newArticle),
       title: newArticle.title,
@@ -332,7 +332,7 @@ export const createNews: RequestHandler = async (req, res) => {
     if (error?.code === 11000) {
       return res.status(400).json({ error: "Duplicate news article" });
     }
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to create news article",
       details: process.env.NODE_ENV === "development" ? error.message : undefined
     });
@@ -360,7 +360,7 @@ export const updateNews: RequestHandler = async (req, res) => {
     await connectMongo();
     const updatedArticle = await NewsArticleModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
     if (!updatedArticle) return res.status(404).json({ error: "Article not found" });
-    
+
     res.json({
       id: idOf(updatedArticle),
       title: updatedArticle.title,
@@ -402,9 +402,9 @@ export const getProjects: RequestHandler = async (req, res) => {
 
     await connectMongo();
     const result = await ProjectModel.find().sort({ createdAt: -1 }).exec();
-    
+
     console.log(`Found ${result.length} projects in database`);
-    
+
     const formattedResult = result.map((project) => ({
       id: idOf(project),
       name: project.name,
@@ -420,14 +420,14 @@ export const getProjects: RequestHandler = async (req, res) => {
       budget: project.budget || undefined,
       createdAt: project.createdAt ? new Date(project.createdAt).toISOString() : new Date().toISOString(),
     }));
-    
+
     console.log(`Returning ${formattedResult.length} formatted projects`);
     res.json(formattedResult);
   } catch (error: any) {
     console.error("Error fetching projects:", error);
     console.error("Error details:", error.message, error.stack);
     console.error("Error code:", error.code);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to fetch projects",
       details: process.env.NODE_ENV === "development" ? error.message : undefined
     });
@@ -440,11 +440,11 @@ export const getProject: RequestHandler = async (req, res) => {
     if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     await connectMongo();
     const project = await ProjectModel.findById(id).exec();
-    
+
     if (!project) {
       return res.status(404).json({ error: "Project not found" });
     }
-    
+
     res.json({
       id: idOf(project),
       name: project.name,
@@ -469,7 +469,7 @@ export const getProject: RequestHandler = async (req, res) => {
 export const createProject: RequestHandler = async (req, res) => {
   try {
     const { name, category, topic, description, distribution, status, year, teamMembers, startDate, endDate, budget } = req.body;
-    
+
     if (!name || !category || !topic || !description || !distribution || !status || !year) {
       return res.status(400).json({ error: "Name, category, topic, description, distribution, status, and year are required" });
     }
@@ -488,7 +488,7 @@ export const createProject: RequestHandler = async (req, res) => {
       endDate: endDate ? new Date(endDate) : undefined,
       budget: budget ?? undefined,
     });
-    
+
     res.status(201).json({
       id: idOf(newProject),
       name: newProject.name,
@@ -509,7 +509,7 @@ export const createProject: RequestHandler = async (req, res) => {
     if (error?.code === 11000) {
       return res.status(400).json({ error: "Duplicate project" });
     }
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to create project",
       details: process.env.NODE_ENV === "development" ? error.message : undefined
     });
@@ -520,7 +520,7 @@ export const updateProject: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, category, topic, description, distribution, status, year, teamMembers, startDate, endDate, budget } = req.body;
-    
+
     if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
@@ -538,7 +538,7 @@ export const updateProject: RequestHandler = async (req, res) => {
     await connectMongo();
     const updatedProject = await ProjectModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
     if (!updatedProject) return res.status(404).json({ error: "Project not found" });
-    
+
     res.json({
       id: idOf(updatedProject),
       name: updatedProject.name,
@@ -904,15 +904,20 @@ export const createPublicDonation: RequestHandler = async (req, res) => {
     const donorNameTrim = String(donorName || "").trim();
     const currencyText = String(created.currency || "RWF");
 
-    const donorSubject = `Donation submission received - ${siteName}`;
+    const donorSubject = `Thank you for your donation - ${siteName}`;
     const donorHtml = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
-        <h2 style="margin: 0 0 8px;">${escapeHtml(siteName)} - Donation Submission</h2>
-        <p style="margin: 0 0 16px;">Hello ${escapeHtml(donorNameTrim || "Donor")},</p>
+        <h2 style="margin: 0 0 8px;">${escapeHtml(siteName)} - Donation Received</h2>
+        <p style="margin: 0 0 16px;">Dear ${escapeHtml(donorNameTrim || "Friend in Christ")},</p>
         <p style="margin: 0 0 16px;">
-          Thank you for supporting our ministry. We have received your donation submission and will review/confirm it.
+          <strong>Grace and peace to you!</strong> Thank you for partnering with us in God's work through your generous donation. 
+          <em>"God loves a cheerful giver"</em> (2 Corinthians 9:7), and we are blessed by your support of our ministry.
         </p>
-        <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #ffffff;">
+        <p style="margin: 0 0 16px;">
+          We have received your donation submission and will confirm payment shortly. Your contribution will help us continue 
+          equipping young professionals for evangelism and spreading the gospel message.
+        </p>
+        <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #f9fafb;">
           <p style="margin: 0 0 6px;"><strong>Reference #:</strong> ${escapeHtml(donationId)}</p>
           <p style="margin: 0 0 6px;"><strong>Amount:</strong> ${escapeHtml(baseAmount.toLocaleString())} ${escapeHtml(currencyText)}</p>
           <p style="margin: 0 0 6px;"><strong>Payment method:</strong> ${escapeHtml(String(paymentMethod))}</p>
@@ -922,14 +927,22 @@ export const createPublicDonation: RequestHandler = async (req, res) => {
           <strong>Note:</strong> This is not an official receipt. An official receipt will be sent after payment is confirmed by our administrators.
         </p>
         <p style="margin: 16px 0 0;">
-          Questions? Reply to this email or contact us at
+          <em>"Whatever you do, work at it with all your heart, as working for the Lord"</em> (Colossians 3:23). 
+          We pray that God will bless you abundantly for your faithfulness and generosity.
+        </p>
+        <p style="margin: 16px 0 0;">
+          If you have any questions, please reach out to us at
           <a href="mailto:${escapeHtml(contactEmail)}">${escapeHtml(contactEmail)}</a>
           ${contactPhone ? ` or ${escapeHtml(contactPhone)}` : ""}.
         </p>
         <p style="margin: 8px 0 0;">
-          Website: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a>
+          Visit us: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a>
         </p>
-        <p style="margin: 16px 0 0;">Blessings,<br />${escapeHtml(siteName)}</p>
+        <p style="margin: 24px 0 0;">
+          May God's grace be with you,<br />
+          <strong>${escapeHtml(siteName)}</strong><br />
+          <em>"Go therefore and make disciples of all nations"</em> - Matthew 28:19
+        </p>
       </div>
     `;
     const donorText = `Donation submission received - ${siteName}
@@ -1133,13 +1146,19 @@ export const sendDonationReceipt: RequestHandler = async (req, res) => {
 
     const html = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
-        <h2 style="margin: 0 0 8px;">${escapeHtml(siteName)} - Donation Receipt</h2>
-        <p style="margin: 0 0 16px;">Hello ${safeName},</p>
+        <h2 style="margin: 0 0 8px;">${escapeHtml(siteName)} - Official Donation Receipt</h2>
+        <p style="margin: 0 0 16px;">Dear ${safeName},</p>
         <p style="margin: 0 0 16px;">
-          Thank you for your generous support. This email confirms we received your donation.
+          <strong>May God bless you abundantly!</strong> Thank you for your generous contribution to our ministry. 
+          <em>"Bring the whole tithe into the storehouse... and see if I will not throw open the floodgates of heaven 
+          and pour out so much blessing"</em> (Malachi 3:10).
+        </p>
+        <p style="margin: 0 0 16px;">
+          Your partnership in spreading the gospel and equipping young professionals for evangelism is deeply appreciated. 
+          This is your official receipt for tax and record-keeping purposes.
         </p>
 
-        <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #ffffff;">
+        <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #f9fafb;">
           <p style="margin: 0 0 6px;"><strong>Receipt #:</strong> ${escapeHtml(receiptNo)}</p>
           <p style="margin: 0 0 6px;"><strong>Date:</strong> ${escapeHtml(donationDateText)}</p>
           <p style="margin: 0 0 6px;"><strong>Amount:</strong> ${escapeHtml(amount.toLocaleString())} ${escapeHtml(currency)}</p>
@@ -1150,14 +1169,22 @@ export const sendDonationReceipt: RequestHandler = async (req, res) => {
         </div>
 
         <p style="margin: 16px 0 0;">
-          If you have any questions, reply to this email or contact us at
+          We pray that the Lord will multiply your seed for sowing and increase your harvest of righteousness (2 Corinthians 9:10). 
+          May His grace and favor rest upon you and your family.
+        </p>
+        <p style="margin: 16px 0 0;">
+          If you have any questions, please contact us at
           <a href="mailto:${escapeHtml(contactEmail)}">${escapeHtml(contactEmail)}</a>
           ${contactPhone ? ` or ${escapeHtml(contactPhone)}` : ""}.
         </p>
         <p style="margin: 8px 0 0;">
-          Website: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a>
+          Visit us: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a>
         </p>
-        <p style="margin: 16px 0 0;">Blessings,<br />${escapeHtml(siteName)}</p>
+        <p style="margin: 24px 0 0;">
+          In Christ's service,<br />
+          <strong>${escapeHtml(siteName)}</strong><br />
+          <em>"Freely you have received; freely give"</em> - Matthew 10:8
+        </p>
       </div>
     `;
 
@@ -1202,7 +1229,7 @@ export const getFAQs: RequestHandler = async (req, res) => {
   try {
     await connectMongo();
     const result = await FAQModel.find().sort({ category: 1, order: 1 }).exec();
-    
+
     const formattedResult = result.map((faq) => ({
       id: idOf(faq),
       category: faq.category,
@@ -1211,7 +1238,7 @@ export const getFAQs: RequestHandler = async (req, res) => {
       order: faq.order,
       createdAt: faq.createdAt ? new Date(faq.createdAt).toISOString() : new Date().toISOString(),
     }));
-    
+
     res.json(formattedResult);
   } catch (error: any) {
     console.error("Error fetching FAQs:", error);
@@ -1225,11 +1252,11 @@ export const getFAQ: RequestHandler = async (req, res) => {
     if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     await connectMongo();
     const faq = await FAQModel.findById(id).exec();
-    
+
     if (!faq) {
       return res.status(404).json({ error: "FAQ not found" });
     }
-    
+
     res.json({
       id: idOf(faq),
       category: faq.category,
@@ -1247,7 +1274,7 @@ export const getFAQ: RequestHandler = async (req, res) => {
 export const createFAQ: RequestHandler = async (req, res) => {
   try {
     const { category, question, answer, order } = req.body;
-    
+
     if (!category || !question || !answer) {
       return res.status(400).json({ error: "Category, question, and answer are required" });
     }
@@ -1259,7 +1286,7 @@ export const createFAQ: RequestHandler = async (req, res) => {
       answer,
       order: order || 0,
     });
-    
+
     res.status(201).json({
       id: idOf(newFAQ),
       category: newFAQ.category,
@@ -1273,7 +1300,7 @@ export const createFAQ: RequestHandler = async (req, res) => {
     if (error?.code === 11000) {
       return res.status(400).json({ error: "Duplicate FAQ" });
     }
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to create FAQ",
       details: process.env.NODE_ENV === "development" ? error.message : undefined
     });
@@ -1284,7 +1311,7 @@ export const updateFAQ: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
     const { category, question, answer, order } = req.body;
-    
+
     if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     const updateData: any = {};
     if (category !== undefined) updateData.category = category;
@@ -1295,7 +1322,7 @@ export const updateFAQ: RequestHandler = async (req, res) => {
     await connectMongo();
     const updatedFAQ = await FAQModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
     if (!updatedFAQ) return res.status(404).json({ error: "FAQ not found" });
-    
+
     res.json({
       id: idOf(updatedFAQ),
       category: updatedFAQ.category,
@@ -1484,15 +1511,15 @@ export const getBooks: RequestHandler = async (req, res) => {
   try {
     const category = req.query.category as string | undefined;
     console.log("Fetching books, category filter:", category);
-    
+
     const where: any = {};
     if (category && category !== "All") where.category = category;
 
     await connectMongo();
     const result = await BookModel.find(where).sort({ uploadDate: -1 }).exec();
-    
+
     console.log(`Found ${result.length} books in database`);
-    
+
     const formattedResult = result.map((book) => ({
       id: idOf(book),
       title: book.title,
@@ -1511,14 +1538,14 @@ export const getBooks: RequestHandler = async (req, res) => {
       downloads: book.downloads,
       uploadDate: book.uploadDate ? new Date(book.uploadDate).toISOString() : new Date().toISOString(),
     }));
-    
+
     console.log(`Returning ${formattedResult.length} formatted books`);
     res.json(formattedResult);
   } catch (error: any) {
     console.error("Error fetching books:", error);
     console.error("Error details:", error.message, error.stack);
     console.error("Error code:", error.code);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to fetch books",
       details: process.env.NODE_ENV === "development" ? error.message : undefined
     });
@@ -1531,11 +1558,11 @@ export const getBook: RequestHandler = async (req, res) => {
     if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     await connectMongo();
     const book = await BookModel.findById(id).exec();
-    
+
     if (!book) {
       return res.status(404).json({ error: "Book not found" });
     }
-    
+
     res.json({
       id: idOf(book),
       title: book.title,
@@ -1563,7 +1590,7 @@ export const getBook: RequestHandler = async (req, res) => {
 export const createBook: RequestHandler = async (req, res) => {
   try {
     const { title, author, category, description, coverImage, fileUrl, isbn, publisher, publishDate, language, pages, tags, featured } = req.body;
-    
+
     if (!title || !category) {
       return res.status(400).json({ error: "Title and category are required" });
     }
@@ -1586,7 +1613,7 @@ export const createBook: RequestHandler = async (req, res) => {
       downloads: 0,
       uploadDate: new Date(),
     });
-    
+
     res.status(201).json({
       id: idOf(newBook),
       title: newBook.title,
@@ -1610,7 +1637,7 @@ export const createBook: RequestHandler = async (req, res) => {
     if (error?.code === 11000) {
       return res.status(400).json({ error: "Duplicate book" });
     }
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to create book",
       details: process.env.NODE_ENV === "development" ? error.message : undefined
     });
@@ -1621,7 +1648,7 @@ export const updateBook: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, author, category, description, coverImage, fileUrl, isbn, publisher, publishDate, language, pages, tags, featured } = req.body;
-    
+
     if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
@@ -1641,7 +1668,7 @@ export const updateBook: RequestHandler = async (req, res) => {
     await connectMongo();
     const updatedBook = await BookModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
     if (!updatedBook) return res.status(404).json({ error: "Book not found" });
-    
+
     res.json({
       id: idOf(updatedBook),
       title: updatedBook.title,
@@ -1738,7 +1765,7 @@ export const downloadBookPdf: RequestHandler = async (req, res) => {
       console.error("PDF stream error:", e);
       try {
         res.end();
-      } catch {}
+      } catch { }
     });
     nodeStream.pipe(res);
   } catch (error) {
@@ -1775,7 +1802,7 @@ export const viewBookPdf: RequestHandler = async (req, res) => {
       console.error("PDF stream error:", e);
       try {
         res.end();
-      } catch {}
+      } catch { }
     });
     nodeStream.pipe(res);
   } catch (error) {
@@ -1867,20 +1894,50 @@ export const createSubscriber: RequestHandler = async (req, res) => {
 
       // Emails (non-blocking)
       const subscriberName = String(existing.name || "").trim();
-      const welcomeSubject = `Welcome to ${siteName}`;
+      const welcomeSubject = `Welcome to ${siteName} - God bless you!`;
       const welcomeHtml = `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
           <h2 style="margin: 0 0 8px;">Welcome to ${escapeHtml(siteName)}</h2>
-          <p style="margin: 0 0 16px;">Hello ${escapeHtml(subscriberName || "Friend")},</p>
-          <p style="margin: 0 0 16px;">Thank you for subscribing. You’ll now receive updates and resources from us.</p>
-          <p style="margin: 0 0 16px;">Website: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a></p>
-          <p style="margin: 0;">If you didn’t subscribe, you can ignore this email.</p>
+          <p style="margin: 0 0 16px;">Dear ${escapeHtml(subscriberName || "Friend in Christ")},</p>
+          <p style="margin: 0 0 16px;">
+            <strong>Grace and peace be with you!</strong> Thank you for joining our community of young professionals 
+            committed to evangelism and serving God.
+          </p>
+          <p style="margin: 0 0 16px;">
+            You will now receive updates, devotional resources, ministry news, and opportunities to be part of God's work 
+            through ${escapeHtml(siteName)}. <em>"How beautiful are the feet of those who bring good news!"</em> (Romans 10:15)
+          </p>
+          <p style="margin: 0 0 16px;">
+            Visit our website: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a>
+          </p>
+          <p style="margin: 16px 0 0;">
+            May the Lord bless you and keep you. May His face shine upon you and be gracious to you (Numbers 6:24-25).
+          </p>
+          <p style="margin: 16px 0 0;">
+            In Christian fellowship,<br />
+            <strong>${escapeHtml(siteName)}</strong>
+          </p>
+          <p style="margin: 8px 0 0; font-size: 0.875rem; color: #6b7280;">
+            If you didn't subscribe, you can <a href="${escapeHtml(siteUrl)}/unsubscribe">unsubscribe here</a>.
+          </p>
         </div>
       `;
-      const welcomeText = `Welcome to ${siteName}
-Thanks for subscribing. You’ll now receive updates and resources from us.
-Website: ${siteUrl}
-If you didn’t subscribe, you can ignore this email.
+      const welcomeText = `Welcome to ${siteName} - God bless you!
+
+Dear ${subscriberName || "Friend in Christ"},
+
+Grace and peace be with you! Thank you for joining our community of young professionals committed to evangelism and serving God.
+
+You will now receive updates, devotional resources, ministry news, and opportunities to be part of God's work through ${siteName}. "How beautiful are the feet of those who bring good news!" (Romans 10:15)
+
+Visit our website: ${siteUrl}
+
+May the Lord bless you and keep you. May His face shine upon you and be gracious to you (Numbers 6:24-25).
+
+In Christian fellowship,
+${siteName}
+
+If you didn't subscribe, you can unsubscribe at: ${siteUrl}/unsubscribe
 `;
       const mails: Promise<any>[] = [
         sendMail({ to: existing.email, subject: welcomeSubject, html: welcomeHtml, text: welcomeText, replyTo: contactEmail || undefined }),
@@ -1921,20 +1978,50 @@ If you didn’t subscribe, you can ignore this email.
 
     // Emails (non-blocking)
     const subscriberName = String(created.name || "").trim();
-    const welcomeSubject = `Welcome to ${siteName}`;
+    const welcomeSubject = `Welcome to ${siteName} - God bless you!`;
     const welcomeHtml = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
         <h2 style="margin: 0 0 8px;">Welcome to ${escapeHtml(siteName)}</h2>
-        <p style="margin: 0 0 16px;">Hello ${escapeHtml(subscriberName || "Friend")},</p>
-        <p style="margin: 0 0 16px;">Thank you for subscribing. You’ll now receive updates and resources from us.</p>
-        <p style="margin: 0 0 16px;">Website: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a></p>
-        <p style="margin: 0;">If you didn’t subscribe, you can ignore this email.</p>
+        <p style="margin: 0 0 16px;">Dear ${escapeHtml(subscriberName || "Friend in Christ")},</p>
+        <p style="margin: 0 0 16px;">
+          <strong>Grace and peace be with you!</strong> Thank you for joining our community of young professionals 
+          committed to evangelism and serving God.
+        </p>
+        <p style="margin: 0 0 16px;">
+          You will now receive updates, devotional resources, ministry news, and opportunities to be part of God's work 
+          through ${escapeHtml(siteName)}. <em>"How beautiful are the feet of those who bring good news!"</em> (Romans 10:15)
+        </p>
+        <p style="margin: 0 0 16px;">
+          Visit our website: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a>
+        </p>
+        <p style="margin: 16px 0 0;">
+          May the Lord bless you and keep you. May His face shine upon you and be gracious to you (Numbers 6:24-25).
+        </p>
+        <p style="margin: 16px 0 0;">
+          In Christian fellowship,<br />
+          <strong>${escapeHtml(siteName)}</strong>
+        </p>
+        <p style="margin: 8px 0 0; font-size: 0.875rem; color: #6b7280;">
+          If you didn't subscribe, you can <a href="${escapeHtml(siteUrl)}/unsubscribe">unsubscribe here</a>.
+        </p>
       </div>
     `;
-    const welcomeText = `Welcome to ${siteName}
-Thanks for subscribing. You’ll now receive updates and resources from us.
-Website: ${siteUrl}
-If you didn’t subscribe, you can ignore this email.
+    const welcomeText = `Welcome to ${siteName} - God bless you!
+
+Dear ${subscriberName || "Friend in Christ"},
+
+Grace and peace be with you! Thank you for joining our community of young professionals committed to evangelism and serving God.
+
+You will now receive updates, devotional resources, ministry news, and opportunities to be part of God's work through ${siteName}. "How beautiful are the feet of those who bring good news!" (Romans 10:15)
+
+Visit our website: ${siteUrl}
+
+May the Lord bless you and keep you. May His face shine upon you and be gracious to you (Numbers 6:24-25).
+
+In Christian fellowship,
+${siteName}
+
+If you didn't subscribe, you can unsubscribe at: ${siteUrl}/unsubscribe
 `;
     const mails: Promise<any>[] = [
       sendMail({ to: created.email, subject: welcomeSubject, html: welcomeHtml, text: welcomeText, replyTo: contactEmail || undefined }),
@@ -2315,7 +2402,7 @@ export const getCommitteeMembers: RequestHandler = async (req, res) => {
   try {
     const category = req.query.category as string | undefined;
     const active = req.query.active !== "false";
-    
+
     let where: any = {};
     if (category) {
       where.category = category;
@@ -2326,7 +2413,7 @@ export const getCommitteeMembers: RequestHandler = async (req, res) => {
 
     await connectMongo();
     const result = await CommitteeMemberModel.find(where).sort({ category: 1, order: 1 }).exec();
-    
+
     const formattedResult = result.map((member) => ({
       id: idOf(member),
       position: member.position,
@@ -2339,7 +2426,7 @@ export const getCommitteeMembers: RequestHandler = async (req, res) => {
       order: member.order,
       active: member.active,
     }));
-    
+
     res.json(formattedResult);
   } catch (error: any) {
     console.error("Error fetching committee members:", error);
@@ -2353,11 +2440,11 @@ export const getCommitteeMember: RequestHandler = async (req, res) => {
     if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     await connectMongo();
     const member = await CommitteeMemberModel.findById(id).exec();
-    
+
     if (!member) {
       return res.status(404).json({ error: "Committee member not found" });
     }
-    
+
     res.json({
       id: idOf(member),
       position: member.position,
@@ -2379,19 +2466,19 @@ export const getCommitteeMember: RequestHandler = async (req, res) => {
 export const createCommitteeMember: RequestHandler = async (req, res) => {
   try {
     const { position, name, church, phone, category, image, email, order, active } = req.body;
-    
+
     if (!position || !name || !church || !phone || !category) {
       return res.status(400).json({ error: "Position, name, church, phone, and category are required" });
     }
-    
+
     // Validate category
     const validCategories = ["leadership", "team", "auditor", "asa_representatives", "board_chancellors"];
     if (!validCategories.includes(category)) {
-      return res.status(400).json({ 
-        error: `Invalid category. Must be one of: ${validCategories.join(", ")}` 
+      return res.status(400).json({
+        error: `Invalid category. Must be one of: ${validCategories.join(", ")}`
       });
     }
-    
+
     // Get count for order if not provided
     let memberOrder = order;
     if (memberOrder === undefined || memberOrder === null) {
@@ -2412,7 +2499,7 @@ export const createCommitteeMember: RequestHandler = async (req, res) => {
       order: memberOrder,
       active: active !== undefined ? active : true,
     });
-    
+
     res.status(201).json({
       id: idOf(newMember),
       position: newMember.position,
@@ -2430,7 +2517,7 @@ export const createCommitteeMember: RequestHandler = async (req, res) => {
     if (error?.code === 11000) {
       return res.status(400).json({ error: "Duplicate committee member" });
     }
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to create committee member",
       details: process.env.NODE_ENV === "development" ? error.message : undefined
     });
@@ -2441,7 +2528,7 @@ export const updateCommitteeMember: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
     const { position, name, church, phone, category, image, email, order, active } = req.body;
-    
+
     if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     const updateData: any = {};
     if (position !== undefined) updateData.position = position;
@@ -2457,7 +2544,7 @@ export const updateCommitteeMember: RequestHandler = async (req, res) => {
     await connectMongo();
     const updatedMember = await CommitteeMemberModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
     if (!updatedMember) return res.status(404).json({ error: "Committee member not found" });
-    
+
     res.json({
       id: idOf(updatedMember),
       position: updatedMember.position,
@@ -2494,13 +2581,13 @@ export const deleteCommitteeMember: RequestHandler = async (req, res) => {
 export const getDevotions: RequestHandler = async (req, res) => {
   try {
     console.log("Fetching devotions, query params:", req.query);
-    
+
     // Build where clause for date filtering
     let where: any = {};
-    
+
     const dateFilter = req.query.dateFilter as string | undefined;
     const days = req.query.days ? parseInt(req.query.days as string) : undefined;
-    
+
     if (dateFilter === "last7days" || days) {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - (days || 7));
@@ -2508,7 +2595,7 @@ export const getDevotions: RequestHandler = async (req, res) => {
       where.date = { $gte: cutoffDate };
       console.log("Date filter applied, cutoff date:", cutoffDate.toISOString());
     }
-    
+
     // Fetch from database
     console.log("Querying devotions with where clause:", JSON.stringify(where));
     await connectMongo();
@@ -2516,9 +2603,9 @@ export const getDevotions: RequestHandler = async (req, res) => {
     const q = DevotionModel.find(where).sort({ date: -1 });
     if (limit) q.limit(limit);
     const result = await q.exec();
-    
+
     console.log(`Found ${result.length} devotions in database`);
-    
+
     // Convert DB format to API format
     const formattedResult = result.map((d) => ({
       id: idOf(d),
@@ -2532,14 +2619,14 @@ export const getDevotions: RequestHandler = async (req, res) => {
       featuredVideoTitle: d.featuredVideoTitle || undefined,
       createdAt: d.createdAt ? new Date(d.createdAt).toISOString() : new Date().toISOString(),
     }));
-    
+
     console.log(`Returning ${formattedResult.length} formatted devotions`);
     res.json(formattedResult);
   } catch (error: any) {
     console.error("Error fetching devotions:", error);
     console.error("Error details:", error.message, error.stack);
     console.error("Error code:", error.code);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to fetch devotions",
       details: process.env.NODE_ENV === "development" ? error.message : undefined
     });
@@ -2552,11 +2639,11 @@ export const getDevotion: RequestHandler = async (req, res) => {
     if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     await connectMongo();
     const devotion = await DevotionModel.findById(id).exec();
-    
+
     if (!devotion) {
       return res.status(404).json({ error: "Devotion not found" });
     }
-    
+
     // Convert DB format to API format
     res.json({
       id: idOf(devotion),
@@ -2579,11 +2666,11 @@ export const getDevotion: RequestHandler = async (req, res) => {
 export const createDevotion: RequestHandler = async (req, res) => {
   try {
     const { title, date, excerpt, content, image, featuredVideoUrl, featuredVideoThumbnail, featuredVideoTitle } = req.body;
-    
+
     if (!title || !date || !excerpt) {
       return res.status(400).json({ error: "Title, date, and excerpt are required" });
     }
-    
+
     // Validate date format
     let devotionDate: Date;
     try {
@@ -2594,7 +2681,7 @@ export const createDevotion: RequestHandler = async (req, res) => {
     } catch (e) {
       return res.status(400).json({ error: "Invalid date format" });
     }
-    
+
     await connectMongo();
     const newDevotion = await DevotionModel.create({
       title: title.trim(),
@@ -2606,7 +2693,7 @@ export const createDevotion: RequestHandler = async (req, res) => {
       featuredVideoThumbnail: featuredVideoThumbnail?.trim() || undefined,
       featuredVideoTitle: featuredVideoTitle?.trim() || undefined,
     });
-    
+
     // Convert DB format to API format
     res.status(201).json({
       id: idOf(newDevotion),
@@ -2625,7 +2712,7 @@ export const createDevotion: RequestHandler = async (req, res) => {
     if (error?.code === 11000) {
       return res.status(400).json({ error: "Duplicate devotion" });
     }
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to create devotion",
       details: process.env.NODE_ENV === "development" ? error.message : undefined
     });
@@ -2636,7 +2723,7 @@ export const updateDevotion: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, date, excerpt, content, image, featuredVideoUrl, featuredVideoThumbnail, featuredVideoTitle } = req.body;
-    
+
     if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     // Prepare update data
     const updateData: any = {};
@@ -2652,7 +2739,7 @@ export const updateDevotion: RequestHandler = async (req, res) => {
     await connectMongo();
     const updatedDevotion = await DevotionModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
     if (!updatedDevotion) return res.status(404).json({ error: "Devotion not found" });
-    
+
     // Convert DB format to API format
     res.json({
       id: idOf(updatedDevotion),
@@ -2690,7 +2777,7 @@ export const deleteDevotion: RequestHandler = async (req, res) => {
 export const getContactSubmissions: RequestHandler = async (req, res) => {
   try {
     const status = req.query.status as string | undefined;
-    
+
     let where: any = {};
     if (status) {
       where.status = status;
@@ -2698,7 +2785,7 @@ export const getContactSubmissions: RequestHandler = async (req, res) => {
 
     await connectMongo();
     const result = await ContactSubmissionModel.find(where).sort({ createdAt: -1 }).exec();
-    
+
     const formattedResult = result.map((submission) => ({
       id: idOf(submission),
       name: submission.name,
@@ -2712,7 +2799,7 @@ export const getContactSubmissions: RequestHandler = async (req, res) => {
       createdAt: submission.createdAt ? new Date(submission.createdAt).toISOString() : new Date().toISOString(),
       updatedAt: submission.updatedAt ? new Date(submission.updatedAt).toISOString() : new Date().toISOString(),
     }));
-    
+
     res.json(formattedResult);
   } catch (error: any) {
     console.error("Error fetching contact submissions:", error);
@@ -2726,11 +2813,11 @@ export const getContactSubmission: RequestHandler = async (req, res) => {
     if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     await connectMongo();
     const submission = await ContactSubmissionModel.findById(id).exec();
-    
+
     if (!submission) {
       return res.status(404).json({ error: "Contact submission not found" });
     }
-    
+
     res.json({
       id: idOf(submission),
       name: submission.name,
@@ -2753,7 +2840,7 @@ export const getContactSubmission: RequestHandler = async (req, res) => {
 export const createContactSubmission: RequestHandler = async (req, res) => {
   try {
     const { name, email, subject, message } = req.body;
-    
+
     if (!name || !email || !subject || !message) {
       return res.status(400).json({ error: "Name, email, subject, and message are required" });
     }
@@ -2805,21 +2892,33 @@ ${String(message || "")}
     const donorSubject = `We received your message - ${siteName}`;
     const donorHtml = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
-        <h2 style="margin: 0 0 8px;">${escapeHtml(siteName)} - Message received</h2>
-        <p style="margin: 0 0 16px;">Hello ${safeName},</p>
-        <p style="margin: 0 0 16px;">Thank you for contacting us. We’ve received your message and will get back to you as soon as possible.</p>
-        <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #ffffff;">
+        <h2 style="margin: 0 0 8px;">${escapeHtml(siteName)} - Message Received</h2>
+        <p style="margin: 0 0 16px;">Dear ${safeName},</p>
+        <p style="margin: 0 0 16px;">
+          <strong>Grace and peace to you!</strong> Thank you for reaching out to us. We have received your message 
+          and will respond as soon as possible.
+        </p>
+        <p style="margin: 0 0 16px;">
+          <em>"The Lord is close to all who call on him"</em> (Psalm 145:18). We appreciate your interest in our ministry 
+          and look forward to connecting with you.
+        </p>
+        <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #f9fafb;">
           <p style="margin: 0 0 6px;"><strong>Your reference #:</strong> ${escapeHtml(submissionId)}</p>
           <p style="margin: 0 0 6px;"><strong>Subject:</strong> ${safeSubject}</p>
           <p style="margin: 0;"><strong>Message:</strong><br />${safeMessage.replace(/\n/g, "<br />")}</p>
         </div>
         <p style="margin: 16px 0 0;">
-          If you need to add more information, reply to this email.
+          If you need to add more information, please reply to this email.
           You can also reach us at <a href="mailto:${escapeHtml(contactEmail)}">${escapeHtml(contactEmail)}</a>
           ${contactPhone ? ` or ${escapeHtml(contactPhone)}` : ""}.
         </p>
         <p style="margin: 8px 0 0;">
-          Website: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a>
+          Visit us: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a>
+        </p>
+        <p style="margin: 24px 0 0;">
+          May God bless you,<br />
+          <strong>${escapeHtml(siteName)}</strong><br />
+          <em>"Go and make disciples of all nations"</em> - Matthew 28:19
         </p>
       </div>
     `;
@@ -2858,7 +2957,7 @@ Website: ${siteUrl}
       );
     }
     if (mails.length) await Promise.allSettled(mails);
-    
+
     res.status(201).json({
       id: idOf(newSubmission),
       name: newSubmission.name,
@@ -2882,16 +2981,16 @@ export const updateContactSubmission: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, notes } = req.body;
-    
+
     // Get current submission to check status transitions
     if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     await connectMongo();
     const current = await ContactSubmissionModel.findById(id).exec();
-    
+
     if (!current) {
       return res.status(404).json({ error: "Contact submission not found" });
     }
-    
+
     const updateData: any = {};
     if (status !== undefined) {
       updateData.status = status;
@@ -2906,7 +3005,7 @@ export const updateContactSubmission: RequestHandler = async (req, res) => {
 
     const updatedSubmission = await ContactSubmissionModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
     if (!updatedSubmission) return res.status(404).json({ error: "Contact submission not found" });
-    
+
     res.json({
       id: idOf(updatedSubmission),
       name: updatedSubmission.name,
@@ -3004,7 +3103,7 @@ export const getAnalytics: RequestHandler = async (req, res) => {
       console.error("Error details:", dbError.message, dbError.stack);
       // Continue with default values (0) if database queries fail
     }
-    
+
     // Get counts from database for migrated models
     let totalMembers = 0;
     let activeMembers = 0;
@@ -3047,7 +3146,7 @@ export const getAnalytics: RequestHandler = async (req, res) => {
     } catch (e) {
       console.error("Error counting migrated models for analytics:", e);
     }
-    
+
     const analytics = {
       totalMembers,
       activeMembers,
@@ -3067,7 +3166,7 @@ export const getAnalytics: RequestHandler = async (req, res) => {
       totalContactSubmissions,
       newContactSubmissions,
     };
-    
+
     res.json(analytics);
   } catch (error: any) {
     console.error("Error fetching analytics:", error);

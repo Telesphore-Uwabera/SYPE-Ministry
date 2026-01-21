@@ -1305,15 +1305,13 @@ export const updateDonation: RequestHandler = async (req, res) => {
                 <span class="detail-value">${escapeHtml(totalAmount.toLocaleString())} ${escapeHtml(currencyText)}</span>
               </div>
               <div class="detail-row">
-                <span class="detail-label">Amount Received:</span>
+                <span class="detail-label">Amount Paid:</span>
                 <span class="detail-value">${escapeHtml(received.toLocaleString())} ${escapeHtml(currencyText)}</span>
               </div>
-              ${remaining > 0 ? `
               <div class="detail-row">
                 <span class="detail-label">Remaining Balance:</span>
                 <span class="detail-value">${escapeHtml(remaining.toLocaleString())} ${escapeHtml(currencyText)}</span>
               </div>
-              ` : ''}
             </div>
 
             <div class="blessing">
@@ -1646,15 +1644,13 @@ export const sendDonationReceipt: RequestHandler = async (req, res) => {
                 <span class="detail-value">${escapeHtml(amount.toLocaleString())} ${escapeHtml(currency)}</span>
               </div>
               <div class="detail-row">
-                <span class="detail-label">Amount Received:</span>
+                <span class="detail-label">Amount Paid:</span>
                 <span class="detail-value">${escapeHtml(received.toLocaleString())} ${escapeHtml(currency)}</span>
               </div>
-              ${remaining > 0 ? `
               <div class="detail-row">
                 <span class="detail-label">Remaining Balance:</span>
                 <span class="detail-value">${escapeHtml(remaining.toLocaleString())} ${escapeHtml(currency)}</span>
               </div>
-              ` : ''}
             </div>
 
             <!-- Blessing and Prayer -->

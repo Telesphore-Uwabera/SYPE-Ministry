@@ -202,6 +202,7 @@ export const DonationModel: any =
         projectId: { type: String },
         paymentMethod: { type: String },
         paymentStatus: { type: String, default: "unpaid" }, // paid|unpaid|installment
+        paymentDeadline: { type: Date },
         receiptSent: { type: Boolean, default: false },
         notes: { type: String },
       },

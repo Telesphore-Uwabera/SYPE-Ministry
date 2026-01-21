@@ -42,8 +42,8 @@ export function createServer() {
   const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean)
     : process.env.NODE_ENV === "production"
-    ? [] // In production, specify allowed origins
-    : [
+      ? [] // In production, specify allowed origins
+      : [
         "http://localhost:5173",
         "http://localhost:8080",
         "http://localhost:8081",
@@ -61,7 +61,7 @@ export function createServer() {
       origin: (origin, callback) => {
         // Allow requests with no origin (mobile apps, curl, etc.)
         if (!origin) return callback(null, true);
-        
+
         // In development, allow localhost on any port
         if (process.env.NODE_ENV !== "production") {
           const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
@@ -79,7 +79,7 @@ export function createServer() {
         if (normalizedSiteUrl && origin === normalizedSiteUrl) {
           return callback(null, true);
         }
-        
+
         // Check against explicit allowed origins
         if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
           callback(null, true);
@@ -297,6 +297,15 @@ export function createServer() {
       message: process.env.NODE_ENV === "development" ? err.message : "Something went wrong",
     });
   });
+
+  // Start background jobs
+  if (process.env.NODE_ENV !== "development" || process.env.ENABLE_REMINDERS === "true") {
+    const { runReminders } = require("./lib/reminders");
+    // Run once on startup
+    setTimeout(() => runReminders().catch(console.error), 10000);
+    // Then run every hour
+    setInterval(() => runReminders().catch(console.error), 3600000);
+  }
 
   return app;
 }

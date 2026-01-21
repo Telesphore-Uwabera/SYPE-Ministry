@@ -55,6 +55,7 @@ export default function DonationManagement() {
     receiptSent: false,
     notes: "",
     projectId: "",
+    paymentDeadline: "",
   });
 
   useEffect(() => {
@@ -147,10 +148,10 @@ export default function DonationManagement() {
   const handleEdit = (donation: Donation) => {
     setEditingDonation(donation);
     // Handle date format (could be ISO string or date string)
-    const donationDate = typeof donation.date === "string" 
+    const donationDate = typeof donation.date === "string"
       ? (donation.date.includes("T") ? donation.date.split("T")[0] : donation.date)
       : new Date(donation.date).toISOString().split("T")[0];
-    
+
     setFormData({
       donorName: donation.donorName,
       donorEmail: donation.donorEmail,
@@ -164,6 +165,7 @@ export default function DonationManagement() {
       receiptSent: donation.receiptSent || false,
       notes: donation.notes || "",
       projectId: donation.projectId || "",
+      paymentDeadline: donation.paymentDeadline ? (typeof donation.paymentDeadline === "string" ? donation.paymentDeadline.split("T")[0] : new Date(donation.paymentDeadline).toISOString().split("T")[0]) : "",
     });
     setIsDialogOpen(true);
   };
@@ -233,6 +235,7 @@ export default function DonationManagement() {
       receiptSent: false,
       notes: "",
       projectId: "",
+      paymentDeadline: "",
     });
   };
 
@@ -256,7 +259,7 @@ export default function DonationManagement() {
     .reduce((sum, d) => sum + Math.max(0, d.amount - (d.amountPaid || 0)), 0);
 
   const exportToCSV = () => {
-    const headers = ["Date", "Donor Name", "Donor Email", "Amount", "Currency", "Type", "Payment Method", "Payment Status", "Amount Received", "Amount Remaining", "Receipt Sent"];
+    const headers = ["Date", "Donor Name", "Donor Email", "Amount", "Currency", "Type", "Payment Method", "Payment Status", "Deadline", "Amount Received", "Amount Remaining", "Receipt Sent"];
     const rows = filteredDonations.map((d) => [
       d.date,
       d.donorName,
@@ -266,6 +269,7 @@ export default function DonationManagement() {
       d.type,
       d.paymentMethod || "",
       d.paymentStatus || "unpaid",
+      d.paymentDeadline || "",
       (d.paymentStatus === "paid" ? d.amount : d.paymentStatus === "installment" ? (d.amountPaid || 0) : 0).toString(),
       Math.max(0, d.amount - (d.paymentStatus === "paid" ? d.amount : d.paymentStatus === "installment" ? (d.amountPaid || 0) : 0)).toString(),
       d.receiptSent ? "Yes" : "No",
@@ -316,7 +320,7 @@ export default function DonationManagement() {
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="donorName">Donor Name *</Label>
                     <Input
@@ -442,6 +446,15 @@ export default function DonationManagement() {
                       placeholder="Project ID"
                     />
                   </div>
+                </div>
+                <div>
+                  <Label htmlFor="paymentDeadline">Payment Deadline (Optional)</Label>
+                  <Input
+                    id="paymentDeadline"
+                    type="date"
+                    value={formData.paymentDeadline || ""}
+                    onChange={(e) => setFormData({ ...formData, paymentDeadline: e.target.value })}
+                  />
                 </div>
                 {formData.paymentStatus === "installment" && (
                   <div className="grid grid-cols-2 gap-4">
@@ -580,6 +593,7 @@ export default function DonationManagement() {
                   <TableHead>Amount</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Payment Status</TableHead>
+                  <TableHead>Deadline</TableHead>
                   <TableHead>Received</TableHead>
                   <TableHead>Remaining</TableHead>
                   <TableHead>Receipt</TableHead>
@@ -615,12 +629,25 @@ export default function DonationManagement() {
                         )}
                       </TableCell>
                       <TableCell>
+                        {donation.paymentDeadline ? (
+                          <span className={
+                            new Date(donation.paymentDeadline) < new Date() && donation.paymentStatus !== 'paid'
+                              ? "text-red-500 font-bold"
+                              : ""
+                          }>
+                            {new Date(donation.paymentDeadline).toLocaleDateString()}
+                          </span>
+                        ) : (
+                          <span className="text-foreground/30">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         {(
                           donation.paymentStatus === "paid"
                             ? donation.amount
                             : donation.paymentStatus === "installment"
-                            ? donation.amountPaid || 0
-                            : 0
+                              ? donation.amountPaid || 0
+                              : 0
                         ).toLocaleString()}{" "}
                         {donation.currency}
                       </TableCell>
@@ -628,9 +655,9 @@ export default function DonationManagement() {
                         {Math.max(
                           0,
                           donation.amount -
-                            (donation.paymentStatus === "paid"
-                              ? donation.amount
-                              : donation.paymentStatus === "installment"
+                          (donation.paymentStatus === "paid"
+                            ? donation.amount
+                            : donation.paymentStatus === "installment"
                               ? donation.amountPaid || 0
                               : 0)
                         ).toLocaleString()}{" "}

@@ -70,6 +70,7 @@ export interface Donation {
   projectId?: string;
   paymentMethod?: string;
   paymentStatus?: "paid" | "unpaid" | "installment";
+  paymentDeadline?: string;
   receiptSent: boolean;
   notes?: string;
 }

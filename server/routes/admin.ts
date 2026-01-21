@@ -803,7 +803,7 @@ export const getDonation: RequestHandler = async (req, res) => {
 
 export const createDonation: RequestHandler = async (req, res) => {
   try {
-    const { donorName, donorEmail, donorPhone, amount, amountPaid, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent } = req.body ?? {};
+    const { donorName, donorEmail, donorPhone, amount, amountPaid, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent, paymentDeadline } = req.body ?? {};
     if (!donorName || !donorEmail || amount === undefined || amount === null || !type || !paymentMethod) {
       return res.status(400).json({ error: "Donor name, email, amount, type, and payment method are required" });
     }
@@ -832,6 +832,7 @@ export const createDonation: RequestHandler = async (req, res) => {
       projectId: projectId || "",
       receiptSent: !!receiptSent,
       notes: notes || "",
+      paymentDeadline: paymentDeadline ? new Date(paymentDeadline) : undefined,
     });
     res.status(201).json({
       id: idOf(created),
@@ -848,6 +849,7 @@ export const createDonation: RequestHandler = async (req, res) => {
       projectId: created.projectId || "",
       receiptSent: !!created.receiptSent,
       notes: created.notes || "",
+      paymentDeadline: created.paymentDeadline ? new Date(created.paymentDeadline).toISOString().split("T")[0] : undefined,
     });
   } catch (error) {
     console.error("Error creating donation:", error);
@@ -861,7 +863,7 @@ export const createDonation: RequestHandler = async (req, res) => {
 // - Notification email to admins
 export const createPublicDonation: RequestHandler = async (req, res) => {
   try {
-    const { donorName, donorEmail, donorPhone, amount, amountPaid, currency, date, type, paymentMethod, paymentStatus, projectId, notes } = req.body ?? {};
+    const { donorName, donorEmail, donorPhone, amount, amountPaid, currency, date, type, paymentMethod, paymentStatus, projectId, notes, paymentDeadline } = req.body ?? {};
     if (!donorName || !donorEmail || amount === undefined || amount === null || !type || !paymentMethod) {
       return res.status(400).json({ error: "Donor name, email, amount, type, and payment method are required" });
     }
@@ -890,6 +892,7 @@ export const createPublicDonation: RequestHandler = async (req, res) => {
       projectId: projectId || "",
       receiptSent: false,
       notes: notes || "",
+      paymentDeadline: paymentDeadline ? new Date(paymentDeadline) : undefined,
     });
 
     // Fire-and-forget emails (do not fail donation creation if email fails)
@@ -921,7 +924,8 @@ export const createPublicDonation: RequestHandler = async (req, res) => {
           <p style="margin: 0 0 6px;"><strong>Reference #:</strong> ${escapeHtml(donationId)}</p>
           <p style="margin: 0 0 6px;"><strong>Amount:</strong> ${escapeHtml(baseAmount.toLocaleString())} ${escapeHtml(currencyText)}</p>
           <p style="margin: 0 0 6px;"><strong>Payment method:</strong> ${escapeHtml(String(paymentMethod))}</p>
-          <p style="margin: 0;"><strong>Status:</strong> ${escapeHtml(status)}</p>
+          <p style="margin: 0 0 6px;"><strong>Status:</strong> ${escapeHtml(status)}</p>
+          ${paymentDeadline ? `<p style="margin: 0;"><strong>Payment Deadline:</strong> ${escapeHtml(new Date(paymentDeadline).toLocaleDateString())}</p>` : ""}
         </div>
         <p style="margin: 16px 0 0;">
           <strong>Note:</strong> This is not an official receipt. An official receipt will be sent after payment is confirmed by our administrators.
@@ -950,6 +954,7 @@ Reference #: ${donationId}
 Amount: ${baseAmount.toLocaleString()} ${currencyText}
 Payment method: ${String(paymentMethod)}
 Status: ${status}
+${paymentDeadline ? `Payment Deadline: ${new Date(paymentDeadline).toLocaleDateString()}` : ""}
 
 Note: This is not an official receipt. An official receipt will be sent after payment is confirmed.
 
@@ -969,7 +974,8 @@ Website: ${siteUrl}
           <p style="margin: 0 0 6px;"><strong>Type:</strong> ${escapeHtml(String(type))}</p>
           <p style="margin: 0 0 6px;"><strong>Payment method:</strong> ${escapeHtml(String(paymentMethod))}</p>
           <p style="margin: 0 0 6px;"><strong>Status:</strong> ${escapeHtml(status)}</p>
-          <p style="margin: 0;"><strong>Project:</strong> ${escapeHtml(String(projectId || ""))}</p>
+          <p style="margin: 0 0 6px;"><strong>Project:</strong> ${escapeHtml(String(projectId || ""))}</p>
+          ${paymentDeadline ? `<p style="margin: 0;"><strong>Deadline:</strong> ${escapeHtml(new Date(paymentDeadline).toLocaleDateString())}</p>` : ""}
         </div>
         ${notes ? `<p style="margin: 16px 0 0;"><strong>Notes:</strong><br />${escapeHtml(String(notes))}</p>` : ""}
       </div>
@@ -983,6 +989,7 @@ Type: ${String(type)}
 Payment method: ${String(paymentMethod)}
 Status: ${status}
 Project: ${String(projectId || "")}
+${paymentDeadline ? `Deadline: ${new Date(paymentDeadline).toLocaleDateString()}` : ""}
 ${notes ? `Notes: ${String(notes)}` : ""}
 `;
 
@@ -1028,6 +1035,7 @@ ${notes ? `Notes: ${String(notes)}` : ""}
       projectId: created.projectId || "",
       receiptSent: !!created.receiptSent,
       notes: created.notes || "",
+      paymentDeadline: created.paymentDeadline ? new Date(created.paymentDeadline).toISOString().split("T")[0] : undefined,
     });
   } catch (error) {
     console.error("Error creating public donation:", error);
@@ -1039,7 +1047,7 @@ export const updateDonation: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
     if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    const { donorName, donorEmail, donorPhone, amount, amountPaid, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent } = req.body ?? {};
+    const { donorName, donorEmail, donorPhone, amount, amountPaid, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent, paymentDeadline } = req.body ?? {};
 
     await connectMongo();
 
@@ -1075,6 +1083,7 @@ export const updateDonation: RequestHandler = async (req, res) => {
     if (projectId !== undefined) updateData.projectId = projectId;
     if (notes !== undefined) updateData.notes = notes;
     if (receiptSent !== undefined) updateData.receiptSent = !!receiptSent;
+    if (paymentDeadline !== undefined) updateData.paymentDeadline = paymentDeadline ? new Date(paymentDeadline) : null;
 
     updateData.amountPaid = nextPaid;
 
@@ -1096,8 +1105,13 @@ export const updateDonation: RequestHandler = async (req, res) => {
       const received = nextStatus === "paid" ? totalAmount : nextStatus === "installment" ? nextPaid : 0;
       const remaining = Math.max(0, totalAmount - received);
       const currencyText = String(updated.currency || "RWF");
+
       const donationDate = updated.date ? new Date(updated.date) : new Date();
       const donationDateText = donationDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+
+      const deadlineDate = updated.paymentDeadline ? new Date(updated.paymentDeadline) : null;
+      const deadlineText = deadlineDate ? deadlineDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "None";
+
       const donorNameText = String(updated.donorName || "Donor");
       const safeName = escapeHtml(donorNameText);
 
@@ -1281,6 +1295,10 @@ export const updateDonation: RequestHandler = async (req, res) => {
                 <span class="detail-value">${escapeHtml(donationDateText)}</span>
               </div>
               <div class="detail-row">
+                <span class="detail-label">Payment Deadline:</span>
+                <span class="detail-value" style="${deadlineDate && deadlineDate < new Date() ? 'color: #e53e3e; font-weight: bold;' : ''}">${escapeHtml(deadlineText)}</span>
+              </div>
+              <div class="detail-row">
                 <span class="detail-label">Donor Name:</span>
                 <span class="detail-value">${safeName}</span>
               </div>
@@ -1379,6 +1397,7 @@ export const updateDonation: RequestHandler = async (req, res) => {
       projectId: updated.projectId || "",
       receiptSent: !!updated.receiptSent,
       notes: updated.notes || "",
+      paymentDeadline: updated.paymentDeadline ? new Date(updated.paymentDeadline).toISOString().split("T")[0] : undefined,
     });
   } catch (error) {
     console.error("Error updating donation:", error);
@@ -1427,6 +1446,9 @@ export const sendDonationReceipt: RequestHandler = async (req, res) => {
     const status = String(donation.paymentStatus || "unpaid");
     const received = status === "paid" ? amount : status === "installment" ? amountPaid : 0;
     const remaining = Math.max(0, amount - received);
+
+    const deadlineDate = donation.paymentDeadline ? new Date(donation.paymentDeadline) : null;
+    const deadlineText = deadlineDate ? deadlineDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "None";
 
     const subject = `Donation Receipt - ${siteName}`;
     const safeName = escapeHtml(donorName || "Donor");
@@ -1618,6 +1640,10 @@ export const sendDonationReceipt: RequestHandler = async (req, res) => {
               <div class="detail-row">
                 <span class="detail-label">Date of Donation:</span>
                 <span class="detail-value">${escapeHtml(donationDateText)}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Payment Deadline:</span>
+                <span class="detail-value" style="${deadlineDate && deadlineDate < new Date() ? 'color: #e53e3e; font-weight: bold;' : ''}">${escapeHtml(deadlineText)}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Donor Name:</span>
@@ -2814,8 +2840,13 @@ export const sendEmailCampaign: RequestHandler = async (req, res) => {
     let recipients: string[] = Array.isArray(campaign.recipients) ? campaign.recipients.map(String) : [];
     recipients = recipients.map((x) => x.trim()).filter(Boolean);
     if (recipients.length === 0) {
-      const subs = await EmailSubscriberModel.find({ status: "active" }).select({ email: 1 }).exec();
-      recipients = subs.map((s: any) => String(s.email || "").trim()).filter(Boolean);
+      const [subs, members] = await Promise.all([
+        EmailSubscriberModel.find({ status: "active" }).select({ email: 1 }).exec(),
+        MemberModel.find({ status: "Active" }).select({ email: 1 }).exec(),
+      ]);
+      const subEmails = subs.map((s: any) => String(s.email || "").trim());
+      const memberEmails = members.map((m: any) => String(m.email || "").trim());
+      recipients = [...subEmails, ...memberEmails].filter(Boolean);
     }
     // de-dup
     recipients = Array.from(new Set(recipients)).filter((e) => e.includes("@"));

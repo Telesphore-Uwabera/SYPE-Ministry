@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Loader2 } from "lucide-react";
+import { Heart, Loader2, Zap } from "lucide-react";
 
 interface DonationFormProps {
   onSuccess?: () => void;
@@ -30,6 +30,7 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
     paymentStatus: "unpaid" as "paid" | "unpaid" | "installment",
     projectId: "",
     message: "",
+    paymentDeadline: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -51,19 +52,20 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
       const response = await fetch("/api/donations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            donorName: formData.donorName,
-            donorEmail: formData.donorEmail,
-            donorPhone: formData.donorPhone,
-            amount: parseFloat(formData.amount),
-            currency: formData.currency,
-            type: formData.type,
-            paymentMethod: formData.paymentMethod,
-            paymentStatus: formData.paymentStatus || "unpaid",
-            projectId: formData.projectId || undefined,
-            notes: formData.message || undefined,
-            date: new Date().toISOString(),
-          }),
+        body: JSON.stringify({
+          donorName: formData.donorName,
+          donorEmail: formData.donorEmail,
+          donorPhone: formData.donorPhone,
+          amount: parseFloat(formData.amount),
+          currency: formData.currency,
+          type: formData.type,
+          paymentMethod: formData.paymentMethod,
+          paymentStatus: formData.paymentStatus || "unpaid",
+          projectId: formData.projectId || undefined,
+          notes: formData.message || undefined,
+          paymentDeadline: formData.paymentDeadline || undefined,
+          date: new Date().toISOString(),
+        }),
       });
 
       if (!response.ok) {
@@ -88,6 +90,7 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
         paymentStatus: "unpaid",
         projectId: "",
         message: "",
+        paymentDeadline: "",
       });
 
       if (onSuccess) {
@@ -105,31 +108,32 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Heart className="w-5 h-5 text-primary" />
+    <Card className="w-full max-w-2xl mx-auto border-2 border-primary/20 shadow-xl overflow-hidden">
+      <CardHeader className="bg-primary/5 border-b border-primary/10">
+        <CardTitle className="flex items-center gap-2 text-2xl text-primary font-heading">
+          <Heart className="w-6 h-6 text-primary fill-primary/20" />
           Make a Donation
         </CardTitle>
-        <CardDescription>
-          Fill out the form below to make a donation to SYPE Ministry. All donations help us spread the Gospel.
+        <CardDescription className="text-foreground/70">
+          Your support directly fuels our mission to equip young professionals for evangelism.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <CardContent className="p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="donorName">Full Name *</Label>
+              <Label htmlFor="donorName" className="font-semibold">Full Name *</Label>
               <Input
                 id="donorName"
                 value={formData.donorName}
                 onChange={(e) => setFormData({ ...formData, donorName: e.target.value })}
                 placeholder="John Doe"
                 required
+                className="focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="donorEmail">Email Address *</Label>
+              <Label htmlFor="donorEmail" className="font-semibold">Email Address *</Label>
               <Input
                 id="donorEmail"
                 type="email"
@@ -137,13 +141,14 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
                 onChange={(e) => setFormData({ ...formData, donorEmail: e.target.value })}
                 placeholder="john@example.com"
                 required
+                className="focus:ring-2 focus:ring-primary/20"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="donorPhone">Phone Number *</Label>
+              <Label htmlFor="donorPhone" className="font-semibold">Phone Number *</Label>
               <Input
                 id="donorPhone"
                 type="tel"
@@ -158,10 +163,11 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
                 placeholder="0780XXXXXX"
                 pattern="[0-9]*"
                 required
+                className="focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount *</Label>
+              <Label htmlFor="amount" className="font-semibold">Amount *</Label>
               <Input
                 id="amount"
                 type="number"
@@ -171,15 +177,16 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
                 min="1"
                 step="1"
                 required
+                className="focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="currency">Currency *</Label>
+              <Label htmlFor="currency" className="font-semibold">Currency *</Label>
               <Select
                 value={formData.currency}
                 onValueChange={(value) => setFormData({ ...formData, currency: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="focus:ring-2 focus:ring-primary/20">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -189,13 +196,16 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="type">Donation Type *</Label>
+              <Label htmlFor="type" className="font-semibold">Donation Type *</Label>
               <Select
                 value={formData.type}
                 onValueChange={(value) => setFormData({ ...formData, type: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="focus:ring-2 focus:ring-primary/20">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -205,17 +215,14 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="paymentMethod">Payment Method *</Label>
+              <Label htmlFor="paymentMethod" className="font-semibold">Payment Method *</Label>
               <Select
                 value={formData.paymentMethod}
                 onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select payment method" />
+                <SelectTrigger className="focus:ring-2 focus:ring-primary/20">
+                  <SelectValue placeholder="Select method" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="mtn">MTN Mobile Money</SelectItem>
@@ -226,77 +233,98 @@ export default function DonationForm({ onSuccess }: DonationFormProps) {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="paymentStatus">Payment Status *</Label>
+              <Label htmlFor="paymentStatus" className="font-semibold">Payment Status *</Label>
               <Select
                 value={formData.paymentStatus}
                 onValueChange={(value) => setFormData({ ...formData, paymentStatus: value as "paid" | "unpaid" | "installment" })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="focus:ring-2 focus:ring-primary/20">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="unpaid">Unpaid</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="unpaid">Unpaid (Pledge)</SelectItem>
+                  <SelectItem value="paid">Paid (Confirmed)</SelectItem>
                   <SelectItem value="installment">Installment Payment</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="projectId">Specific Project (Optional)</Label>
+              <Label htmlFor="projectId" className="font-semibold">Specific Project (Optional)</Label>
               <Input
                 id="projectId"
                 value={formData.projectId}
                 onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
                 placeholder="Project name or ID"
+                className="focus:ring-2 focus:ring-primary/20"
               />
             </div>
           </div>
 
+          {(formData.paymentStatus === "unpaid" || formData.paymentStatus === "installment") && (
+            <div className="space-y-2 p-4 bg-primary/5 rounded-lg border border-primary/10 transition-all">
+              <Label htmlFor="paymentDeadline" className="font-semibold text-primary">Payment Deadline (Optional)</Label>
+              <Input
+                id="paymentDeadline"
+                type="date"
+                value={formData.paymentDeadline}
+                onChange={(e) => setFormData({ ...formData, paymentDeadline: e.target.value })}
+                min={new Date().toISOString().split("T")[0]}
+                className="focus:ring-2 focus:ring-primary/20"
+              />
+              <p className="text-xs text-foreground/60">
+                When do you plan to complete this payment? We'll send you a gentle reminder on this day.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-2">
-            <Label htmlFor="message">Message (Optional)</Label>
+            <Label htmlFor="message" className="font-semibold">Message (Optional)</Label>
             <Textarea
               id="message"
               value={formData.message}
               onChange={(e) => setFormData({ ...formData, message: e.target.value })}
               placeholder="Any special instructions or messages..."
-              rows={4}
+              rows={3}
+              className="focus:ring-2 focus:ring-primary/20"
             />
           </div>
 
-          <div className="bg-muted/50 rounded-lg p-4 text-sm text-foreground/70">
-            <p className="mb-2">
-              <strong>Payment Instructions:</strong>
+          <div className="bg-muted/50 rounded-lg p-4 text-sm text-foreground/70 border border-border">
+            <p className="mb-2 font-bold flex items-center gap-1">
+              <Zap className="w-4 h-4 text-primary" />
+              Payment Instructions:
             </p>
             <p className="mb-2">
-              After submitting this form, please make your payment using one of the following methods:
+              After submitting, please make your payment:
             </p>
-            <ul className="list-disc list-inside space-y-1 ml-2">
-              <li>MTN Mobile Money: *182*1*1*0782789883# (Registered to: Niyonkuru Simeon)</li>
-              <li>Bank Transfer: Contact us for bank details</li>
+            <ul className="list-disc list-inside space-y-1 ml-2 font-medium">
+              <li>MTN MoMo: <span className="text-primary">*182*1*1*0782789883#</span> (Niyonkuru Simeon)</li>
+              <li>Bank Transfer: Contact us for details</li>
               <li>Cash: Contact us to arrange a meeting</li>
             </ul>
-            <p className="mt-2 text-xs">
-              Once payment is confirmed, you will receive a receipt via email.
+            <p className="mt-2 text-xs italic">
+              Confirmation receipt will be emailed once payment is verified.
             </p>
           </div>
 
           <Button
             type="submit"
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-lg font-bold shadow-lg transition-all active:scale-[0.98]"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Submitting...
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Submitting Commitment...
               </>
             ) : (
               <>
-                <Heart className="w-4 h-4 mr-2" />
-                Submit Donation Form
+                <Heart className="w-5 h-5 mr-2 fill-current" />
+                Submit Donation
               </>
             )}
           </Button>

@@ -1046,6 +1046,9 @@ export const updateDonation: RequestHandler = async (req, res) => {
     const existing = await DonationModel.findById(id).exec();
     if (!existing) return res.status(404).json({ error: "Donation not found" });
 
+    // Track if receipt was already sent before this update
+    const wasReceiptSent = existing.receiptSent;
+
     const baseAmount = amount !== undefined ? Number(amount) || 0 : Number(existing.amount || 0);
     const nextStatus = paymentStatus !== undefined ? String(paymentStatus) : String(existing.paymentStatus || "unpaid");
 
@@ -1077,6 +1080,292 @@ export const updateDonation: RequestHandler = async (req, res) => {
 
     const updated = await DonationModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
     if (!updated) return res.status(404).json({ error: "Donation not found" });
+
+    // Auto-send updated receipt if receipt was already sent and donor has email
+    const shouldSendUpdatedReceipt = wasReceiptSent && updated.donorEmail;
+
+    if (shouldSendUpdatedReceipt) {
+      // Send updated receipt in background (non-blocking)
+      const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
+      const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").trim().replace(/\/+$/, "");
+      const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
+      const contactPhone = (process.env.CONTACT_PHONE || "").trim();
+
+      const receiptNo = idOf(updated);
+      const totalAmount = Number(updated.amount || 0);
+      const received = nextStatus === "paid" ? totalAmount : nextStatus === "installment" ? nextPaid : 0;
+      const remaining = Math.max(0, totalAmount - received);
+      const currencyText = String(updated.currency || "RWF");
+      const donationDate = updated.date ? new Date(updated.date) : new Date();
+      const donationDateText = donationDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+      const donorNameText = String(updated.donorName || "Donor");
+      const safeName = escapeHtml(donorNameText);
+
+      // Generate receipt email (same template as sendDonationReceipt)
+      const subject = `Updated Donation Receipt - ${siteName}`;
+
+      const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Updated Donation Receipt - ${escapeHtml(siteName)}</title>
+        <style>
+          @media print {
+            body { margin: 0; padding: 20px; }
+            .receipt-card { box-shadow: none !important; border: 2px solid #000 !important; }
+          }
+          body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+          }
+          .receipt-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background-color: #ffffff;
+          }
+          .receipt-card {
+            border: 3px solid #2c5282;
+            border-radius: 12px;
+            padding: 40px;
+            background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+          }
+          .letterhead {
+            text-align: center;
+            border-bottom: 3px double #2c5282;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+          }
+          .ministry-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c5282;
+            margin: 0 0 8px 0;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+          }
+          .ministry-tagline {
+            font-size: 13px;
+            color: #5a6c7d;
+            font-style: italic;
+            margin: 0;
+          }
+          .receipt-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin: 20px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+          }
+          .update-notice {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: bold;
+            color: #856404;
+          }
+          .scripture-box {
+            background-color: #eef2f7;
+            border-left: 4px solid #2c5282;
+            padding: 15px 20px;
+            margin: 20px 0;
+            font-style: italic;
+            color: #2c5282;
+          }
+          .receipt-details {
+            border: 2px solid #2c5282;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+            background-color: #ffffff;
+          }
+          .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+          }
+          .detail-label {
+            font-weight: 600;
+            color: #2d3748;
+          }
+          .detail-value {
+            color: #1a1a1a;
+            text-align: right;
+          }
+          .blessing {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            font-style: italic;
+            color: #92400e;
+          }
+          .signature-section {
+            margin-top: 40px;
+            text-align: center;
+          }
+          .signature-line {
+            border-top: 2px solid #2c5282;
+            width: 300px;
+            margin: 40px auto 10px;
+          }
+          .official-stamp {
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            border: 2px dashed #2c5282;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #2c5282;
+            font-weight: bold;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="receipt-container">
+          <div class="receipt-card">
+            <div class="letterhead">
+              <div class="ministry-name">${escapeHtml(siteName)}</div>
+              <div class="ministry-tagline">Equipping Young Professionals for Evangelism</div>
+              <div style="font-size: 12px; color: #5a6c7d; margin-top: 10px;">
+                ${escapeHtml(contactEmail)} ${contactPhone ? `| ${escapeHtml(contactPhone)}` : ""}<br>
+                ${escapeHtml(siteUrl)}
+              </div>
+            </div>
+
+            <div class="receipt-title">Updated Official Donation Receipt</div>
+            
+            <div class="update-notice">
+              UPDATED RECEIPT - This supersedes any previous receipt for this donation
+            </div>
+            
+            <div class="official-stamp">
+              FOR TAX AND RECORD-KEEPING PURPOSES
+            </div>
+
+            <div style="font-size: 16px; margin: 20px 0;">
+              <strong>Dear ${safeName},</strong>
+            </div>
+
+            <p style="margin: 15px 0;">
+              <strong>May God bless you abundantly!</strong> This is your updated receipt reflecting the latest information for your donation.
+            </p>
+
+            <div class="scripture-box">
+              "Bring the whole tithe into the storehouse... and see if I will not throw open the floodgates 
+              of heaven and pour out so much blessing that there will not be room enough to store it."
+              <br><strong>- Malachi 3:10</strong>
+            </div>
+
+            <div class="receipt-details">
+              <div class="detail-row">
+                <span class="detail-label">Receipt Number:</span>
+                <span class="detail-value">#${escapeHtml(receiptNo)}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Date of Donation:</span>
+                <span class="detail-value">${escapeHtml(donationDateText)}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Donor Name:</span>
+                <span class="detail-value">${safeName}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Donor Email:</span>
+                <span class="detail-value">${escapeHtml(String(updated.donorEmail || ""))}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Donation Type:</span>
+                <span class="detail-value">${escapeHtml(String(updated.type || ""))}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Payment Method:</span>
+                <span class="detail-value">${escapeHtml(String(updated.paymentMethod || ""))}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Payment Status:</span>
+                <span class="detail-value">${escapeHtml(String(updated.paymentStatus || ""))}</span>
+              </div>
+              <div class="detail-row" style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #2c5282;">
+                <span class="detail-label">Total Amount:</span>
+                <span class="detail-value">${escapeHtml(totalAmount.toLocaleString())} ${escapeHtml(currencyText)}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Amount Received:</span>
+                <span class="detail-value">${escapeHtml(received.toLocaleString())} ${escapeHtml(currencyText)}</span>
+              </div>
+              ${remaining > 0 ? `
+              <div class="detail-row">
+                <span class="detail-label">Remaining Balance:</span>
+                <span class="detail-value">${escapeHtml(remaining.toLocaleString())} ${escapeHtml(currencyText)}</span>
+              </div>
+              ` : ''}
+            </div>
+
+            <div class="blessing">
+              We pray that the Lord will multiply your seed for sowing and increase your harvest 
+              of righteousness (2 Corinthians 9:10). May His grace and favor rest upon you and your family.
+            </div>
+
+            <p style="margin: 20px 0;">
+              Your partnership in spreading the gospel and equipping young professionals for evangelism 
+              is deeply appreciated. This receipt confirms your generous contribution to God's work.
+            </p>
+
+            <div class="signature-section">
+              <div class="signature-line"></div>
+              <div style="margin-top: 10px; font-weight: bold;">Authorized Signature</div>
+              <div style="margin-top: 5px; font-size: 14px; color: #5a6c7d;">${escapeHtml(siteName)}</div>
+            </div>
+
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e2e8f0; font-size: 14px;">
+              <div class="scripture-box" style="margin: 0; font-size: 14px;">
+                "Freely you have received; freely give." - Matthew 10:8
+              </div>
+              
+              <p style="font-size: 13px; text-align: center; margin-top: 20px; color: #5a6c7d;">
+                This is an updated official receipt. Please retain for your records.<br>
+                If you have any questions, contact us at ${escapeHtml(contactEmail)}${contactPhone ? ` or ${escapeHtml(contactPhone)}` : ""}.
+              </p>
+
+              <div style="text-align: center; margin-top: 20px; font-size: 12px; color: #5a6c7d; font-style: italic;">
+                In Christ's service,<br>
+                <strong>${escapeHtml(siteName)}</strong><br>
+                "Go therefore and make disciples of all nations" - Matthew 28:19
+              </div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+      `;
+
+      // Send email in background (non-blocking)
+      Promise.allSettled([
+        sendMail({
+          to: String(updated.donorEmail),
+          subject,
+          html,
+          text: `Updated Donation Receipt - ${siteName}\nReceipt #: ${receiptNo}\nThis is your updated receipt.\n\nTotal: ${totalAmount.toLocaleString()} ${currencyText}\nReceived: ${received.toLocaleString()} ${currencyText}\nRemaining: ${remaining.toLocaleString()} ${currencyText}`,
+          replyTo: contactEmail || undefined,
+        })
+      ]).catch(err => console.error("Error sending updated receipt:", err));
+    }
+
     res.json({
       id: idOf(updated),
       donorName: updated.donorName,

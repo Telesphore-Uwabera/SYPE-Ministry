@@ -78,7 +78,21 @@ export default function Admin() {
       const response = await fetch(buildApiUrl("/api/admin/analytics"));
       const data = await response.json();
       if (data) {
-        setAnalytics(data);
+        console.log("Analytics data refreshed:", data);
+        setAnalytics({
+          totalMembers: data.totalMembers || 0,
+          activeMembers: data.activeMembers || 0,
+          totalProjects: data.totalProjects || 0,
+          activeProjects: data.activeProjects || 0,
+          totalDonations: data.totalDonations || 0,
+          totalDonationAmount: data.totalDonationAmount || 0,
+          totalEvents: data.totalEvents || 0,
+          upcomingEvents: data.upcomingEvents || 0,
+          totalNewsArticles: data.totalNewsArticles || 0,
+          totalBooks: data.totalBooks || 0,
+          totalSubscribers: data.totalSubscribers || 0,
+          activeSubscribers: data.activeSubscribers || 0,
+        });
       }
     } catch (error) {
       console.error("Error loading analytics:", error);
@@ -239,11 +253,10 @@ export default function Admin() {
                 // Close mobile sidebar when a link is clicked
                 setIsMobileSidebarOpen(false);
               }}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
-                activeSection === item.id
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground/70 hover:bg-muted hover:text-foreground"
-              }`}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeSection === item.id
+                ? "bg-primary text-primary-foreground"
+                : "text-foreground/70 hover:bg-muted hover:text-foreground"
+                }`}
             >
               <Icon className="w-4 h-4 flex-shrink-0" />
               <span className="truncate">{item.label}</span>
@@ -272,7 +285,7 @@ export default function Admin() {
   const renderContent = () => {
     switch (activeSection) {
       case "analytics":
-        return <AnalyticsDashboard />;
+        return <AnalyticsDashboard analytics={analytics} onRefresh={loadAnalytics} />;
       case "members":
         return <MemberManagement />;
       case "news":
@@ -296,7 +309,7 @@ export default function Admin() {
       case "settings":
         return <SettingsManagement />;
       default:
-        return <AnalyticsDashboard />;
+        return <AnalyticsDashboard analytics={analytics} onRefresh={loadAnalytics} />;
     }
   };
 
@@ -319,33 +332,7 @@ export default function Admin() {
             </div>
           </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Total Members</CardDescription>
-                <CardTitle className="text-3xl">{analytics.totalMembers}</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Active Projects</CardDescription>
-                <CardTitle className="text-3xl">{analytics.activeProjects}</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Total Donations</CardDescription>
-                <CardTitle className="text-3xl">{analytics.totalDonations}</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>News Articles</CardDescription>
-                <CardTitle className="text-3xl">{analytics.totalNewsArticles}</CardTitle>
-              </CardHeader>
-            </Card>
-          </div>
+
 
           {/* Admin Features Content */}
           <div className="space-y-4">

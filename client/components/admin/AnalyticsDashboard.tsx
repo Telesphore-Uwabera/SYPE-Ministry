@@ -4,29 +4,38 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { BarChart3, Users, BookOpen, DollarSign, Calendar, Newspaper } from "lucide-react";
 import { buildApiUrl } from "@/lib/apiConfig";
 
-export default function AnalyticsDashboard() {
-  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+interface AnalyticsDashboardProps {
+  analytics?: Analytics | null;
+  onRefresh?: () => void;
+}
+
+export default function AnalyticsDashboard({ analytics: propAnalytics, onRefresh }: AnalyticsDashboardProps) {
+  const [analytics, setAnalytics] = useState<Analytics | null>(propAnalytics || null);
 
   useEffect(() => {
-    loadAnalytics();
-  }, []);
+    if (propAnalytics) {
+      setAnalytics(propAnalytics);
+    } else {
+      loadAnalytics();
+    }
+  }, [propAnalytics]);
 
   const loadAnalytics = async () => {
     try {
       const apiUrl = buildApiUrl("/api/admin/analytics");
       console.log("Fetching analytics from:", apiUrl);
-      
+
       const response = await fetch(apiUrl);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`HTTP error! status: ${response.status}`, errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       console.log("Analytics data received:", data);
-      
+
       if (data) {
         // Ensure all required fields have default values
         const analyticsData = {
@@ -125,12 +134,23 @@ export default function AnalyticsDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <BarChart3 className="w-6 h-6 text-primary" />
-        <div>
-          <h2 className="text-2xl font-bold">Analytics & Reports</h2>
-          <p className="text-foreground/70">Ministry statistics and insights</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <BarChart3 className="w-6 h-6 text-primary" />
+          <div>
+            <h2 className="text-2xl font-bold">Analytics & Reports</h2>
+            <p className="text-foreground/70">Ministry statistics and insights</p>
+          </div>
         </div>
+        {(onRefresh || !propAnalytics) && (
+          <button
+            onClick={() => onRefresh ? onRefresh() : loadAnalytics()}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+          >
+            <BarChart3 className="w-4 h-4" />
+            Refresh Data
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

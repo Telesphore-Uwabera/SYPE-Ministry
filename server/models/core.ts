@@ -265,3 +265,16 @@ export const EmailCampaignModel: any =
     )
   ) as any);
 
+export const YouTubeSyncModel: any =
+  (mongoose.models.YouTubeSync as any) ??
+  (mongoose.model(
+    "YouTubeSync",
+    new Schema(
+      {
+        videoId: { type: String, required: true, unique: true },
+        notifiedAt: { type: Date, default: () => new Date() },
+        title: { type: String },
+      },
+      { timestamps: true, collection: "youtube_sync" }
+    )
+  ) as any);

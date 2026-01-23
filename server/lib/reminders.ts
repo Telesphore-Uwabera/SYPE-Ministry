@@ -1,56 +1,61 @@
 import { DonationModel } from "../models/core";
 import { sendMail } from "./mailer";
 import { connectMongo } from "./mongoose";
+import { syncYouTubeAndNotify } from "./youtubeSync";
 
 function escapeHtml(value: string) {
-    return value
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 export async function runReminders() {
-    try {
-        await connectMongo();
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+  try {
+    await connectMongo();
 
-        // Find donations where payment is due today or was due and still unpaid
-        // We only want to send the reminder ONCE on the deadline day (or if it's nearing)
-        // For simplicity, let's find all unpaid/installment donations where the deadline is today
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
+    // Sync YouTube videos and notify
+    await syncYouTubeAndNotify().catch(err => console.error("[Reminders] YouTube sync failed:", err));
 
-        const donations = await DonationModel.find({
-            paymentStatus: { $in: ["unpaid", "installment"] },
-            paymentDeadline: {
-                $gte: today,
-                $lt: tomorrow,
-            },
-        }).exec();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-        if (donations.length === 0) return;
+    // Find donations where payment is due today or was due and still unpaid
+    // We only want to send the reminder ONCE on the deadline day (or if it's nearing)
+    // For simplicity, let's find all unpaid/installment donations where the deadline is today
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
 
-        console.log(`[Reminders] Found ${donations.length} donations with deadlines today.`);
+    const donations = await DonationModel.find({
+      paymentStatus: { $in: ["unpaid", "installment"] },
+      paymentDeadline: {
+        $gte: today,
+        $lt: tomorrow,
+      },
+    }).exec();
 
-        const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
-        const adminEmail = (process.env.ADMIN_NOTIFY_EMAIL || "sypeministry@gmail.com").trim();
+    if (donations.length === 0) return;
 
-        for (const donation of donations) {
-            const donorEmail = String(donation.donorEmail || "").trim();
-            const donorName = String(donation.donorName || "Donor");
-            const amount = Number(donation.amount || 0);
-            const paid = Number(donation.amountPaid || 0);
-            const remaining = Math.max(0, amount - paid);
-            const currency = String(donation.currency || "RWF");
+    console.log(`[Reminders] Found ${donations.length} donations with deadlines today.`);
 
-            if (!donorEmail) continue;
+    const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
+    const adminEmail = (process.env.ADMIN_NOTIFY_EMAIL || "sypeministry@gmail.com").trim();
 
-            const subject = `Payment Reminder: Donation Deadline Today - ${siteName}`;
+    for (const donation of donations) {
+      const donorEmail = String(donation.donorEmail || "").trim();
+      const donorName = String(donation.donorName || "Donor");
+      const amount = Number(donation.amount || 0);
+      const paid = Number(donation.amountPaid || 0);
+      const remaining = Math.max(0, amount - paid);
+      const currency = String(donation.currency || "RWF");
 
-            const donorHtml = `
+      if (!donorEmail) continue;
+
+      const subject = `Payment Reminder: Donation Deadline Today - ${siteName}`;
+
+      const donorHtml = `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
           <div style="background-color: #2c5282; color: white; padding: 24px; text-align: center;">
             <h2 style="margin: 0;">Payment Reminder</h2>
@@ -80,7 +85,7 @@ export async function runReminders() {
         </div>
       `;
 
-            const adminHtml = `
+      const adminHtml = `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
           <h2 style="color: #c53030;">Donation Deadline Reached</h2>
           <p>Today is the payment deadline for a donation commitment:</p>
@@ -95,25 +100,25 @@ export async function runReminders() {
         </div>
       `;
 
-            // Send to donor
-            await sendMail({
-                to: donorEmail,
-                subject,
-                html: donorHtml,
-                text: `Payment Reminder: Your donation of ${remaining.toLocaleString()} ${currency} is due today at ${siteName}.`,
-            }).catch(err => console.error(`Failed to send reminder to ${donorEmail}:`, err));
+      // Send to donor
+      await sendMail({
+        to: donorEmail,
+        subject,
+        html: donorHtml,
+        text: `Payment Reminder: Your donation of ${remaining.toLocaleString()} ${currency} is due today at ${siteName}.`,
+      }).catch(err => console.error(`Failed to send reminder to ${donorEmail}:`, err));
 
-            // Send to admin
-            await sendMail({
-                to: adminEmail,
-                subject: `[ADMIN] Deadline Reached: ${donorName} - ${remaining.toLocaleString()} ${currency}`,
-                html: adminHtml,
-                text: `Deadline reached for ${donorName}. Remaining: ${remaining.toLocaleString()} ${currency}.`,
-            }).catch(err => console.error(`Failed to send reminder to admin:`, err));
+      // Send to admin
+      await sendMail({
+        to: adminEmail,
+        subject: `[ADMIN] Deadline Reached: ${donorName} - ${remaining.toLocaleString()} ${currency}`,
+        html: adminHtml,
+        text: `Deadline reached for ${donorName}. Remaining: ${remaining.toLocaleString()} ${currency}.`,
+      }).catch(err => console.error(`Failed to send reminder to admin:`, err));
 
-            console.log(`[Reminders] Sent reminder for donation ${donation._id} to ${donorEmail}`);
-        }
-    } catch (err) {
-        console.error("[Reminders] Error in reminder scheduler:", err);
+      console.log(`[Reminders] Sent reminder for donation ${donation._id} to ${donorEmail}`);
     }
+  } catch (err) {
+    console.error("[Reminders] Error in reminder scheduler:", err);
+  }
 }

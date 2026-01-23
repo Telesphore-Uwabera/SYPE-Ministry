@@ -35,6 +35,21 @@ try {
 export function createServer() {
   const app = express();
 
+  // Middleware - Request Logger
+  app.use((req, res, next) => {
+    const start = Date.now();
+    res.on("finish", () => {
+      const duration = Date.now() - start;
+      console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`);
+    });
+    next();
+  });
+
+  // Heartbeat logging to keep the dashboard "alive" and showing activity
+  setInterval(() => {
+    console.log(`[${new Date().toISOString()}] ❤️ Backend Heartbeat - Status: OK - Memory: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
+  }, 300000); // Every 5 minutes
+
   // Connect to MongoDB early (non-blocking)
   connectMongo().catch((err) => {
     console.error("MongoDB connection failed:", err);

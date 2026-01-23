@@ -158,7 +158,7 @@ export default function Navigation() {
       if (showSearch && searchResults.length > 0) {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
-          setSelectedResultIndex((prev) => 
+          setSelectedResultIndex((prev) =>
             prev < searchResults.length - 1 ? prev + 1 : prev
           );
         } else if (e.key === 'ArrowUp') {
@@ -257,7 +257,7 @@ export default function Navigation() {
                   }}
                 >
                   <img
-                    src="/Sype logo.png"
+                    src="/Sype logo.webp"
                     alt="SYPE Ministry Logo"
                     className="h-10 md:h-12 w-auto object-contain transition-all duration-300 group-hover:brightness-110"
                   />
@@ -299,7 +299,7 @@ export default function Navigation() {
                       >
                         {link.label}
                       </motion.span>
-                      
+
                       {/* Active indicator with color transition */}
                       {active && (
                         <motion.div
@@ -313,7 +313,7 @@ export default function Navigation() {
                           }}
                         />
                       )}
-                      
+
                       {/* Hover effect with color exchange */}
                       {!active && (
                         <motion.div
@@ -338,7 +338,7 @@ export default function Navigation() {
                           }}
                         />
                       )}
-                      
+
                       {/* Zoom effect on hover */}
                       <motion.div
                         className="absolute inset-0 border-2 border-primary/0 rounded-md"
@@ -352,7 +352,7 @@ export default function Navigation() {
                   </motion.div>
                 );
               })}
-              
+
               {/* Action Buttons */}
               <div className="hidden lg:flex items-center gap-3 ml-4 pl-4 border-l border-border/30">
                 {/* Search Button */}
@@ -544,7 +544,7 @@ export default function Navigation() {
                     </motion.div>
                   );
                 })}
-                
+
                 {/* Mobile Donate Button */}
                 <motion.div
                   initial={{ x: -30, opacity: 0, scale: 0.9 }}
@@ -603,7 +603,7 @@ export default function Navigation() {
                 className="flex items-center font-heading font-bold text-primary"
               >
                 <img
-                  src="/Sype logo.png"
+                  src="/Sype logo.webp"
                   alt="SYPE Ministry Logo"
                   className="h-14 md:h-16 lg:h-20 w-auto object-contain"
                 />
@@ -645,7 +645,7 @@ export default function Navigation() {
                   </Link>
                 );
               })}
-              
+
               {/* Duplicate Action Buttons */}
               <div className="hidden lg:flex items-center gap-3 ml-4 pl-4 border-l border-border/30">
                 <motion.button
@@ -905,12 +905,12 @@ export default function Navigation() {
                               {result.description}
                             </p>
                           </div>
-                          <ArrowRight 
-                            size={16} 
+                          <ArrowRight
+                            size={16}
                             className={cn(
                               "text-foreground/30 transition-transform",
                               isSelected && "text-primary translate-x-1"
-                            )} 
+                            )}
                           />
                         </Link>
                       );

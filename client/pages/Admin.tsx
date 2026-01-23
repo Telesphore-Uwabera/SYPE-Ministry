@@ -233,7 +233,7 @@ export default function Admin() {
       <div className="p-4 border-b">
         <div className="flex items-center gap-3 mb-3">
           <img
-            src="/Sype logo.png"
+            src="/Sype logo.webp"
             alt="SYPE Ministry Logo"
             className="w-10 h-10 object-contain"
           />

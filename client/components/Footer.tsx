@@ -15,7 +15,7 @@ export default function Footer() {
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !email.includes("@")) {
       toast({
         title: "Invalid email",
@@ -67,7 +67,7 @@ export default function Footer() {
           <div>
             <div className="flex flex-col items-start gap-2 mb-4">
               <img
-                src="/Sype logo.png"
+                src="/Sype logo.webp"
                 alt="SYPE Ministry Logo"
                 className="h-32 w-auto object-contain"
               />
@@ -337,7 +337,7 @@ export default function Footer() {
                 </Button>
               </form>
             )}
-            
+
             {/* WhatsApp Group Link */}
             <div className="mt-6 pt-6 border-t border-primary-foreground/20">
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">

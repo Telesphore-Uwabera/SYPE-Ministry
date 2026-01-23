@@ -192,34 +192,35 @@ Create a `.env` file in the root directory (copy from `env.example`):
 
 ```env
 # Server Configuration
-PORT=8080
-NODE_ENV=development
+NODE_ENV=production
 
-# Database (MongoDB Atlas)
-DATABASE_URL="mongodb+srv://<DB_USER>:<DB_PASSWORD>@<CLUSTER_HOST>/SYPEMinistry?retryWrites=true&w=majority&appName=Cluster0"
+# MongoDB (Atlas)
+DATABASE_URL=mongodb+srv://SYPEMinistry:91073%40Tecy@cluster0.sybcb.mongodb.net/SYPEMinistry?retryWrites=true&w=majority&appName=Cluster0
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=dnlatyl5z
+CLOUDINARY_API_KEY=531793435626149
+CLOUDINARY_API_SECRET=E92nCg5QzQEuh7yl4kXnL35yoKo
 
-# Cloudinary (required for uploads in production)
-CLOUDINARY_CLOUD_NAME="your-cloud-name"
-CLOUDINARY_API_KEY="your-cloudinary-key"
-CLOUDINARY_API_SECRET="your-cloudinary-secret"
+# Frontend + CORS
+ALLOWED_ORIGINS=https://sypeministry.netlify.app,https://sypeministry.org,https://www.sypeministry.org
+SITE_URL=https://sypeministry.netlify.app
+SITE_NAME="SYPE Ministry"
 
-# YouTube Data API v3 Key (Required for Videos page)
-YOUTUBE_API_KEY="your-youtube-api-key-here"
-
-# Site Configuration
-SITE_URL=http://localhost:8080
-SITE_NAME=SYPE Ministry
+# Optional / still used
+YOUTUBE_API_KEY=AIzaSyBQbfbmq2CHi1d_OQHElG56ANA6j-8mvCo
 CONTACT_EMAIL=sypeministry@gmail.com
 CONTACT_PHONE=+250780430990
+PING_MESSAGE=pong
 
-# CORS Configuration (for development)
-ALLOWED_ORIGINS=http://localhost:5173,http://localhost:8080,http://localhost:3000
-
-# Optional: File Upload Limits (in bytes)
-MAX_FILE_SIZE=104857600
-
-# Optional: For health checks
-PING_MESSAGE="pong"
+# Email (SMTP) - for sending donation receipts
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=sypeministry@gmail.com
+SMTP_PASSWORD=qyhvmfzehsdyfwot
+SMTP_FROM=SYPE Ministry <sypeministry@gmail.com>
+BREVO_API_KEY=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
+ADMIN_NOTIFY_EMAIL=sypeministry@gmail.com
 ```
 
 ### Development Server

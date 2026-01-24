@@ -27,18 +27,18 @@ export default function Projects() {
     try {
       const apiUrl = buildApiUrl("/api/projects");
       console.log("Fetching projects from:", apiUrl);
-      
+
       const response = await fetch(apiUrl);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`HTTP error! status: ${response.status}`, errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       console.log("Projects data received:", data);
-      
+
       if (Array.isArray(data)) {
         setProjects(data);
       } else {
@@ -127,7 +127,7 @@ export default function Projects() {
   // Filter projects by date
   const getFilteredProjects = () => {
     let filtered = [...projects];
-    
+
     if (dateFilter === "past") {
       // Projects with endDate in the past or completed status
       filtered = filtered.filter((p) => {
@@ -162,7 +162,7 @@ export default function Projects() {
         return false;
       });
     }
-    
+
     return filtered;
   };
 
@@ -186,7 +186,7 @@ export default function Projects() {
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary via-secondary to-primary py-16 md:py-20 text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
-          <motion.h1 
+          <motion.h1
             className="font-heading font-bold text-4xl md:text-5xl mb-4"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -194,7 +194,7 @@ export default function Projects() {
           >
             Evangelical Projects
           </motion.h1>
-          <motion.p 
+          <motion.p
             className="text-lg opacity-90 max-w-2xl mx-auto"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -208,61 +208,61 @@ export default function Projects() {
 
       {/* Statistics Section */}
       {!loading && (
-      <section className="py-12 bg-white border-b border-border">
-        <div className="container mx-auto px-4">
-          <StaggerContainer
-            className="grid grid-cols-2 md:grid-cols-4 gap-6"
-            staggerDelay={0.2}
-            direction="scale"
-            detectScrollDirection
-          >
-            {stats.map((stat, idx) => {
-              const IconComponent = stat.icon;
-              return (
-                <HoverAnimation key={idx} scale={1.05} y={-5}>
-                  <motion.div
-                    whileHover={{ rotateY: 5 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  >
-                    <Card className="text-center border-2 hover:border-primary/50 hover:shadow-xl transition-all bg-gradient-to-br from-white to-primary/5">
-                      <CardContent className="pt-6">
-                        <motion.div
-                          className="flex justify-center mb-3"
-                          whileHover={{ rotate: 360, scale: 1.2 }}
-                          transition={{ duration: 0.6 }}
-                        >
+        <section className="py-12 bg-white border-b border-border">
+          <div className="container mx-auto px-4">
+            <StaggerContainer
+              className="grid grid-cols-2 md:grid-cols-4 gap-6"
+              staggerDelay={0.2}
+              direction="scale"
+              detectScrollDirection
+            >
+              {stats.map((stat, idx) => {
+                const IconComponent = stat.icon;
+                return (
+                  <HoverAnimation key={idx} scale={1.05} y={-5}>
+                    <motion.div
+                      whileHover={{ rotateY: 5 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    >
+                      <Card className="text-center border-2 hover:border-primary/50 hover:shadow-xl transition-all bg-gradient-to-br from-white to-primary/5">
+                        <CardContent className="pt-6">
                           <motion.div
-                            className={`p-3 bg-primary/10 rounded-lg ${stat.color}`}
-                            whileHover={{ backgroundColor: "rgba(59, 130, 246, 0.2)" }}
+                            className="flex justify-center mb-3"
+                            whileHover={{ rotate: 360, scale: 1.2 }}
+                            transition={{ duration: 0.6 }}
                           >
-                            <IconComponent className="w-6 h-6" />
+                            <motion.div
+                              className={`p-3 bg-primary/10 rounded-lg ${stat.color}`}
+                              whileHover={{ backgroundColor: "rgba(59, 130, 246, 0.2)" }}
+                            >
+                              <IconComponent className="w-6 h-6" />
+                            </motion.div>
                           </motion.div>
-                        </motion.div>
-                        <motion.div
-                          className="text-3xl font-heading font-bold text-primary mb-1"
-                          initial={{ scale: 0 }}
-                          whileInView={{ scale: 1 }}
-                          viewport={{ once: true }}
-                          transition={{
-                            type: "spring",
-                            stiffness: 200,
-                            delay: idx * 0.1,
-                          }}
-                        >
-                          {stat.value}
-                        </motion.div>
-                        <div className="text-sm text-foreground/70 font-medium">
-                          {stat.label}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </HoverAnimation>
-              );
-            })}
-          </StaggerContainer>
-        </div>
-      </section>
+                          <motion.div
+                            className="text-3xl font-heading font-bold text-primary mb-1"
+                            initial={{ scale: 0 }}
+                            whileInView={{ scale: 1 }}
+                            viewport={{ once: true }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 200,
+                              delay: idx * 0.1,
+                            }}
+                          >
+                            {stat.value}
+                          </motion.div>
+                          <div className="text-sm text-foreground/70 font-medium">
+                            {stat.label}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  </HoverAnimation>
+                );
+              })}
+            </StaggerContainer>
+          </div>
+        </section>
       )}
 
       {loading && (
@@ -305,29 +305,31 @@ export default function Projects() {
             <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" staggerDelay={0.15} direction="up" detectScrollDirection>
               {events.map((event) => (
                 <HoverAnimation key={event.id} scale={1.02} y={-6}>
-                  <Card className="h-full border-2 hover:border-primary/50 hover:shadow-lg transition-all">
-                    <CardHeader>
-                      <CardTitle className="text-lg text-primary line-clamp-2">
-                        {event.title}
-                      </CardTitle>
-                      <CardDescription className="text-sm">
-                        {new Date(event.date).toLocaleDateString()} • {event.time} • {event.location}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-foreground/80 text-sm leading-relaxed line-clamp-3 mb-3">
-                        {event.description}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-xs">
-                          {event.category}
-                        </Badge>
-                        <Button asChild size="sm" variant="outline">
-                          <Link to={`/events/${event.id}`}>Read More</Link>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <Link to={`/events/${event.id}`} className="block h-full">
+                    <Card className="h-full border-2 hover:border-primary/50 hover:shadow-lg transition-all">
+                      <CardHeader>
+                        <CardTitle className="text-lg text-primary line-clamp-2">
+                          {event.title}
+                        </CardTitle>
+                        <CardDescription className="text-sm">
+                          {new Date(event.date).toLocaleDateString()} • {event.time} • {event.location}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-foreground/80 text-sm leading-relaxed line-clamp-3 mb-3">
+                          {event.description}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline" className="text-xs">
+                            {event.category}
+                          </Badge>
+                          <Button asChild size="sm" variant="outline" className="pointer-events-none">
+                            <span>Read More</span>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 </HoverAnimation>
               ))}
             </StaggerContainer>
@@ -363,41 +365,41 @@ export default function Projects() {
                     style={{ perspective: 1000 }}
                   >
                     <Card className="h-full flex flex-col border-2 hover:border-primary/50 hover:shadow-2xl transition-all group bg-gradient-to-br from-white to-primary/5">
-                    <CardHeader className="flex-shrink-0">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-                          {getIcon(project.category)}
+                      <CardHeader className="flex-shrink-0">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                            {getIcon(project.category)}
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            {getStatusBadge(project.status)}
+                            <Badge variant="outline" className="text-xs">
+                              {project.year}
+                            </Badge>
+                          </div>
                         </div>
-                        <div className="flex flex-col gap-2">
-                          {getStatusBadge(project.status)}
-                          <Badge variant="outline" className="text-xs">
-                            {project.year}
+                        <CardTitle className="text-xl text-primary mb-2 min-h-[56px]">
+                          {project.name}
+                        </CardTitle>
+                        <CardDescription className="flex items-center gap-2">
+                          <Badge className={`${getBadgeColor(project.topic)} text-xs`}>
+                            {project.topic}
                           </Badge>
-                        </div>
-                      </div>
-                      <CardTitle className="text-xl text-primary mb-2 min-h-[56px]">
-                        {project.name}
-                      </CardTitle>
-                      <CardDescription className="flex items-center gap-2">
-                        <Badge className={`${getBadgeColor(project.topic)} text-xs`}>
-                          {project.topic}
-                        </Badge>
-                        <span className="text-xs">•</span>
-                        <span className="text-xs">{project.category}</span>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex-1 flex flex-col min-h-0">
-                      <p className="text-foreground/80 text-sm leading-relaxed mb-4 flex-1 min-h-[100px]">
-                        {project.description}
-                      </p>
-                      <div className="pt-4 border-t border-border mt-auto flex-shrink-0">
-                        <p className="text-xs text-foreground/60">
-                          <span className="font-semibold">Distribution:</span>{" "}
-                          <span className="text-foreground/70">{project.distribution}</span>
+                          <span className="text-xs">•</span>
+                          <span className="text-xs">{project.category}</span>
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex-1 flex flex-col min-h-0">
+                        <p className="text-foreground/80 text-sm leading-relaxed mb-4 flex-1 min-h-[100px]">
+                          {project.description}
                         </p>
-                      </div>
-                    </CardContent>
-                  </Card>
+                        <div className="pt-4 border-t border-border mt-auto flex-shrink-0">
+                          <p className="text-xs text-foreground/60">
+                            <span className="font-semibold">Distribution:</span>{" "}
+                            <span className="text-foreground/70">{project.distribution}</span>
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </motion.div>
                 </HoverAnimation>
               ))}
@@ -462,23 +464,23 @@ export default function Projects() {
 
             <TabsContent value="all" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredProjects.map((project, idx) => (
+                {filteredProjects.map((project, idx) => (
                   <motion.div
-                key={idx}
+                    key={idx}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: idx * 0.05 }}
-              >
+                  >
                     <Card className="h-full border-2 hover:border-primary/50 hover:shadow-lg transition-all">
                       <CardHeader>
                         <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-start gap-4 flex-1">
+                          <div className="flex items-start gap-4 flex-1">
                             <div className="p-3 bg-primary/10 rounded-lg">
-                      {getIcon(project.category)}
-                    </div>
-                    <div className="flex-1">
+                              {getIcon(project.category)}
+                            </div>
+                            <div className="flex-1">
                               <CardTitle className="text-lg text-primary mb-1">
-                        {project.name}
+                                {project.name}
                               </CardTitle>
                               <CardDescription>{project.category} • {project.year}</CardDescription>
                             </div>
@@ -504,13 +506,13 @@ export default function Projects() {
                           <p className="text-xs">
                             <span className="font-semibold text-foreground">Distribution:</span>{" "}
                             <span className="text-foreground/70">{project.distribution}</span>
-                      </p>
-                    </div>
+                          </p>
+                        </div>
                       </CardContent>
                     </Card>
                   </motion.div>
                 ))}
-                  </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="ongoing" className="space-y-6">
@@ -539,8 +541,8 @@ export default function Projects() {
                           {getStatusBadge(project.status)}
                         </div>
                         <Badge className={`${getBadgeColor(project.topic)} text-xs`}>
-                    {project.topic}
-                  </Badge>
+                          {project.topic}
+                        </Badge>
                       </CardHeader>
                       <CardContent>
                         <p className="text-foreground/80 text-sm leading-relaxed mb-4">
@@ -556,7 +558,7 @@ export default function Projects() {
                     </Card>
                   </motion.div>
                 ))}
-                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="completed" className="space-y-6">
@@ -590,8 +592,8 @@ export default function Projects() {
                       </CardHeader>
                       <CardContent>
                         <p className="text-foreground/80 text-sm leading-relaxed mb-4">
-                  {project.description}
-                </p>
+                          {project.description}
+                        </p>
                         <div className="bg-muted/50 rounded-lg p-3">
                           <p className="text-xs">
                             <span className="font-semibold text-foreground">Distribution:</span>{" "}
@@ -642,8 +644,8 @@ export default function Projects() {
                           <p className="text-xs">
                             <span className="font-semibold text-foreground">Distribution:</span>{" "}
                             <span className="text-foreground/70">{project.distribution}</span>
-                  </p>
-                </div>
+                          </p>
+                        </div>
                       </CardContent>
                     </Card>
                   </motion.div>
@@ -689,12 +691,12 @@ export default function Projects() {
                             <span className="font-semibold text-foreground">Distribution:</span>{" "}
                             <span className="text-foreground/70">{project.distribution}</span>
                           </p>
-              </div>
+                        </div>
                       </CardContent>
                     </Card>
                   </motion.div>
-            ))}
-          </div>
+                ))}
+              </div>
             </TabsContent>
           </Tabs>
         </div>

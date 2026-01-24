@@ -227,7 +227,7 @@ function LatestDevotionsCards() {
                   size="sm"
                   className="w-full"
                 >
-                  <Link to="/devotions" className="inline-flex items-center justify-center gap-2">
+                  <Link to={`/devotions/${devotion.id}`} className="inline-flex items-center justify-center gap-2">
                     Read More
                     <BookOpen className="w-3 h-3" />
                   </Link>
@@ -377,33 +377,35 @@ function LatestEventsCards() {
     <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
       {events.map((event) => (
         <HoverAnimation key={event.id} scale={1.02} y={-8}>
-          <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300">
-            <CardHeader>
-              <CardTitle className="line-clamp-2">{event.title}</CardTitle>
-              <CardDescription className="flex flex-col gap-1 text-xs">
-                <span className="inline-flex items-center gap-2">
-                  <Calendar className="w-3 h-3" />
-                  {new Date(event.date).toLocaleDateString()} • {event.time}
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <Clock className="w-3 h-3" />
-                  {event.location}
-                </span>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-foreground/70 line-clamp-3 mb-3">{event.description}</p>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-foreground/60">{event.category}</span>
-                <Button asChild size="sm" variant="outline">
-                  <Link to={`/events/${event.id}`} className="inline-flex items-center gap-2">
-                    Learn more
-                    <ExternalLink className="w-3 h-3" />
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <Link to={`/events/${event.id}`} className="block h-full">
+            <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300">
+              <CardHeader>
+                <CardTitle className="line-clamp-2">{event.title}</CardTitle>
+                <CardDescription className="flex flex-col gap-1 text-xs">
+                  <span className="inline-flex items-center gap-2">
+                    <Calendar className="w-3 h-3" />
+                    {new Date(event.date).toLocaleDateString()} • {event.time}
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <Clock className="w-3 h-3" />
+                    {event.location}
+                  </span>
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-foreground/70 line-clamp-3 mb-3">{event.description}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-foreground/60">{event.category}</span>
+                  <Button asChild size="sm" variant="outline" className="pointer-events-none">
+                    <span className="inline-flex items-center gap-2">
+                      Learn more
+                      <ExternalLink className="w-3 h-3" />
+                    </span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         </HoverAnimation>
       ))}
     </StaggerContainer>

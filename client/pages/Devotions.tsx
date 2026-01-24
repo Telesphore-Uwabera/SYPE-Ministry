@@ -17,18 +17,18 @@ export default function Devotions() {
       try {
         const apiUrl = buildApiUrl("/api/devotions");
         console.log("Fetching devotions from:", apiUrl);
-        
+
         const res = await fetch(apiUrl);
-        
+
         if (!res.ok) {
           const errorText = await res.text();
           console.error(`HTTP error! status: ${res.status}`, errorText);
           throw new Error(`HTTP error! status: ${res.status}`);
         }
-        
+
         const data = await res.json();
         console.log("Devotions data received:", data);
-        
+
         if (Array.isArray(data)) {
           // Sort by date (newest first)
           const sortedDevotions = data.sort(
@@ -47,7 +47,7 @@ export default function Devotions() {
         setDevotions([]); // Set empty array on error
       }
     };
-    
+
     fetchDevotions();
   }, []);
 
@@ -116,10 +116,10 @@ export default function Devotions() {
                   <div className="flex items-start gap-4">
                     <Heart className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                     <div>
-                        <p className="font-semibold text-primary mb-1">Leadership</p>
-                        <p className="text-foreground/70">
-                          Rotating member leaders (daily)
-                        </p>
+                      <p className="font-semibold text-primary mb-1">Leadership</p>
+                      <p className="text-foreground/70">
+                        Rotating member leaders (daily)
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -233,49 +233,51 @@ export default function Devotions() {
             >
               {devotions.map((devotion) => (
                 <HoverAnimation key={devotion.id} scale={1.02} y={-5}>
-                  <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300">
-                    {devotion.image ? (
-                      <div className="relative h-48 overflow-hidden">
-                        <img
-                          src={devotion.image}
-                          alt={devotion.title}
-                          className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-                        />
-                      </div>
-                    ) : (
-                      <div className="h-48 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                        <BookOpen className="w-16 h-16 text-primary opacity-40" />
-                      </div>
-                    )}
-                    <CardHeader>
-                      <CardDescription className="flex items-center gap-2 text-xs mb-2">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(devotion.date).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </CardDescription>
-                      <CardTitle className="line-clamp-2 text-lg">{devotion.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-foreground/70 line-clamp-3 mb-4">
-                        {devotion.excerpt}
-                      </p>
-                      {devotion.content && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                        >
-                          <Link to={`/devotions/${devotion.id}`} className="w-full inline-flex items-center justify-center">
-                            Read More
-                            <ArrowRight className="w-3 h-3 ml-2" />
-                          </Link>
-                        </Button>
+                  <Link to={`/devotions/${devotion.id}`} className="block h-full">
+                    <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300">
+                      {devotion.image ? (
+                        <div className="relative h-48 overflow-hidden">
+                          <img
+                            src={devotion.image}
+                            alt={devotion.title}
+                            className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-48 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                          <BookOpen className="w-16 h-16 text-primary opacity-40" />
+                        </div>
                       )}
-                    </CardContent>
-                  </Card>
+                      <CardHeader>
+                        <CardDescription className="flex items-center gap-2 text-xs mb-2">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(devotion.date).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </CardDescription>
+                        <CardTitle className="line-clamp-2 text-lg">{devotion.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-foreground/70 line-clamp-3 mb-4">
+                          {devotion.excerpt}
+                        </p>
+                        {devotion.content && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground pointer-events-none"
+                          >
+                            <span className="w-full inline-flex items-center justify-center">
+                              Read More
+                              <ArrowRight className="w-3 h-3 ml-2" />
+                            </span>
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </Link>
                 </HoverAnimation>
               ))}
             </StaggerContainer>

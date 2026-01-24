@@ -19,18 +19,18 @@ export default function News() {
       try {
         const apiUrl = buildApiUrl("/api/news");
         console.log("Fetching news from:", apiUrl);
-        
+
         const res = await fetch(apiUrl);
-        
+
         if (!res.ok) {
           const errorText = await res.text();
           console.error(`HTTP error! status: ${res.status}`, errorText);
           throw new Error(`HTTP error! status: ${res.status}`);
         }
-        
+
         const data = await res.json();
         console.log("News data received:", data);
-        
+
         if (Array.isArray(data)) {
           // Sort by publishDate (newest first)
           const sortedNews = data.sort(
@@ -49,7 +49,7 @@ export default function News() {
         setNews([]); // Set empty array on error
       }
     };
-    
+
     fetchNews();
   }, []);
 
@@ -142,7 +142,7 @@ export default function News() {
             >
               {filteredNews.map((article) => (
                 <HoverAnimation key={article.id} scale={1.02} y={-5}>
-                  <div className="block h-full">
+                  <Link to={`/news/${article.id}`} className="block h-full">
                     <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300">
                       {article.image ? (
                         <div className="relative h-48 overflow-hidden">
@@ -207,16 +207,16 @@ export default function News() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                          className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground pointer-events-none"
                         >
-                          <Link to={`/news/${article.id}`} className="w-full inline-flex items-center justify-center">
+                          <span className="w-full inline-flex items-center justify-center">
                             Read More
                             <ArrowRight className="w-3 h-3 ml-2" />
-                          </Link>
+                          </span>
                         </Button>
                       </CardContent>
                     </Card>
-                  </div>
+                  </Link>
                 </HoverAnimation>
               ))}
             </StaggerContainer>

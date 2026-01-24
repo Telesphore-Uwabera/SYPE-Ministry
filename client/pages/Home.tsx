@@ -105,7 +105,18 @@ function LatestNewsCards() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-foreground/70 line-clamp-3">{article.excerpt}</p>
+                <p className="text-sm text-foreground/70 line-clamp-3 mb-4">{article.excerpt}</p>
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="w-full pointer-events-none"
+                >
+                  <span className="inline-flex items-center justify-center gap-2">
+                    Read More
+                    <Newspaper className="w-3 h-3" />
+                  </span>
+                </Button>
               </CardContent>
             </Card>
           </Link>
@@ -398,7 +409,7 @@ function LatestEventsCards() {
                   <span className="text-xs text-foreground/60">{event.category}</span>
                   <Button asChild size="sm" variant="outline" className="pointer-events-none">
                     <span className="inline-flex items-center gap-2">
-                      Learn more
+                      Read More
                       <ExternalLink className="w-3 h-3" />
                     </span>
                   </Button>

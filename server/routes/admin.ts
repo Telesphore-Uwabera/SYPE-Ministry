@@ -87,557 +87,444 @@ export const sendTestEmail: RequestHandler = async (req, res) => {
 };
 
 // Members API
-export const getMembers: RequestHandler = async (req, res) => {
-  try {
-    await connectMongo();
-    const result = await MemberModel.find().sort({ joinDate: -1 }).exec();
-    res.json(
-      result.map((m: any) => ({
-        id: idOf(m),
-        name: m.name,
-        email: m.email,
-        phone: m.phone || "",
-        role: m.role,
-        status: m.status,
-        joinDate: m.joinDate ? new Date(m.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-        department: m.department || "",
-        notes: m.notes || "",
-      }))
-    );
-  } catch (error) {
-    console.error("Error fetching members:", error);
-    res.status(500).json({ error: "Failed to fetch members" });
-  }
-};
+export const getMembers: RequestHandler = asyncHandler(async (req, res) => {
+  await connectMongo();
+  const result = await MemberModel.find().sort({ joinDate: -1 }).exec();
+  res.json(
+    result.map((m: any) => ({
+      id: idOf(m),
+      name: m.name,
+      email: m.email,
+      phone: m.phone || "",
+      role: m.role,
+      status: m.status,
+      joinDate: m.joinDate ? new Date(m.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      department: m.department || "",
+      notes: m.notes || "",
+    }))
+  );
+});
 
-export const getMember: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const member = await MemberModel.findById(id).exec();
-    if (!member) return res.status(404).json({ error: "Member not found" });
-    res.json({
-      id: idOf(member),
-      name: member.name,
-      email: member.email,
-      phone: member.phone || "",
-      role: member.role,
-      status: member.status,
-      joinDate: member.joinDate ? new Date(member.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-      department: member.department || "",
-      notes: member.notes || "",
-    });
-  } catch (error) {
-    console.error("Error fetching member:", error);
-    res.status(500).json({ error: "Failed to fetch member" });
-  }
-};
+export const getMember: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const member = await MemberModel.findById(id).exec();
+  if (!member) throw new ApiError(404, "Member not found");
+  res.json({
+    id: idOf(member),
+    name: member.name,
+    email: member.email,
+    phone: member.phone || "",
+    role: member.role,
+    status: member.status,
+    joinDate: member.joinDate ? new Date(member.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+    department: member.department || "",
+    notes: member.notes || "",
+  });
+});
 
-export const createMember: RequestHandler = async (req, res) => {
-  try {
-    const { name, email, phone, role, status, joinDate, department, notes } = req.body ?? {};
-    if (!name || !email || !role || !status) {
-      return res.status(400).json({ error: "name, email, role, and status are required" });
-    }
-    await connectMongo();
-    const created = await MemberModel.create({
-      name,
-      email,
-      phone: phone || "",
-      role,
-      status,
-      joinDate: joinDate ? new Date(joinDate) : new Date(),
-      department: department || "",
-      notes: notes || "",
-    });
-    res.status(201).json({
-      id: idOf(created),
-      name: created.name,
-      email: created.email,
-      phone: created.phone || "",
-      role: created.role,
-      status: created.status,
-      joinDate: created.joinDate ? new Date(created.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-      department: created.department || "",
-      notes: created.notes || "",
-    });
-  } catch (error: any) {
-    console.error("Error creating member:", error);
-    if (error?.code === 11000) return res.status(400).json({ error: "Member with this email already exists" });
-    res.status(500).json({ error: "Failed to create member" });
+export const createMember: RequestHandler = asyncHandler(async (req, res) => {
+  const { name, email, phone, role, status, joinDate, department, notes } = req.body ?? {};
+  if (!name || !email || !role || !status) {
+    throw new ApiError(400, "name, email, role, and status are required");
   }
-};
+  await connectMongo();
+  const created = await MemberModel.create({
+    name,
+    email,
+    phone: phone || "",
+    role,
+    status,
+    joinDate: joinDate ? new Date(joinDate) : new Date(),
+    department: department || "",
+    notes: notes || "",
+  });
+  res.status(201).json({
+    id: idOf(created),
+    name: created.name,
+    email: created.email,
+    phone: created.phone || "",
+    role: created.role,
+    status: created.status,
+    joinDate: created.joinDate ? new Date(created.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+    department: created.department || "",
+    notes: created.notes || "",
+  });
+});
 
-export const updateMember: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    const { name, email, phone, role, status, joinDate, department, notes } = req.body ?? {};
-    const updateData: any = {};
-    if (name !== undefined) updateData.name = name;
-    if (email !== undefined) updateData.email = email;
-    if (phone !== undefined) updateData.phone = phone;
-    if (role !== undefined) updateData.role = role;
-    if (status !== undefined) updateData.status = status;
-    if (joinDate !== undefined) updateData.joinDate = new Date(joinDate);
-    if (department !== undefined) updateData.department = department;
-    if (notes !== undefined) updateData.notes = notes;
+export const updateMember: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  const { name, email, phone, role, status, joinDate, department, notes } = req.body ?? {};
+  const updateData: any = {};
+  if (name !== undefined) updateData.name = name;
+  if (email !== undefined) updateData.email = email;
+  if (phone !== undefined) updateData.phone = phone;
+  if (role !== undefined) updateData.role = role;
+  if (status !== undefined) updateData.status = status;
+  if (joinDate !== undefined) updateData.joinDate = new Date(joinDate);
+  if (department !== undefined) updateData.department = department;
+  if (notes !== undefined) updateData.notes = notes;
 
-    await connectMongo();
-    const updated = await MemberModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
-    if (!updated) return res.status(404).json({ error: "Member not found" });
-    res.json({
-      id: idOf(updated),
-      name: updated.name,
-      email: updated.email,
-      phone: updated.phone || "",
-      role: updated.role,
-      status: updated.status,
-      joinDate: updated.joinDate ? new Date(updated.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-      department: updated.department || "",
-      notes: updated.notes || "",
-    });
-  } catch (error: any) {
-    console.error("Error updating member:", error);
-    if (error?.code === 11000) return res.status(400).json({ error: "Member with this email already exists" });
-    res.status(500).json({ error: "Failed to update member" });
-  }
-};
+  await connectMongo();
+  const updated = await MemberModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  if (!updated) throw new ApiError(404, "Member not found");
+  res.json({
+    id: idOf(updated),
+    name: updated.name,
+    email: updated.email,
+    phone: updated.phone || "",
+    role: updated.role,
+    status: updated.status,
+    joinDate: updated.joinDate ? new Date(updated.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+    department: updated.department || "",
+    notes: updated.notes || "",
+  });
+});
 
-export const deleteMember: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const deleted = await MemberModel.findByIdAndDelete(id).exec();
-    if (!deleted) return res.status(404).json({ error: "Member not found" });
-    res.status(204).send();
-  } catch (error) {
-    console.error("Error deleting member:", error);
-    res.status(500).json({ error: "Failed to delete member" });
-  }
-};
+export const deleteMember: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const deleted = await MemberModel.findByIdAndDelete(id).exec();
+  if (!deleted) throw new ApiError(404, "Member not found");
+  res.status(204).send();
+});
 
 // News API
-export const getNews: RequestHandler = async (req, res) => {
-  try {
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+export const getNews: RequestHandler = asyncHandler(async (req, res) => {
+  const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
 
-    console.log("Fetching news articles, limit:", limit);
+  console.log("Fetching news articles, limit:", limit);
 
-    await connectMongo();
-    const query = NewsArticleModel.find().sort({ publishDate: -1 });
-    if (limit) query.limit(limit);
-    const result = await query.exec();
+  await connectMongo();
+  const query = NewsArticleModel.find().sort({ publishDate: -1 });
+  if (limit) query.limit(limit);
+  const result = await query.exec();
 
-    console.log(`Found ${result.length} news articles in database`);
+  console.log(`Found ${result.length} news articles in database`);
 
-    // Convert DB format to API format
-    const formattedResult = result.map((article) => ({
-      id: idOf(article),
-      title: article.title,
-      author: article.author,
-      publishDate: new Date(article.publishDate).toISOString(),
-      excerpt: article.excerpt,
-      body: article.body,
-      image: article.image || undefined,
-      featured: article.featured,
-      category: article.category || undefined,
-      tags: article.tags || [],
-      views: article.views,
-      createdAt: (article.createdAt ? new Date(article.createdAt) : new Date()).toISOString(),
-    }));
+  // Convert DB format to API format
+  const formattedResult = result.map((article) => ({
+    id: idOf(article),
+    title: article.title,
+    author: article.author,
+    publishDate: new Date(article.publishDate).toISOString(),
+    excerpt: article.excerpt,
+    body: article.body,
+    image: article.image || undefined,
+    featured: article.featured,
+    category: article.category || undefined,
+    tags: article.tags || [],
+    views: article.views,
+    createdAt: (article.createdAt ? new Date(article.createdAt) : new Date()).toISOString(),
+  }));
 
-    console.log(`Returning ${formattedResult.length} formatted news articles`);
-    res.json(formattedResult);
-  } catch (error: any) {
-    console.error("Error fetching news:", error);
-    console.error("Error details:", error.message, error.stack);
-    res.status(500).json({
-      error: "Failed to fetch news",
-      details: process.env.NODE_ENV === "development" ? error.message : undefined
-    });
+  console.log(`Returning ${formattedResult.length} formatted news articles`);
+  res.json(formattedResult);
+});
+
+export const getNewsArticle: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const article = await NewsArticleModel.findById(id).exec();
+
+  if (!article) {
+    throw new ApiError(404, "Article not found");
   }
-};
 
-export const getNewsArticle: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const article = await NewsArticleModel.findById(id).exec();
+  res.json({
+    id: idOf(article),
+    title: article.title,
+    author: article.author,
+    publishDate: new Date(article.publishDate).toISOString(),
+    excerpt: article.excerpt,
+    body: article.body,
+    image: article.image || undefined,
+    featured: article.featured,
+    category: article.category || undefined,
+    tags: article.tags || [],
+    views: article.views,
+    createdAt: (article.createdAt ? new Date(article.createdAt) : new Date()).toISOString(),
+  });
+});
 
-    if (!article) {
-      return res.status(404).json({ error: "Article not found" });
-    }
+export const createNews: RequestHandler = asyncHandler(async (req, res) => {
+  const { title, author, publishDate, excerpt, body, image, featured, category, tags } = req.body;
 
-    res.json({
-      id: idOf(article),
-      title: article.title,
-      author: article.author,
-      publishDate: new Date(article.publishDate).toISOString(),
-      excerpt: article.excerpt,
-      body: article.body,
-      image: article.image || undefined,
-      featured: article.featured,
-      category: article.category || undefined,
-      tags: article.tags || [],
-      views: article.views,
-      createdAt: (article.createdAt ? new Date(article.createdAt) : new Date()).toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error fetching news article:", error);
-    res.status(500).json({ error: "Failed to fetch news article" });
+  if (!title || !author || !excerpt || !body) {
+    throw new ApiError(400, "Title, author, excerpt, and body are required");
   }
-};
 
-export const createNews: RequestHandler = async (req, res) => {
-  try {
-    const { title, author, publishDate, excerpt, body, image, featured, category, tags } = req.body;
+  await connectMongo();
+  const newArticle = await NewsArticleModel.create({
+    title,
+    author,
+    publishDate: publishDate ? new Date(publishDate) : new Date(),
+    excerpt,
+    body,
+    image: image || undefined,
+    featured: !!featured,
+    category: category || undefined,
+    tags: tags || [],
+    views: 0,
+  });
 
-    if (!title || !author || !excerpt || !body) {
-      return res.status(400).json({ error: "Title, author, excerpt, and body are required" });
-    }
+  res.status(201).json({
+    id: idOf(newArticle),
+    title: newArticle.title,
+    author: newArticle.author,
+    publishDate: new Date(newArticle.publishDate).toISOString(),
+    excerpt: newArticle.excerpt,
+    body: newArticle.body,
+    image: newArticle.image || undefined,
+    featured: newArticle.featured,
+    category: newArticle.category || undefined,
+    tags: newArticle.tags || [],
+    views: newArticle.views,
+    createdAt: (newArticle.createdAt ? new Date(newArticle.createdAt) : new Date()).toISOString(),
+  });
+});
 
-    await connectMongo();
-    const newArticle = await NewsArticleModel.create({
-      title,
-      author,
-      publishDate: publishDate ? new Date(publishDate) : new Date(),
-      excerpt,
-      body,
-      image: image || undefined,
-      featured: !!featured,
-      category: category || undefined,
-      tags: tags || [],
-      views: 0,
-    });
+export const updateNews: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { title, author, publishDate, excerpt, body, image, featured, category, tags, views } = req.body;
 
-    res.status(201).json({
-      id: idOf(newArticle),
-      title: newArticle.title,
-      author: newArticle.author,
-      publishDate: new Date(newArticle.publishDate).toISOString(),
-      excerpt: newArticle.excerpt,
-      body: newArticle.body,
-      image: newArticle.image || undefined,
-      featured: newArticle.featured,
-      category: newArticle.category || undefined,
-      tags: newArticle.tags || [],
-      views: newArticle.views,
-      createdAt: (newArticle.createdAt ? new Date(newArticle.createdAt) : new Date()).toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error creating news article:", error);
-    if (error?.code === 11000) {
-      return res.status(400).json({ error: "Duplicate news article" });
-    }
-    res.status(500).json({
-      error: "Failed to create news article",
-      details: process.env.NODE_ENV === "development" ? error.message : undefined
-    });
-  }
-};
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  const updateData: any = {};
+  if (title !== undefined) updateData.title = title;
+  if (author !== undefined) updateData.author = author;
+  if (publishDate !== undefined) updateData.publishDate = new Date(publishDate);
+  if (excerpt !== undefined) updateData.excerpt = excerpt;
+  if (body !== undefined) updateData.body = body;
+  if (image !== undefined) updateData.image = image || undefined;
+  if (featured !== undefined) updateData.featured = featured;
+  if (category !== undefined) updateData.category = category || undefined;
+  if (tags !== undefined) updateData.tags = tags || [];
+  if (views !== undefined) updateData.views = views;
 
-export const updateNews: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { title, author, publishDate, excerpt, body, image, featured, category, tags, views } = req.body;
+  await connectMongo();
+  const updatedArticle = await NewsArticleModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  if (!updatedArticle) throw new ApiError(404, "Article not found");
 
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    const updateData: any = {};
-    if (title !== undefined) updateData.title = title;
-    if (author !== undefined) updateData.author = author;
-    if (publishDate !== undefined) updateData.publishDate = new Date(publishDate);
-    if (excerpt !== undefined) updateData.excerpt = excerpt;
-    if (body !== undefined) updateData.body = body;
-    if (image !== undefined) updateData.image = image || undefined;
-    if (featured !== undefined) updateData.featured = featured;
-    if (category !== undefined) updateData.category = category || undefined;
-    if (tags !== undefined) updateData.tags = tags || [];
-    if (views !== undefined) updateData.views = views;
+  res.json({
+    id: idOf(updatedArticle),
+    title: updatedArticle.title,
+    author: updatedArticle.author,
+    publishDate: new Date(updatedArticle.publishDate).toISOString(),
+    excerpt: updatedArticle.excerpt,
+    body: updatedArticle.body,
+    image: updatedArticle.image || undefined,
+    featured: updatedArticle.featured,
+    category: updatedArticle.category || undefined,
+    tags: updatedArticle.tags || [],
+    views: updatedArticle.views,
+    createdAt: (updatedArticle.createdAt ? new Date(updatedArticle.createdAt) : new Date()).toISOString(),
+  });
+});
 
-    await connectMongo();
-    const updatedArticle = await NewsArticleModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
-    if (!updatedArticle) return res.status(404).json({ error: "Article not found" });
-
-    res.json({
-      id: idOf(updatedArticle),
-      title: updatedArticle.title,
-      author: updatedArticle.author,
-      publishDate: new Date(updatedArticle.publishDate).toISOString(),
-      excerpt: updatedArticle.excerpt,
-      body: updatedArticle.body,
-      image: updatedArticle.image || undefined,
-      featured: updatedArticle.featured,
-      category: updatedArticle.category || undefined,
-      tags: updatedArticle.tags || [],
-      views: updatedArticle.views,
-      createdAt: (updatedArticle.createdAt ? new Date(updatedArticle.createdAt) : new Date()).toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error updating news article:", error);
-    res.status(500).json({ error: "Failed to update news article" });
-  }
-};
-
-export const deleteNews: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const deleted = await NewsArticleModel.findByIdAndDelete(id).exec();
-    if (!deleted) return res.status(404).json({ error: "Article not found" });
-    res.status(204).send();
-  } catch (error: any) {
-    console.error("Error deleting news article:", error);
-    res.status(500).json({ error: "Failed to delete news article" });
-  }
-};
+export const deleteNews: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const deleted = await NewsArticleModel.findByIdAndDelete(id).exec();
+  if (!deleted) throw new ApiError(404, "Article not found");
+  res.status(204).send();
+});
 
 // Projects API
-export const getProjects: RequestHandler = async (req, res) => {
-  try {
-    console.log("Fetching projects from database");
+export const getProjects: RequestHandler = asyncHandler(async (req, res) => {
+  console.log("Fetching projects from database");
 
-    await connectMongo();
-    console.log("Querying ProjectModel.find()...");
-    const result = await ProjectModel.find().sort({ createdAt: -1 }).exec();
-    console.log(`Found ${result.length} projects in database.`);
-    if (result.length > 0) {
-      console.log("First project name:", result[0].name);
-    }
-
-    const formattedResult = result.map((project) => ({
-      id: idOf(project),
-      name: project.name,
-      category: project.category,
-      topic: project.topic,
-      description: project.description,
-      distribution: project.distribution,
-      status: project.status,
-      year: project.year,
-      teamMembers: project.teamMembers || [],
-      startDate: project.startDate ? new Date(project.startDate).toISOString().split("T")[0] : undefined,
-      endDate: project.endDate ? new Date(project.endDate).toISOString().split("T")[0] : undefined,
-      budget: project.budget || undefined,
-      featured: !!project.featured,
-      createdAt: project.createdAt ? new Date(project.createdAt).toISOString() : new Date().toISOString(),
-    }));
-
-    console.log(`Returning ${formattedResult.length} formatted projects`);
-    res.json(formattedResult);
-  } catch (error: any) {
-    console.error("Error fetching projects:", error);
-    console.error("Error details:", error.message, error.stack);
-    console.error("Error code:", error.code);
-    res.status(500).json({
-      error: "Failed to fetch projects",
-      details: process.env.NODE_ENV === "development" ? error.message : undefined
-    });
+  await connectMongo();
+  console.log("Querying ProjectModel.find()...");
+  const result = await ProjectModel.find().sort({ createdAt: -1 }).exec();
+  console.log(`Found ${result.length} projects in database.`);
+  if (result.length > 0) {
+    console.log("First project name:", result[0].name);
   }
-};
 
-export const getProject: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const project = await ProjectModel.findById(id).exec();
+  const formattedResult = result.map((project) => ({
+    id: idOf(project),
+    name: project.name,
+    category: project.category,
+    topic: project.topic,
+    description: project.description,
+    distribution: project.distribution,
+    status: project.status,
+    year: project.year,
+    teamMembers: project.teamMembers || [],
+    startDate: project.startDate ? new Date(project.startDate).toISOString().split("T")[0] : undefined,
+    endDate: project.endDate ? new Date(project.endDate).toISOString().split("T")[0] : undefined,
+    budget: project.budget || undefined,
+    featured: !!project.featured,
+    createdAt: project.createdAt ? new Date(project.createdAt).toISOString() : new Date().toISOString(),
+  }));
 
-    if (!project) {
-      return res.status(404).json({ error: "Project not found" });
-    }
+  console.log(`Returning ${formattedResult.length} formatted projects`);
+  res.json(formattedResult);
+});
 
-    res.json({
-      id: idOf(project),
-      name: project.name,
-      category: project.category,
-      topic: project.topic,
-      description: project.description,
-      distribution: project.distribution,
-      status: project.status,
-      year: project.year,
-      teamMembers: project.teamMembers || [],
-      startDate: project.startDate ? new Date(project.startDate).toISOString().split("T")[0] : undefined,
-      endDate: project.endDate ? new Date(project.endDate).toISOString().split("T")[0] : undefined,
-      budget: project.budget || undefined,
-      featured: !!project.featured,
-      createdAt: project.createdAt ? new Date(project.createdAt).toISOString() : new Date().toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error fetching project:", error);
-    res.status(500).json({ error: "Failed to fetch project" });
+export const getProject: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const project = await ProjectModel.findById(id).exec();
+
+  if (!project) {
+    throw new ApiError(404, "Project not found");
   }
-};
 
-export const createProject: RequestHandler = async (req, res) => {
-  try {
-    const { name, category, topic, description, distribution, status, year, teamMembers, startDate, endDate, budget, featured } = req.body;
+  res.json({
+    id: idOf(project),
+    name: project.name,
+    category: project.category,
+    topic: project.topic,
+    description: project.description,
+    distribution: project.distribution,
+    status: project.status,
+    year: project.year,
+    teamMembers: project.teamMembers || [],
+    startDate: project.startDate ? new Date(project.startDate).toISOString().split("T")[0] : undefined,
+    endDate: project.endDate ? new Date(project.endDate).toISOString().split("T")[0] : undefined,
+    budget: project.budget || undefined,
+    featured: !!project.featured,
+    createdAt: project.createdAt ? new Date(project.createdAt).toISOString() : new Date().toISOString(),
+  });
+});
 
-    if (!name || !category || !topic || !description || !distribution || !status || !year) {
-      return res.status(400).json({ error: "Name, category, topic, description, distribution, status, and year are required" });
-    }
+export const createProject: RequestHandler = asyncHandler(async (req, res) => {
+  const { name, category, topic, description, distribution, status, year, teamMembers, startDate, endDate, budget, featured } = req.body;
 
-    await connectMongo();
-    const newProject = await ProjectModel.create({
-      name,
-      category,
-      topic,
-      description,
-      distribution,
-      status,
-      year,
-      teamMembers: teamMembers || [],
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
-      budget: budget ?? undefined,
-      featured: !!featured,
-    });
-
-    res.status(201).json({
-      id: idOf(newProject),
-      name: newProject.name,
-      category: newProject.category,
-      topic: newProject.topic,
-      description: newProject.description,
-      distribution: newProject.distribution,
-      status: newProject.status,
-      year: newProject.year,
-      teamMembers: newProject.teamMembers || [],
-      startDate: newProject.startDate ? new Date(newProject.startDate).toISOString().split("T")[0] : undefined,
-      endDate: newProject.endDate ? new Date(newProject.endDate).toISOString().split("T")[0] : undefined,
-      budget: newProject.budget || undefined,
-      featured: !!newProject.featured,
-      createdAt: newProject.createdAt ? new Date(newProject.createdAt).toISOString() : new Date().toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error creating project:", error);
-    if (error?.code === 11000) {
-      return res.status(400).json({ error: "Duplicate project" });
-    }
-    res.status(500).json({
-      error: "Failed to create project",
-      details: process.env.NODE_ENV === "development" ? error.message : undefined
-    });
+  if (!name || !category || !topic || !description || !distribution || !status || !year) {
+    throw new ApiError(400, "Name, category, topic, description, distribution, status, and year are required");
   }
-};
 
-export const updateProject: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, category, topic, description, distribution, status, year, teamMembers, startDate, endDate, budget, featured } = req.body;
+  await connectMongo();
+  const newProject = await ProjectModel.create({
+    name,
+    category,
+    topic,
+    description,
+    distribution,
+    status,
+    year,
+    teamMembers: teamMembers || [],
+    startDate: startDate ? new Date(startDate) : undefined,
+    endDate: endDate ? new Date(endDate) : undefined,
+    budget: budget ?? undefined,
+    featured: !!featured,
+  });
 
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    const updateData: any = {};
-    if (name !== undefined) updateData.name = name;
-    if (category !== undefined) updateData.category = category;
-    if (topic !== undefined) updateData.topic = topic;
-    if (description !== undefined) updateData.description = description;
-    if (distribution !== undefined) updateData.distribution = distribution;
-    if (status !== undefined) updateData.status = status;
-    if (year !== undefined) updateData.year = year;
-    if (teamMembers !== undefined) updateData.teamMembers = teamMembers || [];
-    if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : undefined;
-    if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : undefined;
-    if (budget !== undefined) updateData.budget = budget ?? undefined;
-    if (featured !== undefined) updateData.featured = !!featured;
+  res.status(201).json({
+    id: idOf(newProject),
+    name: newProject.name,
+    category: newProject.category,
+    topic: newProject.topic,
+    description: newProject.description,
+    distribution: newProject.distribution,
+    status: newProject.status,
+    year: newProject.year,
+    teamMembers: newProject.teamMembers || [],
+    startDate: newProject.startDate ? new Date(newProject.startDate).toISOString().split("T")[0] : undefined,
+    endDate: newProject.endDate ? new Date(newProject.endDate).toISOString().split("T")[0] : undefined,
+    budget: newProject.budget || undefined,
+    featured: !!newProject.featured,
+    createdAt: newProject.createdAt ? new Date(newProject.createdAt).toISOString() : new Date().toISOString(),
+  });
+});
 
-    await connectMongo();
-    const updatedProject = await ProjectModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
-    if (!updatedProject) return res.status(404).json({ error: "Project not found" });
+export const updateProject: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { name, category, topic, description, distribution, status, year, teamMembers, startDate, endDate, budget, featured } = req.body;
 
-    res.json({
-      id: idOf(updatedProject),
-      name: updatedProject.name,
-      category: updatedProject.category,
-      topic: updatedProject.topic,
-      description: updatedProject.description,
-      distribution: updatedProject.distribution,
-      status: updatedProject.status,
-      year: updatedProject.year,
-      teamMembers: updatedProject.teamMembers || [],
-      startDate: updatedProject.startDate ? new Date(updatedProject.startDate).toISOString().split("T")[0] : undefined,
-      endDate: updatedProject.endDate ? new Date(updatedProject.endDate).toISOString().split("T")[0] : undefined,
-      budget: updatedProject.budget || undefined,
-      featured: !!updatedProject.featured,
-      createdAt: updatedProject.createdAt ? new Date(updatedProject.createdAt).toISOString() : new Date().toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error updating project:", error);
-    res.status(500).json({ error: "Failed to update project" });
-  }
-};
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  const updateData: any = {};
+  if (name !== undefined) updateData.name = name;
+  if (category !== undefined) updateData.category = category;
+  if (topic !== undefined) updateData.topic = topic;
+  if (description !== undefined) updateData.description = description;
+  if (distribution !== undefined) updateData.distribution = distribution;
+  if (status !== undefined) updateData.status = status;
+  if (year !== undefined) updateData.year = year;
+  if (teamMembers !== undefined) updateData.teamMembers = teamMembers || [];
+  if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : undefined;
+  if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : undefined;
+  if (budget !== undefined) updateData.budget = budget ?? undefined;
+  if (featured !== undefined) updateData.featured = !!featured;
 
-export const deleteProject: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const deleted = await ProjectModel.findByIdAndDelete(id).exec();
-    if (!deleted) return res.status(404).json({ error: "Project not found" });
-    res.status(204).send();
-  } catch (error: any) {
-    console.error("Error deleting project:", error);
-    res.status(500).json({ error: "Failed to delete project" });
-  }
-};
+  await connectMongo();
+  const updatedProject = await ProjectModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  if (!updatedProject) throw new ApiError(404, "Project not found");
+
+  res.json({
+    id: idOf(updatedProject),
+    name: updatedProject.name,
+    category: updatedProject.category,
+    topic: updatedProject.topic,
+    description: updatedProject.description,
+    distribution: updatedProject.distribution,
+    status: updatedProject.status,
+    year: updatedProject.year,
+    teamMembers: updatedProject.teamMembers || [],
+    startDate: updatedProject.startDate ? new Date(updatedProject.startDate).toISOString().split("T")[0] : undefined,
+    endDate: updatedProject.endDate ? new Date(updatedProject.endDate).toISOString().split("T")[0] : undefined,
+    budget: updatedProject.budget || undefined,
+    featured: !!updatedProject.featured,
+    createdAt: updatedProject.createdAt ? new Date(updatedProject.createdAt).toISOString() : new Date().toISOString(),
+  });
+});
+
+export const deleteProject: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const deleted = await ProjectModel.findByIdAndDelete(id).exec();
+  if (!deleted) throw new ApiError(404, "Project not found");
+  res.status(204).send();
+});
 
 // Events API
-export const getEvents: RequestHandler = async (req, res) => {
-  try {
-    await connectMongo();
-    const status = (req.query.status as string | undefined) || undefined;
-    const upcoming = req.query.upcoming === "true";
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+export const getEvents: RequestHandler = asyncHandler(async (req, res) => {
+  await connectMongo();
+  const status = (req.query.status as string | undefined) || undefined;
+  const upcoming = req.query.upcoming === "true";
+  const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
 
-    const where: any = {};
-    if (status) where.status = status;
-    if (upcoming) {
-      // Relaxed filter: either status is explicitly 'upcoming' OR the date is today or later
-      const startOfToday = new Date();
-      startOfToday.setHours(0, 0, 0, 0);
-      where.$or = [
-        { status: "upcoming" },
-        { date: { $gte: startOfToday } }
-      ];
-    }
+  const where: any = {};
+  if (status) where.status = status;
+  if (upcoming) {
+    // Relaxed filter: either status is explicitly 'upcoming' OR the date is today or later
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
 
-    const sort =
-      where.status === "upcoming"
-        ? { date: 1 } // soonest first
-        : { date: -1 }; // latest first
-
-    const query = EventModel.find(where).sort(sort);
-    if (limit && Number.isFinite(limit)) query.limit(limit);
-    console.log("Querying EventModel with filter:", JSON.stringify(where));
-    const result = await query.exec();
-    console.log(`Found ${result.length} events in database matching criteria.`);
-    if (result.length > 0) {
-      console.log("First event title:", result[0].title);
-    }
-    res.json(
-      result.map((e: any) => ({
-        id: idOf(e),
-        title: e.title,
-        description: e.description,
-        date: e.date ? new Date(e.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-        time: e.time,
-        location: e.location,
-        category: e.category,
-        rsvpRequired: !!e.rsvpRequired,
-        rsvpCount: e.rsvpCount || 0,
-        maxAttendees: e.maxAttendees,
-        attendees: e.attendees || [],
-        status: e.status,
-      }))
-    );
-  } catch (error) {
-    console.error("Error fetching events:", error);
-    res.status(500).json({ error: "Failed to fetch events" });
+    where.$or = [
+      { status: "upcoming" },
+      { date: { $gte: startOfToday } }
+    ];
   }
-};
+
+  const events = await EventModel.find(where)
+    .sort({ date: upcoming ? 1 : -1 })
+    .limit(limit || 100)
+    .exec();
+
+  res.json(events.map((e: any) => ({
+    id: idOf(e),
+    title: e.title,
+    description: e.description,
+    date: e.date.toISOString().split("T")[0],
+    time: e.time,
+    location: e.location,
+    category: e.category,
+    status: e.status,
+    image: e.image,
+    registrationUrl: e.registrationUrl,
+    createdAt: e.createdAt ? e.createdAt.toISOString() : new Date().toISOString(),
+  })));
+});
 
 export const getEvent: RequestHandler = asyncHandler(async (req, res) => {
   const { id } = req.params;

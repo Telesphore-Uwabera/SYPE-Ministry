@@ -55,7 +55,7 @@ export default function Projects() {
 
   const fetchEvents = async () => {
     try {
-      const apiUrl = buildApiUrl("/api/events?upcoming=true&limit=6");
+      const apiUrl = buildApiUrl("/api/events?limit=6");
       const response = await fetch(apiUrl, { cache: "no-store" });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();

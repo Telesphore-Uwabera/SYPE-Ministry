@@ -118,7 +118,7 @@ export default function MTNPayment({ variant = "bar", className = "", topOffset 
   const defaultTop = "md:top-12 top-0";
   return (
     <div
-      className={`fixed left-0 right-0 z-[70] bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-white transition-all duration-300 ${className}`}
+      className={`fixed left-0 right-0 z-[70] bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-white transition-all duration-300 ${!topOffset ? defaultTop : ""} ${className}`}
       style={topOffset ? { top: topOffset } : {}}
     >
       <div className="container mx-auto px-4">

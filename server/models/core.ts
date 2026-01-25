@@ -40,6 +40,7 @@ export const ProjectModel: any =
         startDate: { type: Date },
         endDate: { type: Date },
         budget: { type: Number },
+        featured: { type: Boolean, default: false },
       },
       { timestamps: true, collection: "projects" }
     )

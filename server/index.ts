@@ -12,6 +12,7 @@ import * as youtubeRoutes from "./routes/youtube";
 import * as seoRoutes from "./routes/seo";
 import mongoose from "mongoose";
 import { connectMongo } from "./lib/mongoose";
+import { ApiError } from "./lib/errorHandling";
 
 function sanitizeErrorMessage(message: string) {
   // Best-effort redaction of credentials inside connection strings.
@@ -313,6 +314,14 @@ export function createServer() {
   // Error handling middleware
   app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     console.error("Error:", err);
+
+    if (err instanceof ApiError) {
+      return res.status(err.statusCode).json({
+        error: err.name,
+        message: err.message,
+      });
+    }
+
     res.status(500).json({
       error: "Internal server error",
       message: process.env.NODE_ENV === "development" ? err.message : "Something went wrong",

@@ -2,6 +2,7 @@ import { RequestHandler, Request, Response } from "express";
 import { Readable } from "stream";
 import { Member, NewsArticle, Project, Event, Donation, FAQ, MediaFile, EmailCampaign, Book, EmailSubscriber, CommitteeMember, Devotion } from "../../client/types/admin";
 import { connectMongo, isValidObjectId } from "../lib/mongoose";
+import { ApiError, asyncHandler } from "../lib/errorHandling";
 import {
   BookModel,
   CommitteeMemberModel,
@@ -401,9 +402,12 @@ export const getProjects: RequestHandler = async (req, res) => {
     console.log("Fetching projects from database");
 
     await connectMongo();
+    console.log("Querying ProjectModel.find()...");
     const result = await ProjectModel.find().sort({ createdAt: -1 }).exec();
-
-    console.log(`Found ${result.length} projects in database`);
+    console.log(`Found ${result.length} projects in database.`);
+    if (result.length > 0) {
+      console.log("First project name:", result[0].name);
+    }
 
     const formattedResult = result.map((project) => ({
       id: idOf(project),
@@ -418,6 +422,7 @@ export const getProjects: RequestHandler = async (req, res) => {
       startDate: project.startDate ? new Date(project.startDate).toISOString().split("T")[0] : undefined,
       endDate: project.endDate ? new Date(project.endDate).toISOString().split("T")[0] : undefined,
       budget: project.budget || undefined,
+      featured: !!project.featured,
       createdAt: project.createdAt ? new Date(project.createdAt).toISOString() : new Date().toISOString(),
     }));
 
@@ -458,6 +463,7 @@ export const getProject: RequestHandler = async (req, res) => {
       startDate: project.startDate ? new Date(project.startDate).toISOString().split("T")[0] : undefined,
       endDate: project.endDate ? new Date(project.endDate).toISOString().split("T")[0] : undefined,
       budget: project.budget || undefined,
+      featured: !!project.featured,
       createdAt: project.createdAt ? new Date(project.createdAt).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
@@ -468,7 +474,7 @@ export const getProject: RequestHandler = async (req, res) => {
 
 export const createProject: RequestHandler = async (req, res) => {
   try {
-    const { name, category, topic, description, distribution, status, year, teamMembers, startDate, endDate, budget } = req.body;
+    const { name, category, topic, description, distribution, status, year, teamMembers, startDate, endDate, budget, featured } = req.body;
 
     if (!name || !category || !topic || !description || !distribution || !status || !year) {
       return res.status(400).json({ error: "Name, category, topic, description, distribution, status, and year are required" });
@@ -487,6 +493,7 @@ export const createProject: RequestHandler = async (req, res) => {
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
       budget: budget ?? undefined,
+      featured: !!featured,
     });
 
     res.status(201).json({
@@ -502,6 +509,7 @@ export const createProject: RequestHandler = async (req, res) => {
       startDate: newProject.startDate ? new Date(newProject.startDate).toISOString().split("T")[0] : undefined,
       endDate: newProject.endDate ? new Date(newProject.endDate).toISOString().split("T")[0] : undefined,
       budget: newProject.budget || undefined,
+      featured: !!newProject.featured,
       createdAt: newProject.createdAt ? new Date(newProject.createdAt).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
@@ -519,7 +527,7 @@ export const createProject: RequestHandler = async (req, res) => {
 export const updateProject: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, category, topic, description, distribution, status, year, teamMembers, startDate, endDate, budget } = req.body;
+    const { name, category, topic, description, distribution, status, year, teamMembers, startDate, endDate, budget, featured } = req.body;
 
     if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     const updateData: any = {};
@@ -534,6 +542,7 @@ export const updateProject: RequestHandler = async (req, res) => {
     if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : undefined;
     if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : undefined;
     if (budget !== undefined) updateData.budget = budget ?? undefined;
+    if (featured !== undefined) updateData.featured = !!featured;
 
     await connectMongo();
     const updatedProject = await ProjectModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
@@ -552,6 +561,7 @@ export const updateProject: RequestHandler = async (req, res) => {
       startDate: updatedProject.startDate ? new Date(updatedProject.startDate).toISOString().split("T")[0] : undefined,
       endDate: updatedProject.endDate ? new Date(updatedProject.endDate).toISOString().split("T")[0] : undefined,
       budget: updatedProject.budget || undefined,
+      featured: !!updatedProject.featured,
       createdAt: updatedProject.createdAt ? new Date(updatedProject.createdAt).toISOString() : new Date().toISOString(),
     });
   } catch (error: any) {
@@ -585,10 +595,13 @@ export const getEvents: RequestHandler = async (req, res) => {
     const where: any = {};
     if (status) where.status = status;
     if (upcoming) {
-      where.status = "upcoming";
+      // Relaxed filter: either status is explicitly 'upcoming' OR the date is today or later
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
-      where.date = { $gte: startOfToday };
+      where.$or = [
+        { status: "upcoming" },
+        { date: { $gte: startOfToday } }
+      ];
     }
 
     const sort =
@@ -598,7 +611,12 @@ export const getEvents: RequestHandler = async (req, res) => {
 
     const query = EventModel.find(where).sort(sort);
     if (limit && Number.isFinite(limit)) query.limit(limit);
+    console.log("Querying EventModel with filter:", JSON.stringify(where));
     const result = await query.exec();
+    console.log(`Found ${result.length} events in database matching criteria.`);
+    if (result.length > 0) {
+      console.log("First event title:", result[0].title);
+    }
     res.json(
       result.map((e: any) => ({
         id: idOf(e),
@@ -621,241 +639,206 @@ export const getEvents: RequestHandler = async (req, res) => {
   }
 };
 
-export const getEvent: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const event = await EventModel.findById(id).exec();
-    if (!event) return res.status(404).json({ error: "Event not found" });
-    res.json({
-      id: idOf(event),
-      title: event.title,
-      description: event.description,
-      date: event.date ? new Date(event.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-      time: event.time,
-      location: event.location,
-      category: event.category,
-      rsvpRequired: !!event.rsvpRequired,
-      rsvpCount: event.rsvpCount || 0,
-      maxAttendees: event.maxAttendees,
-      attendees: event.attendees || [],
-      status: event.status,
-    });
-  } catch (error) {
-    console.error("Error fetching event:", error);
-    res.status(500).json({ error: "Failed to fetch event" });
-  }
-};
+export const getEvent: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const event = await EventModel.findById(id).exec();
+  if (!event) throw new ApiError(404, "Event not found");
+  res.json({
+    id: idOf(event),
+    title: event.title,
+    description: event.description,
+    date: event.date ? new Date(event.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+    time: event.time,
+    location: event.location,
+    category: event.category,
+    rsvpRequired: !!event.rsvpRequired,
+    rsvpCount: event.rsvpCount || 0,
+    maxAttendees: event.maxAttendees,
+    attendees: (event as any).attendees || [],
+    status: event.status,
+  });
+});
 
-export const createEvent: RequestHandler = async (req, res) => {
-  try {
-    const { title, description, date, time, location, category, rsvpRequired, maxAttendees, status } = req.body ?? {};
-    if (!title || !description || !date || !time || !location || !category || !status) {
-      return res.status(400).json({ error: "title, description, date, time, location, category, and status are required" });
-    }
-    await connectMongo();
-    const created = await EventModel.create({
-      title,
-      description,
-      date: new Date(date),
-      time,
-      location,
-      category,
-      rsvpRequired: !!rsvpRequired,
-      maxAttendees: maxAttendees ?? undefined,
-      status,
-      rsvpCount: 0,
-      attendees: [],
-    });
-    res.status(201).json({
-      id: idOf(created),
-      title: created.title,
-      description: created.description,
-      date: new Date(created.date).toISOString().split("T")[0],
-      time: created.time,
-      location: created.location,
-      category: created.category,
-      rsvpRequired: !!created.rsvpRequired,
-      rsvpCount: created.rsvpCount || 0,
-      maxAttendees: created.maxAttendees,
-      attendees: created.attendees || [],
-      status: created.status,
-    });
-  } catch (error) {
-    console.error("Error creating event:", error);
-    res.status(500).json({ error: "Failed to create event" });
+export const createEvent: RequestHandler = asyncHandler(async (req, res) => {
+  const { title, description, date, time, location, category, rsvpRequired, maxAttendees, status } = req.body ?? {};
+  if (!title || !description || !date || !time || !location || !category || !status) {
+    throw new ApiError(400, "title, description, date, time, location, category, and status are required");
   }
-};
+  await connectMongo();
+  const created = await EventModel.create({
+    title,
+    description,
+    date: new Date(date),
+    time,
+    location,
+    category,
+    rsvpRequired: !!rsvpRequired,
+    maxAttendees: maxAttendees ?? undefined,
+    status,
+    rsvpCount: 0,
+    attendees: [],
+  });
+  res.status(201).json({
+    id: idOf(created),
+    title: created.title,
+    description: created.description,
+    date: new Date(created.date).toISOString().split("T")[0],
+    time: created.time,
+    location: created.location,
+    category: created.category,
+    rsvpRequired: !!created.rsvpRequired,
+    rsvpCount: created.rsvpCount || 0,
+    maxAttendees: created.maxAttendees,
+    attendees: created.attendees || [],
+    status: created.status,
+  });
+});
 
-export const updateEvent: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    const { title, description, date, time, location, category, rsvpRequired, maxAttendees, status, attendees, rsvpCount } = req.body ?? {};
-    const updateData: any = {};
-    if (title !== undefined) updateData.title = title;
-    if (description !== undefined) updateData.description = description;
-    if (date !== undefined) updateData.date = new Date(date);
-    if (time !== undefined) updateData.time = time;
-    if (location !== undefined) updateData.location = location;
-    if (category !== undefined) updateData.category = category;
-    if (rsvpRequired !== undefined) updateData.rsvpRequired = !!rsvpRequired;
-    if (maxAttendees !== undefined) updateData.maxAttendees = maxAttendees;
-    if (status !== undefined) updateData.status = status;
-    if (attendees !== undefined) updateData.attendees = attendees || [];
-    if (rsvpCount !== undefined) updateData.rsvpCount = rsvpCount;
+export const updateEvent: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  const { title, description, date, time, location, category, rsvpRequired, maxAttendees, status, attendees, rsvpCount } = req.body ?? {};
+  const updateData: any = {};
+  if (title !== undefined) updateData.title = title;
+  if (description !== undefined) updateData.description = description;
+  if (date !== undefined) updateData.date = new Date(date);
+  if (time !== undefined) updateData.time = time;
+  if (location !== undefined) updateData.location = location;
+  if (category !== undefined) updateData.category = category;
+  if (rsvpRequired !== undefined) updateData.rsvpRequired = !!rsvpRequired;
+  if (maxAttendees !== undefined) updateData.maxAttendees = maxAttendees;
+  if (status !== undefined) updateData.status = status;
+  if (attendees !== undefined) updateData.attendees = attendees || [];
+  if (rsvpCount !== undefined) updateData.rsvpCount = rsvpCount;
 
-    await connectMongo();
-    const updated = await EventModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
-    if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json({
-      id: idOf(updated),
-      title: updated.title,
-      description: updated.description,
-      date: updated.date ? new Date(updated.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-      time: updated.time,
-      location: updated.location,
-      category: updated.category,
-      rsvpRequired: !!updated.rsvpRequired,
-      rsvpCount: updated.rsvpCount || 0,
-      maxAttendees: updated.maxAttendees,
-      attendees: updated.attendees || [],
-      status: updated.status,
-    });
-  } catch (error) {
-    console.error("Error updating event:", error);
-    res.status(500).json({ error: "Failed to update event" });
-  }
-};
+  await connectMongo();
+  const updated = await EventModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  if (!updated) throw new ApiError(404, "Event not found");
+  res.json({
+    id: idOf(updated),
+    title: updated.title,
+    description: updated.description,
+    date: updated.date ? new Date(updated.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+    time: updated.time,
+    location: updated.location,
+    category: updated.category,
+    rsvpRequired: !!updated.rsvpRequired,
+    rsvpCount: updated.rsvpCount || 0,
+    maxAttendees: updated.maxAttendees,
+    attendees: (updated as any).attendees || [],
+    status: updated.status,
+  });
+});
 
-export const deleteEvent: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const deleted = await EventModel.findByIdAndDelete(id).exec();
-    if (!deleted) return res.status(404).json({ error: "Event not found" });
-    res.status(204).send();
-  } catch (error) {
-    console.error("Error deleting event:", error);
-    res.status(500).json({ error: "Failed to delete event" });
-  }
-};
+export const deleteEvent: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const deleted = await EventModel.findByIdAndDelete(id).exec();
+  if (!deleted) throw new ApiError(404, "Event not found");
+  res.status(204).send();
+});
 
 // Donations API
-export const getDonations: RequestHandler = async (req, res) => {
-  try {
-    await connectMongo();
-    const result = await DonationModel.find().sort({ date: -1 }).exec();
-    res.json(
-      result.map((d: any) => ({
-        id: idOf(d),
-        donorName: d.donorName,
-        donorEmail: d.donorEmail,
-        donorPhone: d.donorPhone || "",
-        amount: d.amount,
-        amountPaid: Number(d.amountPaid || 0),
-        currency: d.currency || "RWF",
-        date: d.date ? new Date(d.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-        type: d.type,
-        paymentMethod: d.paymentMethod || "",
-        paymentStatus: d.paymentStatus || "unpaid",
-        receiptSent: !!d.receiptSent,
-        notes: d.notes || "",
-        projectId: d.projectId || "",
-      }))
-    );
-  } catch (error) {
-    console.error("Error fetching donations:", error);
-    res.status(500).json({ error: "Failed to fetch donations" });
+export const getDonations: RequestHandler = asyncHandler(async (req, res) => {
+  await connectMongo();
+  const result = await DonationModel.find().sort({ date: -1 }).exec();
+  res.json(
+    result.map((d: any) => ({
+      id: idOf(d),
+      donorName: d.donorName,
+      donorEmail: d.donorEmail,
+      donorPhone: d.donorPhone || "",
+      amount: d.amount,
+      amountPaid: d.amountPaid || 0,
+      currency: d.currency || "RWF",
+      date: d.date ? new Date(d.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      type: d.type,
+      paymentMethod: d.paymentMethod || "",
+      paymentStatus: d.paymentStatus || "unpaid",
+      receiptSent: !!d.receiptSent,
+      notes: d.notes || "",
+      projectId: d.projectId || "",
+    }))
+  );
+});
+
+export const getDonation: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const donation = await DonationModel.findById(id).exec();
+  if (!donation) throw new ApiError(404, "Donation not found");
+  res.json({
+    id: idOf(donation),
+    donorName: donation.donorName,
+    donorEmail: donation.donorEmail,
+    donorPhone: donation.donorPhone || "",
+    amount: donation.amount,
+    amountPaid: donation.amountPaid || 0,
+    currency: donation.currency || "RWF",
+    date: donation.date ? new Date(donation.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+    type: donation.type,
+    paymentMethod: donation.paymentMethod || "",
+    paymentStatus: donation.paymentStatus || "unpaid",
+    receiptSent: !!donation.receiptSent,
+    notes: donation.notes || "",
+    projectId: donation.projectId || "",
+  });
+});
+
+export const createDonation: RequestHandler = asyncHandler(async (req, res) => {
+  const { donorName, donorEmail, donorPhone, amount, amountPaid, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent, paymentDeadline } = req.body ?? {};
+  if (!donorName || !donorEmail || amount === undefined || amount === null || !type || !paymentMethod) {
+    throw new ApiError(400, "Donor name, email, amount, type, and payment method are required");
   }
-};
 
-export const getDonation: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const donation = await DonationModel.findById(id).exec();
-    if (!donation) return res.status(404).json({ error: "Donation not found" });
-    res.json({
-      id: idOf(donation),
-      donorName: donation.donorName,
-      donorEmail: donation.donorEmail,
-      donorPhone: donation.donorPhone || "",
-      amount: donation.amount,
-      amountPaid: Number(donation.amountPaid || 0),
-      currency: donation.currency || "RWF",
-      date: donation.date ? new Date(donation.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-      type: donation.type,
-      paymentMethod: donation.paymentMethod || "",
-      paymentStatus: donation.paymentStatus || "unpaid",
-      receiptSent: !!donation.receiptSent,
-      notes: donation.notes || "",
-      projectId: donation.projectId || "",
-    });
-  } catch (error) {
-    console.error("Error fetching donation:", error);
-    res.status(500).json({ error: "Failed to fetch donation" });
+  const baseAmount = Number(amount) || 0;
+  const status = String(paymentStatus || "unpaid");
+  let paid = Number(amountPaid || 0) || 0;
+  if (status === "paid") paid = baseAmount;
+  if (status === "unpaid") paid = 0;
+  if (paid < 0 || paid > baseAmount) {
+    throw new ApiError(400, "amountPaid must be between 0 and amount");
   }
-};
 
-export const createDonation: RequestHandler = async (req, res) => {
-  try {
-    const { donorName, donorEmail, donorPhone, amount, amountPaid, currency, date, type, paymentMethod, paymentStatus, projectId, notes, receiptSent, paymentDeadline } = req.body ?? {};
-    if (!donorName || !donorEmail || amount === undefined || amount === null || !type || !paymentMethod) {
-      return res.status(400).json({ error: "Donor name, email, amount, type, and payment method are required" });
-    }
-
-    const baseAmount = Number(amount) || 0;
-    const status = String(paymentStatus || "unpaid");
-    let paid = Number(amountPaid || 0) || 0;
-    if (status === "paid") paid = baseAmount;
-    if (status === "unpaid") paid = 0;
-    if (paid < 0 || paid > baseAmount) {
-      return res.status(400).json({ error: "amountPaid must be between 0 and amount" });
-    }
-
-    await connectMongo();
-    const created = await DonationModel.create({
-      donorName,
-      donorEmail,
-      donorPhone: donorPhone || "",
-      amount: baseAmount,
-      amountPaid: paid,
-      currency: currency || "RWF",
-      date: date ? new Date(date) : new Date(),
-      type,
-      paymentMethod: String(paymentMethod),
-      paymentStatus: status,
-      projectId: projectId || "",
-      receiptSent: !!receiptSent,
-      notes: notes || "",
-      paymentDeadline: paymentDeadline ? new Date(paymentDeadline) : undefined,
-    });
-    res.status(201).json({
-      id: idOf(created),
-      donorName: created.donorName,
-      donorEmail: created.donorEmail,
-      donorPhone: created.donorPhone || "",
-      amount: created.amount,
-      amountPaid: Number(created.amountPaid || 0),
-      currency: created.currency || "RWF",
-      date: created.date ? new Date(created.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-      type: created.type,
-      paymentMethod: created.paymentMethod || "",
-      paymentStatus: created.paymentStatus || "unpaid",
-      projectId: created.projectId || "",
-      receiptSent: !!created.receiptSent,
-      notes: created.notes || "",
-      paymentDeadline: created.paymentDeadline ? new Date(created.paymentDeadline).toISOString().split("T")[0] : undefined,
-    });
-  } catch (error) {
-    console.error("Error creating donation:", error);
-    res.status(500).json({ error: "Failed to create donation" });
-  }
-};
+  await connectMongo();
+  const created = await DonationModel.create({
+    donorName,
+    donorEmail,
+    donorPhone: donorPhone || "",
+    amount: baseAmount,
+    amountPaid: paid,
+    currency: currency || "RWF",
+    date: date ? new Date(date) : new Date(),
+    type,
+    paymentMethod: String(paymentMethod),
+    paymentStatus: status,
+    projectId: projectId || "",
+    receiptSent: !!receiptSent,
+    notes: notes || "",
+    paymentDeadline: paymentDeadline ? new Date(paymentDeadline) : undefined,
+  });
+  res.status(201).json({
+    id: idOf(created),
+    donorName: created.donorName,
+    donorEmail: created.donorEmail,
+    donorPhone: created.donorPhone || "",
+    amount: created.amount,
+    amountPaid: created.amountPaid || 0,
+    currency: created.currency || "RWF",
+    date: created.date ? new Date(created.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+    type: created.type,
+    paymentMethod: created.paymentMethod || "",
+    paymentStatus: created.paymentStatus || "unpaid",
+    projectId: created.projectId || "",
+    receiptSent: !!created.receiptSent,
+    notes: created.notes || "",
+    paymentDeadline: created.paymentDeadline ? new Date(created.paymentDeadline).toISOString().split("T")[0] : undefined,
+  });
+});
 
 // Public Donations API (used by the public donation form)
 // Sends:
@@ -1419,178 +1402,45 @@ export const deleteDonation: RequestHandler = async (req, res) => {
   }
 };
 
-export const sendDonationReceipt: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+export const sendDonationReceipt: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
 
-    await connectMongo();
-    const donation = await DonationModel.findById(id).exec();
-    if (!donation) return res.status(404).json({ error: "Donation not found" });
+  await connectMongo();
+  const donation = await DonationModel.findById(id).exec();
+  if (!donation) throw new ApiError(404, "Donation not found");
 
-    const donorEmail = String(donation.donorEmail || "").trim();
-    const donorName = String(donation.donorName || "").trim();
-    if (!donorEmail) return res.status(400).json({ error: "Donor email is missing" });
+  const donorEmail = String(donation.donorEmail || "").trim();
+  const donorName = String(donation.donorName || "").trim();
+  if (!donorEmail) throw new ApiError(400, "Donor email is missing");
 
-    const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
-    const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").trim().replace(/\/+$/, "");
-    const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
-    const contactPhone = (process.env.CONTACT_PHONE || "").trim();
+  const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
+  const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").trim().replace(/\/+$/, "");
+  const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
+  const contactPhone = (process.env.CONTACT_PHONE || "").trim();
 
-    const receiptNo = idOf(donation);
-    const amount = Number(donation.amount || 0);
-    const amountPaid = Number(donation.amountPaid || 0);
-    const currency = String(donation.currency || "RWF");
-    const donationDate = donation.date ? new Date(donation.date) : new Date();
-    const donationDateText = donationDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
-    const status = String(donation.paymentStatus || "unpaid");
-    const received = status === "paid" ? amount : status === "installment" ? amountPaid : 0;
-    const remaining = Math.max(0, amount - received);
+  const receiptNo = idOf(donation);
+  const amount = Number(donation.amount || 0);
+  const amountPaid = Number(donation.amountPaid || 0);
+  const currency = String(donation.currency || "RWF");
+  const donationDate = donation.date ? new Date(donation.date) : new Date();
+  const donationDateText = donationDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  const status = String(donation.paymentStatus || "unpaid");
+  const received = status === "paid" ? amount : status === "installment" ? amountPaid : 0;
+  const remaining = Math.max(0, amount - received);
 
-    const deadlineDate = donation.paymentDeadline ? new Date(donation.paymentDeadline) : null;
-    const deadlineText = deadlineDate ? deadlineDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "None";
+  const deadlineDate = donation.paymentDeadline ? new Date(donation.paymentDeadline) : null;
+  const deadlineText = deadlineDate ? deadlineDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "None";
 
-    const subject = `Donation Receipt - ${siteName}`;
-    const safeName = escapeHtml(donorName || "Donor");
+  const subject = `Donation Receipt - ${siteName}`;
+  const safeName = escapeHtml(donorName || "Donor");
 
-    const html = `
+  const html = `
       <!DOCTYPE html>
       <html>
       <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Donation Receipt - ${escapeHtml(siteName)}</title>
+        <meta charset="utf-8">
         <style>
-          @media print {
-            body { margin: 0; padding: 20px; }
-            .receipt-card { box-shadow: none !important; border: 2px solid #000 !important; }
-          }
-          body {
-            font-family: 'Georgia', 'Times New Roman', serif;
-            line-height: 1.6;
-            color: #1a1a1a;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 20px;
-          }
-          .receipt-container {
-            max-width: 700px;
-            margin: 0 auto;
-            background-color: #ffffff;
-          }
-          .receipt-card {
-            border: 3px solid #2c5282;
-            border-radius: 12px;
-            padding: 40px;
-            background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-          }
-          .letterhead {
-            text-align: center;
-            border-bottom: 3px double #2c5282;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-          }
-          .ministry-name {
-            font-size: 28px;
-            font-weight: bold;
-            color: #2c5282;
-            margin: 0 0 8px 0;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-          }
-          .ministry-tagline {
-            font-size: 13px;
-            color: #5a6c7d;
-            font-style: italic;
-            margin: 0;
-          }
-          .receipt-title {
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            color: #1a1a1a;
-            margin: 20px 0;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-          }
-          .greeting {
-            font-size: 16px;
-            margin: 20px 0;
-          }
-          .scripture-box {
-            background-color: #eef2f7;
-            border-left: 4px solid #2c5282;
-            padding: 15px 20px;
-            margin: 20px 0;
-            font-style: italic;
-            color: #2c5282;
-          }
-          .receipt-details {
-            border: 2px solid #2c5282;
-            border-radius: 8px;
-            padding: 25px;
-            margin: 25px 0;
-            background-color: #ffffff;
-          }
-          .detail-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #e2e8f0;
-          }
-          .detail-row:last-child {
-            border-bottom: none;
-            font-weight: bold;
-            font-size: 18px;
-          }
-          .detail-label {
-            font-weight: 600;
-            color: #2d3748;
-          }
-          .detail-value {
-            color: #1a1a1a;
-            text-align: right;
-          }
-          .blessing {
-            background-color: #fef3c7;
-            border: 1px solid #f59e0b;
-            border-radius: 6px;
-            padding: 15px;
-            margin: 20px 0;
-            text-align: center;
-            font-style: italic;
-            color: #92400e;
-          }
-          .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px solid #e2e8f0;
-            font-size: 14px;
-          }
-          .signature-section {
-            margin-top: 40px;
-            text-align: center;
-          }
-          .signature-line {
-            border-top: 2px solid #2c5282;
-            width: 300px;
-            margin: 40px auto 10px;
-          }
-          .contact-info {
-            font-size: 12px;
-            color: #5a6c7d;
-            text-align: center;
-            margin-top: 20px;
-          }
-          .official-stamp {
-            text-align: center;
-            margin: 20px 0;
-            padding: 10px;
-            border: 2px dashed #2c5282;
-            border-radius: 8px;
-            font-size: 12px;
-            color: #2c5282;
             font-weight: bold;
           }
         </style>
@@ -1720,7 +1570,7 @@ export const sendDonationReceipt: RequestHandler = async (req, res) => {
       </html>
     `;
 
-    const text = `Donation Receipt - ${siteName}
+  const text = `Donation Receipt - ${siteName}
 Receipt #: ${receiptNo}
 Date: ${donationDateText}
 Amount: ${amount.toLocaleString()} ${currency}
@@ -1733,529 +1583,424 @@ Questions? Contact: ${contactEmail}${contactPhone ? `, ${contactPhone}` : ""}
 Website: ${siteUrl}
 `;
 
-    const { messageId } = await sendMail({
-      to: donorEmail,
-      subject,
-      html,
-      text,
-      replyTo: contactEmail || undefined,
-    });
+  const { messageId } = await sendMail({
+    to: donorEmail,
+    subject,
+    html,
+    text,
+    replyTo: contactEmail || undefined,
+  });
 
-    // Mark as sent only after successful email send
-    donation.receiptSent = true;
-    await donation.save();
+  // Mark as sent only after successful email send
+  donation.receiptSent = true;
+  await donation.save();
 
-    res.json({ ok: true, messageId });
-  } catch (error: any) {
-    console.error("Error sending donation receipt:", error);
-    res.status(500).json({
-      error: error?.message || "Failed to send receipt",
-      code: error?.code,
-      responseCode: error?.responseCode,
-    });
-  }
-};
+  res.json({ ok: true, messageId });
+});
 
 // FAQs API
-export const getFAQs: RequestHandler = async (req, res) => {
-  try {
-    await connectMongo();
-    const result = await FAQModel.find().sort({ category: 1, order: 1 }).exec();
+export const getFAQs: RequestHandler = asyncHandler(async (req, res) => {
+  await connectMongo();
+  const result = await FAQModel.find().sort({ category: 1, order: 1 }).exec();
 
-    const formattedResult = result.map((faq) => ({
-      id: idOf(faq),
-      category: faq.category,
-      question: faq.question,
-      answer: faq.answer,
-      order: faq.order,
-      createdAt: faq.createdAt ? new Date(faq.createdAt).toISOString() : new Date().toISOString(),
-    }));
+  const formattedResult = result.map((faq) => ({
+    id: idOf(faq),
+    category: faq.category,
+    question: faq.question,
+    answer: faq.answer,
+    order: faq.order,
+    createdAt: (faq as any).createdAt ? new Date((faq as any).createdAt).toISOString() : new Date().toISOString(),
+  }));
 
-    res.json(formattedResult);
-  } catch (error: any) {
-    console.error("Error fetching FAQs:", error);
-    res.status(500).json({ error: "Failed to fetch FAQs" });
+  res.json(formattedResult);
+});
+
+export const getFAQ: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const faq = await FAQModel.findById(id).exec();
+
+  if (!faq) {
+    throw new ApiError(404, "FAQ not found");
   }
-};
 
-export const getFAQ: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const faq = await FAQModel.findById(id).exec();
+  res.json({
+    id: idOf(faq),
+    category: faq.category,
+    question: faq.question,
+    answer: faq.answer,
+    order: faq.order,
+    createdAt: (faq as any).createdAt ? new Date((faq as any).createdAt).toISOString() : new Date().toISOString(),
+  });
+});
 
-    if (!faq) {
-      return res.status(404).json({ error: "FAQ not found" });
-    }
+export const createFAQ: RequestHandler = asyncHandler(async (req, res) => {
+  const { category, question, answer, order } = req.body;
 
-    res.json({
-      id: idOf(faq),
-      category: faq.category,
-      question: faq.question,
-      answer: faq.answer,
-      order: faq.order,
-      createdAt: faq.createdAt ? new Date(faq.createdAt).toISOString() : new Date().toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error fetching FAQ:", error);
-    res.status(500).json({ error: "Failed to fetch FAQ" });
+  if (!category || !question || !answer) {
+    throw new ApiError(400, "Category, question, and answer are required");
   }
-};
 
-export const createFAQ: RequestHandler = async (req, res) => {
-  try {
-    const { category, question, answer, order } = req.body;
+  await connectMongo();
+  const newFAQ = await FAQModel.create({
+    category,
+    question,
+    answer,
+    order: order || 0,
+  });
 
-    if (!category || !question || !answer) {
-      return res.status(400).json({ error: "Category, question, and answer are required" });
-    }
+  res.status(201).json({
+    id: idOf(newFAQ),
+    category: newFAQ.category,
+    question: newFAQ.question,
+    answer: newFAQ.answer,
+    order: newFAQ.order,
+    createdAt: (newFAQ as any).createdAt ? new Date((newFAQ as any).createdAt).toISOString() : new Date().toISOString(),
+  });
+});
 
-    await connectMongo();
-    const newFAQ = await FAQModel.create({
-      category,
-      question,
-      answer,
-      order: order || 0,
-    });
+export const updateFAQ: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { category, question, answer, order } = req.body;
 
-    res.status(201).json({
-      id: idOf(newFAQ),
-      category: newFAQ.category,
-      question: newFAQ.question,
-      answer: newFAQ.answer,
-      order: newFAQ.order,
-      createdAt: newFAQ.createdAt ? new Date(newFAQ.createdAt).toISOString() : new Date().toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error creating FAQ:", error);
-    if (error?.code === 11000) {
-      return res.status(400).json({ error: "Duplicate FAQ" });
-    }
-    res.status(500).json({
-      error: "Failed to create FAQ",
-      details: process.env.NODE_ENV === "development" ? error.message : undefined
-    });
-  }
-};
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  const updateData: any = {};
+  if (category !== undefined) updateData.category = category;
+  if (question !== undefined) updateData.question = question;
+  if (answer !== undefined) updateData.answer = answer;
+  if (order !== undefined) updateData.order = order;
 
-export const updateFAQ: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { category, question, answer, order } = req.body;
+  await connectMongo();
+  const updatedFAQ = await FAQModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  if (!updatedFAQ) throw new ApiError(404, "FAQ not found");
 
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    const updateData: any = {};
-    if (category !== undefined) updateData.category = category;
-    if (question !== undefined) updateData.question = question;
-    if (answer !== undefined) updateData.answer = answer;
-    if (order !== undefined) updateData.order = order;
+  res.json({
+    id: idOf(updatedFAQ),
+    category: updatedFAQ.category,
+    question: updatedFAQ.question,
+    answer: updatedFAQ.answer,
+    order: updatedFAQ.order,
+    createdAt: (updatedFAQ as any).createdAt ? new Date((updatedFAQ as any).createdAt).toISOString() : new Date().toISOString(),
+  });
+});
 
-    await connectMongo();
-    const updatedFAQ = await FAQModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
-    if (!updatedFAQ) return res.status(404).json({ error: "FAQ not found" });
-
-    res.json({
-      id: idOf(updatedFAQ),
-      category: updatedFAQ.category,
-      question: updatedFAQ.question,
-      answer: updatedFAQ.answer,
-      order: updatedFAQ.order,
-      createdAt: updatedFAQ.createdAt ? new Date(updatedFAQ.createdAt).toISOString() : new Date().toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error updating FAQ:", error);
-    res.status(500).json({ error: "Failed to update FAQ" });
-  }
-};
-
-export const deleteFAQ: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const deleted = await FAQModel.findByIdAndDelete(id).exec();
-    if (!deleted) return res.status(404).json({ error: "FAQ not found" });
-    res.status(204).send();
-  } catch (error: any) {
-    console.error("Error deleting FAQ:", error);
-    res.status(500).json({ error: "Failed to delete FAQ" });
-  }
-};
+export const deleteFAQ: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const deleted = await FAQModel.findByIdAndDelete(id).exec();
+  if (!deleted) throw new ApiError(404, "FAQ not found");
+  res.status(204).send();
+});
 
 // Media API
-export const getMedia: RequestHandler = async (req, res) => {
-  try {
-    await connectMongo();
-    const category = req.query.category as string | undefined;
-    const type = req.query.type as string | undefined;
+export const getMedia: RequestHandler = asyncHandler(async (req, res) => {
+  await connectMongo();
+  const category = req.query.category as string | undefined;
+  const type = req.query.type as string | undefined;
 
-    const where: any = {};
-    if (type && type !== "all") where.type = type;
-    if (category && category !== "all") {
-      const categories = category
-        .split(",")
-        .map((c) => c.trim())
-        .filter(Boolean);
-      // match any of the categories loosely (exact or contains) - case-insensitive
-      where.$or = categories.map((c) => ({
-        category: { $regex: c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" },
-      }));
-    }
-
-    const result = await MediaFileModel.find(where).sort({ uploadDate: -1, createdAt: -1 }).exec();
-    res.json(
-      result.map((m: any) => ({
-        id: idOf(m),
-        name: m.name,
-        type: m.type,
-        url: m.url,
-        size: m.size,
-        uploadDate: m.uploadDate ? new Date(m.uploadDate).toISOString() : new Date().toISOString(),
-        category: m.category || undefined,
-        description: m.description || undefined,
-        tags: m.tags || [],
-        thumbnail: m.thumbnail || undefined,
-        youtubeUrl: m.youtubeUrl || undefined,
-      }))
-    );
-  } catch (error) {
-    console.error("Error fetching media files:", error);
-    res.status(500).json({ error: "Failed to fetch media files" });
+  const where: any = {};
+  if (type && type !== "all") where.type = type;
+  if (category && category !== "all") {
+    const categories = category
+      .split(",")
+      .map((c) => c.trim())
+      .filter(Boolean);
+    // match any of the categories loosely (exact or contains) - case-insensitive
+    where.$or = categories.map((c) => ({
+      category: { $regex: c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" },
+    }));
   }
-};
 
-export const getMediaFile: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const file = await MediaFileModel.findById(id).exec();
-    if (!file) return res.status(404).json({ error: "Media file not found" });
-    res.json({
-      id: idOf(file),
-      name: file.name,
-      type: file.type,
-      url: file.url,
-      size: file.size,
-      uploadDate: file.uploadDate ? new Date(file.uploadDate).toISOString() : new Date().toISOString(),
-      category: file.category || undefined,
-      description: file.description || undefined,
-      tags: file.tags || [],
-      thumbnail: file.thumbnail || undefined,
-      youtubeUrl: file.youtubeUrl || undefined,
-    });
-  } catch (error) {
-    console.error("Error fetching media file:", error);
-    res.status(500).json({ error: "Failed to fetch media file" });
+  const result = await MediaFileModel.find(where).sort({ uploadDate: -1, createdAt: -1 }).exec();
+  res.json(
+    result.map((m: any) => ({
+      id: idOf(m),
+      name: m.name,
+      type: m.type,
+      url: m.url,
+      size: m.size,
+      uploadDate: m.uploadDate ? new Date(m.uploadDate).toISOString() : new Date().toISOString(),
+      category: m.category || undefined,
+      description: m.description || undefined,
+      tags: m.tags || [],
+      thumbnail: m.thumbnail || undefined,
+      youtubeUrl: m.youtubeUrl || undefined,
+    }))
+  );
+});
+
+export const getMediaFile: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const file = await MediaFileModel.findById(id).exec();
+  if (!file) throw new ApiError(404, "Media file not found");
+  res.json({
+    id: idOf(file),
+    name: file.name,
+    type: file.type,
+    url: file.url,
+    size: file.size,
+    uploadDate: file.uploadDate ? new Date(file.uploadDate).toISOString() : new Date().toISOString(),
+    category: file.category || undefined,
+    description: file.description || undefined,
+    tags: file.tags || [],
+    thumbnail: file.thumbnail || undefined,
+    youtubeUrl: file.youtubeUrl || undefined,
+  });
+});
+
+export const createMedia: RequestHandler = asyncHandler(async (req, res) => {
+  const { name, type, url, size, category, description, tags, thumbnail, youtubeUrl } = req.body ?? {};
+  if (!name || !type || !url || size === undefined || size === null) {
+    throw new ApiError(400, "Name, type, url, and size are required");
   }
-};
+  await connectMongo();
+  const created = await MediaFileModel.create({
+    name,
+    type,
+    url,
+    size: Number(size) || 0,
+    uploadDate: new Date(),
+    category: category || undefined,
+    description: description || undefined,
+    tags: Array.isArray(tags) ? tags : [],
+    thumbnail: thumbnail || undefined,
+    youtubeUrl: youtubeUrl || undefined,
+  });
+  res.status(201).json({
+    id: idOf(created),
+    name: created.name,
+    type: created.type,
+    url: created.url,
+    size: created.size,
+    uploadDate: created.uploadDate ? new Date(created.uploadDate).toISOString() : new Date().toISOString(),
+    category: created.category || undefined,
+    description: created.description || undefined,
+    tags: created.tags || [],
+    thumbnail: created.thumbnail || undefined,
+    youtubeUrl: created.youtubeUrl || undefined,
+  });
+});
 
-export const createMedia: RequestHandler = async (req, res) => {
-  try {
-    const { name, type, url, size, category, description, tags, thumbnail, youtubeUrl } = req.body ?? {};
-    if (!name || !type || !url || size === undefined || size === null) {
-      return res.status(400).json({ error: "Name, type, url, and size are required" });
-    }
-    await connectMongo();
-    const created = await MediaFileModel.create({
-      name,
-      type,
-      url,
-      size: Number(size) || 0,
-      uploadDate: new Date(),
-      category: category || undefined,
-      description: description || undefined,
-      tags: Array.isArray(tags) ? tags : [],
-      thumbnail: thumbnail || undefined,
-      youtubeUrl: youtubeUrl || undefined,
-    });
-    res.status(201).json({
-      id: idOf(created),
-      name: created.name,
-      type: created.type,
-      url: created.url,
-      size: created.size,
-      uploadDate: created.uploadDate ? new Date(created.uploadDate).toISOString() : new Date().toISOString(),
-      category: created.category || undefined,
-      description: created.description || undefined,
-      tags: created.tags || [],
-      thumbnail: created.thumbnail || undefined,
-      youtubeUrl: created.youtubeUrl || undefined,
-    });
-  } catch (error) {
-    console.error("Error creating media file:", error);
-    res.status(500).json({ error: "Failed to create media file" });
-  }
-};
+export const updateMedia: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  const { name, category, description, tags, thumbnail, youtubeUrl } = req.body ?? {};
+  const updateData: any = {};
+  if (name !== undefined) updateData.name = name;
+  if (category !== undefined) updateData.category = category;
+  if (description !== undefined) updateData.description = description;
+  if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : [];
+  if (thumbnail !== undefined) updateData.thumbnail = thumbnail || undefined;
+  if (youtubeUrl !== undefined) updateData.youtubeUrl = youtubeUrl || undefined;
 
-export const updateMedia: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    const { name, category, description, tags, thumbnail, youtubeUrl } = req.body ?? {};
-    const updateData: any = {};
-    if (name !== undefined) updateData.name = name;
-    if (category !== undefined) updateData.category = category;
-    if (description !== undefined) updateData.description = description;
-    if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : [];
-    if (thumbnail !== undefined) updateData.thumbnail = thumbnail || undefined;
-    if (youtubeUrl !== undefined) updateData.youtubeUrl = youtubeUrl || undefined;
+  await connectMongo();
+  const updated = await MediaFileModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  if (!updated) throw new ApiError(404, "Media file not found");
+  res.json({
+    id: idOf(updated),
+    name: updated.name,
+    type: updated.type,
+    url: updated.url,
+    size: updated.size,
+    uploadDate: updated.uploadDate ? new Date(updated.uploadDate).toISOString() : new Date().toISOString(),
+    category: updated.category || undefined,
+    description: updated.description || undefined,
+    tags: updated.tags || [],
+    thumbnail: updated.thumbnail || undefined,
+    youtubeUrl: updated.youtubeUrl || undefined,
+  });
+});
 
-    await connectMongo();
-    const updated = await MediaFileModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
-    if (!updated) return res.status(404).json({ error: "Media file not found" });
-    res.json({
-      id: idOf(updated),
-      name: updated.name,
-      type: updated.type,
-      url: updated.url,
-      size: updated.size,
-      uploadDate: updated.uploadDate ? new Date(updated.uploadDate).toISOString() : new Date().toISOString(),
-      category: updated.category || undefined,
-      description: updated.description || undefined,
-      tags: updated.tags || [],
-      thumbnail: updated.thumbnail || undefined,
-      youtubeUrl: updated.youtubeUrl || undefined,
-    });
-  } catch (error) {
-    console.error("Error updating media file:", error);
-    res.status(500).json({ error: "Failed to update media file" });
-  }
-};
-
-export const deleteMedia: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const deleted = await MediaFileModel.findByIdAndDelete(id).exec();
-    if (!deleted) return res.status(404).json({ error: "Media file not found" });
-    res.status(204).send();
-  } catch (error) {
-    console.error("Error deleting media file:", error);
-    res.status(500).json({ error: "Failed to delete media file" });
-  }
-};
+export const deleteMedia: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const deleted = await MediaFileModel.findByIdAndDelete(id).exec();
+  if (!deleted) throw new ApiError(404, "Media file not found");
+  res.status(204).send();
+});
 
 // Books API
-export const getBooks: RequestHandler = async (req, res) => {
-  try {
-    const category = req.query.category as string | undefined;
-    console.log("Fetching books, category filter:", category);
+export const getBooks: RequestHandler = asyncHandler(async (req, res) => {
+  const category = req.query.category as string | undefined;
+  console.log("Fetching books, category filter:", category);
 
-    const where: any = {};
-    if (category && category !== "All") where.category = category;
+  const where: any = {};
+  if (category && category !== "All") where.category = category;
 
-    await connectMongo();
-    const result = await BookModel.find(where).sort({ uploadDate: -1 }).exec();
+  await connectMongo();
+  const result = await BookModel.find(where).sort({ uploadDate: -1 }).exec();
 
-    console.log(`Found ${result.length} books in database`);
+  console.log(`Found ${result.length} books in database`);
 
-    const formattedResult = result.map((book) => ({
-      id: idOf(book),
-      title: book.title,
-      author: book.author || undefined,
-      category: book.category,
-      description: book.description || undefined,
-      coverImage: book.coverImage || undefined,
-      fileUrl: book.fileUrl || undefined,
-      isbn: book.isbn || undefined,
-      publisher: book.publisher || undefined,
-      publishDate: book.publishDate ? new Date(book.publishDate).toISOString().split("T")[0] : undefined,
-      language: book.language || undefined,
-      pages: book.pages || undefined,
-      tags: book.tags || [],
-      featured: book.featured,
-      downloads: book.downloads,
-      uploadDate: book.uploadDate ? new Date(book.uploadDate).toISOString() : new Date().toISOString(),
-    }));
+  const formattedResult = result.map((book) => ({
+    id: idOf(book),
+    title: book.title,
+    author: book.author || undefined,
+    category: book.category,
+    description: book.description || undefined,
+    coverImage: book.coverImage || undefined,
+    fileUrl: book.fileUrl || undefined,
+    isbn: book.isbn || undefined,
+    publisher: book.publisher || undefined,
+    publishDate: book.publishDate ? new Date(book.publishDate).toISOString().split("T")[0] : undefined,
+    language: book.language || undefined,
+    pages: book.pages || undefined,
+    tags: book.tags || [],
+    featured: book.featured,
+    downloads: book.downloads,
+    uploadDate: book.uploadDate ? new Date(book.uploadDate).toISOString() : new Date().toISOString(),
+  }));
 
-    console.log(`Returning ${formattedResult.length} formatted books`);
-    res.json(formattedResult);
-  } catch (error: any) {
-    console.error("Error fetching books:", error);
-    console.error("Error details:", error.message, error.stack);
-    console.error("Error code:", error.code);
-    res.status(500).json({
-      error: "Failed to fetch books",
-      details: process.env.NODE_ENV === "development" ? error.message : undefined
-    });
+  console.log(`Returning ${formattedResult.length} formatted books`);
+  res.json(formattedResult);
+});
+
+export const getBook: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const book = await BookModel.findById(id).exec();
+
+  if (!book) {
+    throw new ApiError(404, "Book not found");
   }
-};
 
-export const getBook: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const book = await BookModel.findById(id).exec();
+  res.json({
+    id: idOf(book),
+    title: book.title,
+    author: book.author || undefined,
+    category: book.category,
+    description: book.description || undefined,
+    coverImage: book.coverImage || undefined,
+    fileUrl: book.fileUrl || undefined,
+    isbn: book.isbn || undefined,
+    publisher: book.publisher || undefined,
+    publishDate: book.publishDate ? new Date(book.publishDate).toISOString().split("T")[0] : undefined,
+    language: book.language || undefined,
+    pages: book.pages || undefined,
+    tags: book.tags || [],
+    featured: book.featured,
+    downloads: book.downloads,
+    uploadDate: book.uploadDate ? new Date(book.uploadDate).toISOString() : new Date().toISOString(),
+  });
+});
 
-    if (!book) {
-      return res.status(404).json({ error: "Book not found" });
-    }
+export const createBook: RequestHandler = asyncHandler(async (req, res) => {
+  const { title, author, category, description, coverImage, fileUrl, isbn, publisher, publishDate, language, pages, tags, featured } = req.body;
 
-    res.json({
-      id: idOf(book),
-      title: book.title,
-      author: book.author || undefined,
-      category: book.category,
-      description: book.description || undefined,
-      coverImage: book.coverImage || undefined,
-      fileUrl: book.fileUrl || undefined,
-      isbn: book.isbn || undefined,
-      publisher: book.publisher || undefined,
-      publishDate: book.publishDate ? new Date(book.publishDate).toISOString().split("T")[0] : undefined,
-      language: book.language || undefined,
-      pages: book.pages || undefined,
-      tags: book.tags || [],
-      featured: book.featured,
-      downloads: book.downloads,
-      uploadDate: book.uploadDate ? new Date(book.uploadDate).toISOString() : new Date().toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error fetching book:", error);
-    res.status(500).json({ error: "Failed to fetch book" });
+  if (!title || !category) {
+    throw new ApiError(400, "Title and category are required");
   }
-};
 
-export const createBook: RequestHandler = async (req, res) => {
-  try {
-    const { title, author, category, description, coverImage, fileUrl, isbn, publisher, publishDate, language, pages, tags, featured } = req.body;
+  await connectMongo();
+  const newBook = await BookModel.create({
+    title,
+    author: author || undefined,
+    category,
+    description: description || undefined,
+    coverImage: coverImage || undefined,
+    fileUrl: fileUrl || undefined,
+    isbn: isbn || undefined,
+    publisher: publisher || undefined,
+    publishDate: publishDate ? new Date(publishDate) : undefined,
+    language: language || undefined,
+    pages: pages || undefined,
+    tags: tags || [],
+    featured: !!featured,
+    downloads: 0,
+    uploadDate: new Date(),
+  });
 
-    if (!title || !category) {
-      return res.status(400).json({ error: "Title and category are required" });
-    }
+  res.status(201).json({
+    id: idOf(newBook),
+    title: newBook.title,
+    author: newBook.author || undefined,
+    category: newBook.category,
+    description: newBook.description || undefined,
+    coverImage: newBook.coverImage || undefined,
+    fileUrl: newBook.fileUrl || undefined,
+    isbn: newBook.isbn || undefined,
+    publisher: newBook.publisher || undefined,
+    publishDate: newBook.publishDate ? new Date(newBook.publishDate).toISOString().split("T")[0] : undefined,
+    language: newBook.language || undefined,
+    pages: newBook.pages || undefined,
+    tags: newBook.tags || [],
+    featured: newBook.featured,
+    downloads: newBook.downloads,
+    uploadDate: newBook.uploadDate ? new Date(newBook.uploadDate).toISOString() : new Date().toISOString(),
+  });
+});
 
-    await connectMongo();
-    const newBook = await BookModel.create({
-      title,
-      author: author || undefined,
-      category,
-      description: description || undefined,
-      coverImage: coverImage || undefined,
-      fileUrl: fileUrl || undefined,
-      isbn: isbn || undefined,
-      publisher: publisher || undefined,
-      publishDate: publishDate ? new Date(publishDate) : undefined,
-      language: language || undefined,
-      pages: pages || undefined,
-      tags: tags || [],
-      featured: !!featured,
-      downloads: 0,
-      uploadDate: new Date(),
-    });
+export const updateBook: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { title, author, category, description, coverImage, fileUrl, isbn, publisher, publishDate, language, pages, tags, featured } = req.body;
 
-    res.status(201).json({
-      id: idOf(newBook),
-      title: newBook.title,
-      author: newBook.author || undefined,
-      category: newBook.category,
-      description: newBook.description || undefined,
-      coverImage: newBook.coverImage || undefined,
-      fileUrl: newBook.fileUrl || undefined,
-      isbn: newBook.isbn || undefined,
-      publisher: newBook.publisher || undefined,
-      publishDate: newBook.publishDate ? new Date(newBook.publishDate).toISOString().split("T")[0] : undefined,
-      language: newBook.language || undefined,
-      pages: newBook.pages || undefined,
-      tags: newBook.tags || [],
-      featured: newBook.featured,
-      downloads: newBook.downloads,
-      uploadDate: newBook.uploadDate ? new Date(newBook.uploadDate).toISOString() : new Date().toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error creating book:", error);
-    if (error?.code === 11000) {
-      return res.status(400).json({ error: "Duplicate book" });
-    }
-    res.status(500).json({
-      error: "Failed to create book",
-      details: process.env.NODE_ENV === "development" ? error.message : undefined
-    });
-  }
-};
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  const updateData: any = {};
+  if (title !== undefined) updateData.title = title;
+  if (author !== undefined) updateData.author = author || undefined;
+  if (category !== undefined) updateData.category = category;
+  if (description !== undefined) updateData.description = description || undefined;
+  if (coverImage !== undefined) updateData.coverImage = coverImage || undefined;
+  if (fileUrl !== undefined) updateData.fileUrl = fileUrl || undefined;
+  if (isbn !== undefined) updateData.isbn = isbn || undefined;
+  if (publisher !== undefined) updateData.publisher = publisher || undefined;
+  if (publishDate !== undefined) updateData.publishDate = publishDate ? new Date(publishDate) : undefined;
+  if (language !== undefined) updateData.language = language || undefined;
+  if (pages !== undefined) updateData.pages = pages || undefined;
+  if (tags !== undefined) updateData.tags = tags || [];
+  if (featured !== undefined) updateData.featured = featured;
 
-export const updateBook: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { title, author, category, description, coverImage, fileUrl, isbn, publisher, publishDate, language, pages, tags, featured } = req.body;
+  await connectMongo();
+  const updatedBook = await BookModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  if (!updatedBook) throw new ApiError(404, "Book not found");
 
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    const updateData: any = {};
-    if (title !== undefined) updateData.title = title;
-    if (author !== undefined) updateData.author = author || undefined;
-    if (category !== undefined) updateData.category = category;
-    if (description !== undefined) updateData.description = description || undefined;
-    if (coverImage !== undefined) updateData.coverImage = coverImage || undefined;
-    if (fileUrl !== undefined) updateData.fileUrl = fileUrl || undefined;
-    if (isbn !== undefined) updateData.isbn = isbn || undefined;
-    if (publisher !== undefined) updateData.publisher = publisher || undefined;
-    if (publishDate !== undefined) updateData.publishDate = publishDate ? new Date(publishDate) : undefined;
-    if (language !== undefined) updateData.language = language || undefined;
-    if (pages !== undefined) updateData.pages = pages || undefined;
-    if (tags !== undefined) updateData.tags = tags || [];
-    if (featured !== undefined) updateData.featured = featured;
+  res.json({
+    id: idOf(updatedBook),
+    title: updatedBook.title,
+    author: updatedBook.author || undefined,
+    category: updatedBook.category,
+    description: updatedBook.description || undefined,
+    coverImage: updatedBook.coverImage || undefined,
+    fileUrl: updatedBook.fileUrl || undefined,
+    isbn: updatedBook.isbn || undefined,
+    publisher: updatedBook.publisher || undefined,
+    publishDate: updatedBook.publishDate ? new Date(updatedBook.publishDate).toISOString().split("T")[0] : undefined,
+    language: updatedBook.language || undefined,
+    pages: updatedBook.pages || undefined,
+    tags: updatedBook.tags || [],
+    featured: updatedBook.featured,
+    downloads: updatedBook.downloads,
+    uploadDate: updatedBook.uploadDate ? new Date(updatedBook.uploadDate).toISOString() : new Date().toISOString(),
+  });
+});
 
-    await connectMongo();
-    const updatedBook = await BookModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
-    if (!updatedBook) return res.status(404).json({ error: "Book not found" });
+export const deleteBook: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const deleted = await BookModel.findByIdAndDelete(id).exec();
+  if (!deleted) throw new ApiError(404, "Book not found");
+  res.status(204).send();
+});
 
-    res.json({
-      id: idOf(updatedBook),
-      title: updatedBook.title,
-      author: updatedBook.author || undefined,
-      category: updatedBook.category,
-      description: updatedBook.description || undefined,
-      coverImage: updatedBook.coverImage || undefined,
-      fileUrl: updatedBook.fileUrl || undefined,
-      isbn: updatedBook.isbn || undefined,
-      publisher: updatedBook.publisher || undefined,
-      publishDate: updatedBook.publishDate ? new Date(updatedBook.publishDate).toISOString().split("T")[0] : undefined,
-      language: updatedBook.language || undefined,
-      pages: updatedBook.pages || undefined,
-      tags: updatedBook.tags || [],
-      featured: updatedBook.featured,
-      downloads: updatedBook.downloads,
-      uploadDate: updatedBook.uploadDate ? new Date(updatedBook.uploadDate).toISOString() : new Date().toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error updating book:", error);
-    res.status(500).json({ error: "Failed to update book" });
-  }
-};
-
-export const deleteBook: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const deleted = await BookModel.findByIdAndDelete(id).exec();
-    if (!deleted) return res.status(404).json({ error: "Book not found" });
-    res.status(204).send();
-  } catch (error: any) {
-    console.error("Error deleting book:", error);
-    res.status(500).json({ error: "Failed to delete book" });
-  }
-};
-
-export const trackBookDownload: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const updatedBook = await BookModel.findByIdAndUpdate(
-      id,
-      { $inc: { downloads: 1 } },
-      { new: true }
-    ).exec();
-    if (!updatedBook) return res.status(404).json({ error: "Book not found" });
-    res.json({ downloads: updatedBook.downloads });
-  } catch (error: any) {
-    console.error("Error tracking book download:", error);
-    res.status(500).json({ error: "Failed to track book download" });
-  }
-};
+export const trackBookDownload: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const updatedBook = await BookModel.findByIdAndUpdate(
+    id,
+    { $inc: { downloads: 1 } },
+    { new: true }
+  ).exec();
+  if (!updatedBook) throw new ApiError(404, "Book not found");
+  res.json({ downloads: updatedBook.downloads });
+});
 
 function safePdfFilename(title: string | undefined) {
   const base = (title || "book")
@@ -2267,167 +2012,146 @@ function safePdfFilename(title: string | undefined) {
   return `${base || "book"}.pdf`;
 }
 
-export const downloadBookPdf: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+export const downloadBookPdf: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
 
-    await connectMongo();
-    const book = await BookModel.findByIdAndUpdate(id, { $inc: { downloads: 1 } }, { new: true }).exec();
-    if (!book) return res.status(404).json({ error: "Book not found" });
-    if (!book.fileUrl) return res.status(400).json({ error: "Book fileUrl is missing" });
+  await connectMongo();
+  const book = await BookModel.findByIdAndUpdate(id, { $inc: { downloads: 1 } }, { new: true }).exec();
+  if (!book) throw new ApiError(404, "Book not found");
+  if (!book.fileUrl) throw new ApiError(400, "Book fileUrl is missing");
 
-    const upstream = await fetch(book.fileUrl, { cache: "no-store" as any });
-    if (!upstream.ok || !upstream.body) {
-      return res.status(502).json({ error: "Failed to fetch PDF from storage" });
-    }
-
-    const filename = safePdfFilename(book.title);
-    const contentType =
-      upstream.headers.get("content-type") ||
-      "application/pdf";
-
-    res.setHeader("Content-Type", contentType);
-    res.setHeader("Content-Disposition", `attachment; filename=\"${filename}\"`);
-    res.setHeader("Cache-Control", "no-store");
-
-    // Stream response
-    const nodeStream = Readable.fromWeb(upstream.body as any);
-    nodeStream.on("error", (e) => {
-      console.error("PDF stream error:", e);
-      try {
-        res.end();
-      } catch { }
-    });
-    nodeStream.pipe(res);
-  } catch (error) {
-    console.error("Error downloading book PDF:", error);
-    res.status(500).json({ error: "Failed to download PDF" });
+  const upstream = await fetch(book.fileUrl, { cache: "no-store" as any });
+  if (!upstream.ok || !upstream.body) {
+    throw new ApiError(502, "Failed to fetch PDF from storage");
   }
-};
 
-export const viewBookPdf: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
+  const filename = safePdfFilename(book.title);
+  const contentType =
+    upstream.headers.get("content-type") ||
+    "application/pdf";
 
-    await connectMongo();
-    const book = await BookModel.findById(id).exec();
-    if (!book) return res.status(404).json({ error: "Book not found" });
-    if (!book.fileUrl) return res.status(400).json({ error: "Book fileUrl is missing" });
+  res.setHeader("Content-Type", contentType);
+  res.setHeader("Content-Disposition", `attachment; filename=\"${filename}\"`);
+  res.setHeader("Cache-Control", "no-store");
 
-    const upstream = await fetch(book.fileUrl, { cache: "no-store" as any });
-    if (!upstream.ok || !upstream.body) {
-      return res.status(502).json({ error: "Failed to fetch PDF from storage" });
-    }
+  // Stream response
+  const nodeStream = Readable.fromWeb(upstream.body as any);
+  nodeStream.on("error", (e) => {
+    console.error("PDF stream error:", e);
+    try {
+      res.end();
+    } catch { }
+  });
+  nodeStream.pipe(res);
+});
 
-    const filename = safePdfFilename(book.title);
-    const contentType = upstream.headers.get("content-type") || "application/pdf";
+export const viewBookPdf: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
 
-    res.setHeader("Content-Type", contentType);
-    // Inline disposition lets browsers render PDFs without downloading
-    res.setHeader("Content-Disposition", `inline; filename=\"${filename}\"`);
-    res.setHeader("Cache-Control", "no-store");
+  await connectMongo();
+  const book = await BookModel.findById(id).exec();
+  if (!book) throw new ApiError(404, "Book not found");
+  if (!book.fileUrl) throw new ApiError(400, "Book fileUrl is missing");
 
-    const nodeStream = Readable.fromWeb(upstream.body as any);
-    nodeStream.on("error", (e) => {
-      console.error("PDF stream error:", e);
-      try {
-        res.end();
-      } catch { }
-    });
-    nodeStream.pipe(res);
-  } catch (error) {
-    console.error("Error viewing book PDF:", error);
-    res.status(500).json({ error: "Failed to view PDF" });
+  const upstream = await fetch(book.fileUrl, { cache: "no-store" as any });
+  if (!upstream.ok || !upstream.body) {
+    throw new ApiError(502, "Failed to fetch PDF from storage");
   }
-};
+
+  const filename = safePdfFilename(book.title);
+  const contentType = upstream.headers.get("content-type") || "application/pdf";
+
+  res.setHeader("Content-Type", contentType);
+  // Inline disposition lets browsers render PDFs without downloading
+  res.setHeader("Content-Disposition", `inline; filename=\"${filename}\"`);
+  res.setHeader("Cache-Control", "no-store");
+
+  const nodeStream = Readable.fromWeb(upstream.body as any);
+  nodeStream.on("error", (e) => {
+    console.error("PDF stream error:", e);
+    try {
+      res.end();
+    } catch { }
+  });
+  nodeStream.pipe(res);
+});
 
 // Email Subscribers API
-export const getSubscribers: RequestHandler = async (req, res) => {
-  try {
-    await connectMongo();
-    const status = req.query.status as string | undefined;
-    const where: any = {};
-    if (status) where.status = status;
-    const result = await EmailSubscriberModel.find(where).sort({ subscribedAt: -1 }).exec();
-    res.json(
-      result.map((s: any) => ({
-        id: idOf(s),
-        email: s.email,
-        name: s.name || undefined,
-        subscribedAt: s.subscribedAt ? new Date(s.subscribedAt).toISOString() : new Date().toISOString(),
-        status: s.status || "active",
-        source: s.source || "footer",
-        tags: s.tags || [],
-      }))
-    );
-  } catch (error) {
-    console.error("Error fetching subscribers:", error);
-    res.status(500).json({ error: "Failed to fetch subscribers" });
-  }
-};
+export const getSubscribers: RequestHandler = asyncHandler(async (req, res) => {
+  await connectMongo();
+  const status = req.query.status as string | undefined;
+  const where: any = {};
+  if (status) where.status = status;
+  const result = await EmailSubscriberModel.find(where).sort({ subscribedAt: -1 }).exec();
+  res.json(
+    result.map((s: any) => ({
+      id: idOf(s),
+      email: s.email,
+      name: s.name || undefined,
+      subscribedAt: s.subscribedAt ? new Date(s.subscribedAt).toISOString() : new Date().toISOString(),
+      status: s.status || "active",
+      source: s.source || "footer",
+      tags: s.tags || [],
+    }))
+  );
+});
 
-export const getSubscriber: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const subscriber = await EmailSubscriberModel.findById(id).exec();
-    if (!subscriber) return res.status(404).json({ error: "Subscriber not found" });
-    res.json({
-      id: idOf(subscriber),
-      email: subscriber.email,
-      name: subscriber.name || undefined,
-      subscribedAt: subscriber.subscribedAt ? new Date(subscriber.subscribedAt).toISOString() : new Date().toISOString(),
-      status: subscriber.status || "active",
-      source: subscriber.source || "footer",
-      tags: subscriber.tags || [],
-    });
-  } catch (error) {
-    console.error("Error fetching subscriber:", error);
-    res.status(500).json({ error: "Failed to fetch subscriber" });
-  }
-};
+export const getSubscriber: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const subscriber = await EmailSubscriberModel.findById(id).exec();
+  if (!subscriber) throw new ApiError(404, "Subscriber not found");
+  res.json({
+    id: idOf(subscriber),
+    email: subscriber.email,
+    name: subscriber.name || undefined,
+    subscribedAt: subscriber.subscribedAt ? new Date(subscriber.subscribedAt).toISOString() : new Date().toISOString(),
+    status: subscriber.status || "active",
+    source: subscriber.source || "footer",
+    tags: subscriber.tags || [],
+  });
+});
 
-export const createSubscriber: RequestHandler = async (req, res) => {
-  try {
-    const { email, name, source, status } = req.body ?? {};
-    if (!email || typeof email !== "string" || !email.includes("@")) {
-      return res.status(400).json({ error: "Valid email is required" });
+export const createSubscriber: RequestHandler = asyncHandler(async (req, res) => {
+  const { email, name, source, status } = req.body ?? {};
+  if (!email || typeof email !== "string" || !email.includes("@")) {
+    throw new ApiError(400, "Valid email is required");
+  }
+  await connectMongo();
+  const lowerEmail = email.toLowerCase();
+
+  const existing = await EmailSubscriberModel.findOne({ email: lowerEmail }).exec();
+  const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
+  const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").trim().replace(/\/+$/, "");
+  const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
+  const adminNotifyEmail = getAdminNotifyEmail();
+
+  if (existing) {
+    if (existing.status === "active") {
+      throw new ApiError(400, "Email is already subscribed");
     }
-    await connectMongo();
-    const lowerEmail = email.toLowerCase();
+    existing.status = "active";
+    existing.subscribedAt = new Date();
+    if (name) existing.name = name;
+    if (source) existing.source = source;
+    await existing.save();
+    const payload = {
+      id: idOf(existing),
+      email: existing.email,
+      name: existing.name || undefined,
+      subscribedAt: existing.subscribedAt ? new Date(existing.subscribedAt).toISOString() : new Date().toISOString(),
+      status: existing.status || "active",
+      source: existing.source || "footer",
+      tags: existing.tags || [],
+    };
 
-    const existing = await EmailSubscriberModel.findOne({ email: lowerEmail }).exec();
-    const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
-    const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").trim().replace(/\/+$/, "");
-    const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
-    const adminNotifyEmail = getAdminNotifyEmail();
-
-    if (existing) {
-      if (existing.status === "active") {
-        return res.status(400).json({ error: "Email is already subscribed" });
-      }
-      existing.status = "active";
-      existing.subscribedAt = new Date();
-      if (name) existing.name = name;
-      if (source) existing.source = source;
-      await existing.save();
-      const payload = {
-        id: idOf(existing),
-        email: existing.email,
-        name: existing.name || undefined,
-        subscribedAt: existing.subscribedAt ? new Date(existing.subscribedAt).toISOString() : new Date().toISOString(),
-        status: existing.status || "active",
-        source: existing.source || "footer",
-        tags: existing.tags || [],
-      };
-
-      // Emails (non-blocking)
-      const subscriberName = String(existing.name || "").trim();
-      const welcomeSubject = `Welcome to ${siteName} - God bless you!`;
-      const welcomeHtml = `
+    // Emails (non-blocking)
+    const subscriberName = String(existing.name || "").trim();
+    const welcomeSubject = `Welcome to ${siteName} - God bless you!`;
+    const welcomeHtml = `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
           <h2 style="margin: 0 0 8px;">Welcome to ${escapeHtml(siteName)}</h2>
           <p style="margin: 0 0 16px;">Dear ${escapeHtml(subscriberName || "Friend in Christ")},</p>
@@ -2454,198 +2178,103 @@ export const createSubscriber: RequestHandler = async (req, res) => {
           </p>
         </div>
       `;
-      const welcomeText = `Welcome to ${siteName} - God bless you!
-
-Dear ${subscriberName || "Friend in Christ"},
-
-Grace and peace be with you! Thank you for joining our community of young professionals committed to evangelism and serving God.
-
-You will now receive updates, devotional resources, ministry news, and opportunities to be part of God's work through ${siteName}. "How beautiful are the feet of those who bring good news!" (Romans 10:15)
-
-Visit our website: ${siteUrl}
-
-May the Lord bless you and keep you. May His face shine upon you and be gracious to you (Numbers 6:24-25).
-
-In Christian fellowship,
-${siteName}
-
-If you didn't subscribe, you can unsubscribe at: ${siteUrl}/unsubscribe
-`;
-      const mails: Promise<any>[] = [
-        sendMail({ to: existing.email, subject: welcomeSubject, html: welcomeHtml, text: welcomeText, replyTo: contactEmail || undefined }),
-      ];
-      if (adminNotifyEmail) {
-        mails.push(
-          sendMail({
-            to: adminNotifyEmail,
-            subject: `New subscriber - ${siteName}`,
-            html: `<p><strong>New subscriber:</strong> ${escapeHtml(existing.email)}${subscriberName ? ` (${escapeHtml(subscriberName)})` : ""}</p>`,
-            text: `New subscriber: ${existing.email}${subscriberName ? ` (${subscriberName})` : ""}`,
-            replyTo: existing.email,
-          })
-        );
-      }
-      await Promise.allSettled(mails);
-
-      return res.json(payload);
-    }
-
-    const created = await EmailSubscriberModel.create({
-      email: lowerEmail,
-      name: name || undefined,
-      subscribedAt: new Date(),
-      status: status || "active",
-      source: source || "footer",
-      tags: [],
-    });
-    const payload = {
-      id: idOf(created),
-      email: created.email,
-      name: created.name || undefined,
-      subscribedAt: created.subscribedAt ? new Date(created.subscribedAt).toISOString() : new Date().toISOString(),
-      status: created.status || "active",
-      source: created.source || "footer",
-      tags: created.tags || [],
-    };
-
-    // Emails (non-blocking)
-    const subscriberName = String(created.name || "").trim();
-    const welcomeSubject = `Welcome to ${siteName} - God bless you!`;
-    const welcomeHtml = `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
-        <h2 style="margin: 0 0 8px;">Welcome to ${escapeHtml(siteName)}</h2>
-        <p style="margin: 0 0 16px;">Dear ${escapeHtml(subscriberName || "Friend in Christ")},</p>
-        <p style="margin: 0 0 16px;">
-          <strong>Grace and peace be with you!</strong> Thank you for joining our community of young professionals 
-          committed to evangelism and serving God.
-        </p>
-        <p style="margin: 0 0 16px;">
-          You will now receive updates, devotional resources, ministry news, and opportunities to be part of God's work 
-          through ${escapeHtml(siteName)}. <em>"How beautiful are the feet of those who bring good news!"</em> (Romans 10:15)
-        </p>
-        <p style="margin: 0 0 16px;">
-          Visit our website: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a>
-        </p>
-        <p style="margin: 16px 0 0;">
-          May the Lord bless you and keep you. May His face shine upon you and be gracious to you (Numbers 6:24-25).
-        </p>
-        <p style="margin: 16px 0 0;">
-          In Christian fellowship,<br />
-          <strong>${escapeHtml(siteName)}</strong>
-        </p>
-        <p style="margin: 8px 0 0; font-size: 0.875rem; color: #6b7280;">
-          If you didn't subscribe, you can <a href="${escapeHtml(siteUrl)}/unsubscribe">unsubscribe here</a>.
-        </p>
-      </div>
-    `;
-    const welcomeText = `Welcome to ${siteName} - God bless you!
-
-Dear ${subscriberName || "Friend in Christ"},
-
-Grace and peace be with you! Thank you for joining our community of young professionals committed to evangelism and serving God.
-
-You will now receive updates, devotional resources, ministry news, and opportunities to be part of God's work through ${siteName}. "How beautiful are the feet of those who bring good news!" (Romans 10:15)
-
-Visit our website: ${siteUrl}
-
-May the Lord bless you and keep you. May His face shine upon you and be gracious to you (Numbers 6:24-25).
-
-In Christian fellowship,
-${siteName}
-
-If you didn't subscribe, you can unsubscribe at: ${siteUrl}/unsubscribe
-`;
+    const welcomeText = `Welcome to ${siteName} - God bless you!\n\nDear ${subscriberName || "Friend in Christ"},\n\nGrace and peace be with you! Thank you for joining our community of young professionals committed to evangelism and serving God.\n\nYou will now receive updates, devotional resources, ministry news, and opportunities to be part of God's work through ${siteName}. "How beautiful are the feet of those who bring good news!" (Romans 10:15)\n\nVisit our website: ${siteUrl}\n\nMay the Lord bless you and keep you. May His face shine upon you and be gracious to you (Numbers 6:24-25).\n\nIn Christian fellowship,\n${siteName}\n\nIf you didn't subscribe, you can unsubscribe at: ${siteUrl}/unsubscribe\n`;
     const mails: Promise<any>[] = [
-      sendMail({ to: created.email, subject: welcomeSubject, html: welcomeHtml, text: welcomeText, replyTo: contactEmail || undefined }),
+      sendMail({ to: existing.email, subject: welcomeSubject, html: welcomeHtml, text: welcomeText, replyTo: contactEmail || undefined }),
     ];
     if (adminNotifyEmail) {
       mails.push(
         sendMail({
           to: adminNotifyEmail,
           subject: `New subscriber - ${siteName}`,
-          html: `<p><strong>New subscriber:</strong> ${escapeHtml(created.email)}${subscriberName ? ` (${escapeHtml(subscriberName)})` : ""}</p>`,
-          text: `New subscriber: ${created.email}${subscriberName ? ` (${subscriberName})` : ""}`,
-          replyTo: created.email,
+          html: `<p><strong>New subscriber:</strong> ${escapeHtml(existing.email)}${subscriberName ? ` (${escapeHtml(subscriberName)})` : ""}</p>`,
+          text: `New subscriber: ${existing.email}${subscriberName ? ` (${subscriberName})` : ""}`,
+          replyTo: existing.email,
         })
       );
     }
     await Promise.allSettled(mails);
 
-    res.status(201).json(payload);
-  } catch (error: any) {
-    console.error("Error creating subscriber:", error);
-    if (error?.code === 11000) return res.status(400).json({ error: "Email is already subscribed" });
-    res.status(500).json({ error: "Failed to create subscriber" });
+    return res.json(payload);
   }
-};
 
-export const updateSubscriber: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    const { email, name, status, source, tags } = req.body ?? {};
-    const updateData: any = {};
-    if (email !== undefined) updateData.email = String(email).toLowerCase();
-    if (name !== undefined) updateData.name = name || undefined;
-    if (status !== undefined) updateData.status = status;
-    if (source !== undefined) updateData.source = source;
-    if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : [];
+  const created = await EmailSubscriberModel.create({
+    email: lowerEmail,
+    name: name || undefined,
+    subscribedAt: new Date(),
+    status: status || "active",
+    source: source || "footer",
+    tags: [],
+  });
+  const payload = {
+    id: idOf(created),
+    email: created.email,
+    name: created.name || undefined,
+    subscribedAt: created.subscribedAt ? new Date(created.subscribedAt).toISOString() : new Date().toISOString(),
+    status: created.status || "active",
+    source: created.source || "footer",
+    tags: created.tags || [],
+  };
 
-    await connectMongo();
-    const updated = await EmailSubscriberModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
-    if (!updated) return res.status(404).json({ error: "Subscriber not found" });
-    res.json({
-      id: idOf(updated),
-      email: updated.email,
-      name: updated.name || undefined,
-      subscribedAt: updated.subscribedAt ? new Date(updated.subscribedAt).toISOString() : new Date().toISOString(),
-      status: updated.status || "active",
-      source: updated.source || "footer",
-      tags: updated.tags || [],
-    });
-  } catch (error: any) {
-    console.error("Error updating subscriber:", error);
-    if (error?.code === 11000) return res.status(400).json({ error: "Email is already subscribed" });
-    res.status(500).json({ error: "Failed to update subscriber" });
-  }
-};
+  // Emails (non-blocking)
+  res.status(201).json(payload);
+});
 
-export const deleteSubscriber: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const deleted = await EmailSubscriberModel.findByIdAndDelete(id).exec();
-    if (!deleted) return res.status(404).json({ error: "Subscriber not found" });
-    res.status(204).send();
-  } catch (error) {
-    console.error("Error deleting subscriber:", error);
-    res.status(500).json({ error: "Failed to delete subscriber" });
-  }
-};
+export const updateSubscriber: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  const { email, name, status, source, tags } = req.body ?? {};
+  const updateData: any = {};
+  if (email !== undefined) updateData.email = String(email).toLowerCase();
+  if (name !== undefined) updateData.name = name || undefined;
+  if (status !== undefined) updateData.status = status;
+  if (source !== undefined) updateData.source = source;
+  if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : [];
 
-export const unsubscribe: RequestHandler = async (req, res) => {
-  try {
-    const { email } = req.body ?? {};
-    if (!email) return res.status(400).json({ error: "Email is required" });
-    const lowerEmail = String(email).toLowerCase();
-    await connectMongo();
-    const updated = await EmailSubscriberModel.findOneAndUpdate(
-      { email: lowerEmail },
-      { status: "unsubscribed" },
-      { new: true }
-    ).exec();
-    if (!updated) return res.status(404).json({ error: "Email not found in our subscribers list" });
+  await connectMongo();
+  const updated = await EmailSubscriberModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  if (!updated) throw new ApiError(404, "Subscriber not found");
+  res.json({
+    id: idOf(updated),
+    email: updated.email,
+    name: updated.name || undefined,
+    subscribedAt: updated.subscribedAt ? new Date(updated.subscribedAt).toISOString() : new Date().toISOString(),
+    status: updated.status || "active",
+    source: updated.source || "footer",
+    tags: updated.tags || [],
+  });
+});
 
-    // Confirmation email (non-blocking)
-    const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
-    const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").trim().replace(/\/+$/, "");
-    const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
-    await Promise.allSettled([
-      sendMail({
-        to: updated.email,
-        subject: `You’ve been unsubscribed - ${siteName}`,
-        html: `
+export const deleteSubscriber: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const deleted = await EmailSubscriberModel.findByIdAndDelete(id).exec();
+  if (!deleted) throw new ApiError(404, "Subscriber not found");
+  res.status(204).send();
+});
+
+export const unsubscribe: RequestHandler = asyncHandler(async (req, res) => {
+  const { email } = req.body ?? {};
+  if (!email) throw new ApiError(400, "Email is required");
+  const lowerEmail = String(email).toLowerCase();
+  await connectMongo();
+  const updated = await EmailSubscriberModel.findOneAndUpdate(
+    { email: lowerEmail },
+    { status: "unsubscribed" },
+    { new: true }
+  ).exec();
+  if (!updated) throw new ApiError(404, "Email not found in our subscribers list");
+
+  // Confirmation email (non-blocking)
+  const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
+  const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").trim().replace(/\/+$/, "");
+  const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
+  await Promise.allSettled([
+    sendMail({
+      to: updated.email,
+      subject: `You’ve been unsubscribed - ${siteName}`,
+      html: `
           <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
             <h2 style="margin: 0 0 8px;">Unsubscribed</h2>
             <p style="margin: 0 0 16px;">You will no longer receive newsletter emails from ${escapeHtml(siteName)}.</p>
@@ -2653,28 +2282,24 @@ export const unsubscribe: RequestHandler = async (req, res) => {
             <p style="margin: 0;">If this was a mistake, you can subscribe again on our website.</p>
           </div>
         `,
-        text: `You’ve been unsubscribed - ${siteName}\nYou will no longer receive newsletter emails.\nWebsite: ${siteUrl}\nIf this was a mistake, you can subscribe again on our website.\n`,
-        replyTo: contactEmail || undefined,
-      }),
-    ]);
+      text: `You’ve been unsubscribed - ${siteName}\nYou will no longer receive newsletter emails.\nWebsite: ${siteUrl}\nIf this was a mistake, you can subscribe again on our website.\n`,
+      replyTo: contactEmail || undefined,
+    }),
+  ]);
 
-    res.json({
-      message: "Successfully unsubscribed",
-      subscriber: {
-        id: idOf(updated),
-        email: updated.email,
-        name: updated.name || undefined,
-        subscribedAt: updated.subscribedAt ? new Date(updated.subscribedAt).toISOString() : new Date().toISOString(),
-        status: updated.status || "unsubscribed",
-        source: updated.source || "footer",
-        tags: updated.tags || [],
-      },
-    });
-  } catch (error) {
-    console.error("Error unsubscribing:", error);
-    res.status(500).json({ error: "Failed to unsubscribe" });
-  }
-};
+  res.json({
+    message: "Successfully unsubscribed",
+    subscriber: {
+      id: idOf(updated),
+      email: updated.email,
+      name: updated.name || undefined,
+      subscribedAt: updated.subscribedAt ? new Date(updated.subscribedAt).toISOString() : new Date().toISOString(),
+      status: updated.status || "unsubscribed",
+      source: updated.source || "footer",
+      tags: updated.tags || [],
+    },
+  });
+});
 
 // Email Campaigns API
 function stripHtmlToText(html: string): string {
@@ -2693,37 +2318,11 @@ function stripHtmlToText(html: string): string {
     .trim();
 }
 
-export const getEmailCampaigns: RequestHandler = async (_req, res) => {
-  try {
-    await connectMongo();
-    const result = await EmailCampaignModel.find().sort({ createdAt: -1 }).exec();
-    res.json(
-      result.map((c: any) => ({
-        id: idOf(c),
-        subject: c.subject,
-        body: c.body,
-        recipients: c.recipients || [],
-        sentDate: c.sentDate ? new Date(c.sentDate).toISOString() : undefined,
-        status: c.status || "draft",
-        scheduledDate: c.scheduledDate ? new Date(c.scheduledDate).toISOString() : undefined,
-        openRate: c.openRate ?? undefined,
-        clickRate: c.clickRate ?? undefined,
-      }))
-    );
-  } catch (error) {
-    console.error("Error fetching email campaigns:", error);
-    res.status(500).json({ error: "Failed to fetch email campaigns" });
-  }
-};
-
-export const getEmailCampaign: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const c = await EmailCampaignModel.findById(id).exec();
-    if (!c) return res.status(404).json({ error: "Campaign not found" });
-    res.json({
+export const getEmailCampaigns: RequestHandler = asyncHandler(async (_req, res) => {
+  await connectMongo();
+  const result = await EmailCampaignModel.find().sort({ createdAt: -1 }).exec();
+  res.json(
+    result.map((c: any) => ({
       id: idOf(c),
       subject: c.subject,
       body: c.body,
@@ -2733,679 +2332,586 @@ export const getEmailCampaign: RequestHandler = async (req, res) => {
       scheduledDate: c.scheduledDate ? new Date(c.scheduledDate).toISOString() : undefined,
       openRate: c.openRate ?? undefined,
       clickRate: c.clickRate ?? undefined,
-    });
-  } catch (error) {
-    console.error("Error fetching email campaign:", error);
-    res.status(500).json({ error: "Failed to fetch email campaign" });
-  }
-};
+    }))
+  );
+});
 
-export const createEmailCampaign: RequestHandler = async (req, res) => {
-  try {
-    const { subject, body, status, scheduledDate, recipients } = req.body ?? {};
-    if (!subject || !body) return res.status(400).json({ error: "subject and body are required" });
+export const getEmailCampaign: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const c = await EmailCampaignModel.findById(id).exec();
+  if (!c) throw new ApiError(404, "Campaign not found");
+  res.json({
+    id: idOf(c),
+    subject: c.subject,
+    body: c.body,
+    recipients: c.recipients || [],
+    sentDate: c.sentDate ? new Date(c.sentDate).toISOString() : undefined,
+    status: c.status || "draft",
+    scheduledDate: c.scheduledDate ? new Date(c.scheduledDate).toISOString() : undefined,
+    openRate: c.openRate ?? undefined,
+    clickRate: c.clickRate ?? undefined,
+  });
+});
+
+export const createEmailCampaign: RequestHandler = asyncHandler(async (req, res) => {
+  const { subject, body, status, scheduledDate, recipients } = req.body ?? {};
+  if (!subject || !body) throw new ApiError(400, "subject and body are required");
+  const nextStatus = String(status || "draft");
+  if (!["draft", "scheduled", "sent"].includes(nextStatus)) {
+    throw new ApiError(400, "Invalid status");
+  }
+  const recips = Array.isArray(recipients) ? recipients.map(String).map((x) => x.trim()).filter(Boolean) : [];
+  await connectMongo();
+  const created = await EmailCampaignModel.create({
+    subject: String(subject),
+    body: String(body),
+    recipients: recips,
+    status: nextStatus,
+    scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
+    sentDate: nextStatus === "sent" ? new Date() : undefined,
+  });
+  res.status(201).json({
+    id: idOf(created),
+    subject: created.subject,
+    body: created.body,
+    recipients: created.recipients || [],
+    sentDate: created.sentDate ? new Date(created.sentDate).toISOString() : undefined,
+    status: created.status || "draft",
+    scheduledDate: created.scheduledDate ? new Date(created.scheduledDate).toISOString() : undefined,
+  });
+});
+
+export const updateEmailCampaign: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  const { subject, body, status, scheduledDate, recipients } = req.body ?? {};
+  const updateData: any = {};
+  if (subject !== undefined) updateData.subject = String(subject);
+  if (body !== undefined) updateData.body = String(body);
+  if (status !== undefined) {
     const nextStatus = String(status || "draft");
     if (!["draft", "scheduled", "sent"].includes(nextStatus)) {
-      return res.status(400).json({ error: "Invalid status" });
+      throw new ApiError(400, "Invalid status");
     }
-    const recips = Array.isArray(recipients) ? recipients.map(String).map((x) => x.trim()).filter(Boolean) : [];
-    await connectMongo();
-    const created = await EmailCampaignModel.create({
-      subject: String(subject),
-      body: String(body),
-      recipients: recips,
-      status: nextStatus,
-      scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
-      sentDate: nextStatus === "sent" ? new Date() : undefined,
-    });
-    res.status(201).json({
-      id: idOf(created),
-      subject: created.subject,
-      body: created.body,
-      recipients: created.recipients || [],
-      sentDate: created.sentDate ? new Date(created.sentDate).toISOString() : undefined,
-      status: created.status || "draft",
-      scheduledDate: created.scheduledDate ? new Date(created.scheduledDate).toISOString() : undefined,
-    });
-  } catch (error) {
-    console.error("Error creating email campaign:", error);
-    res.status(500).json({ error: "Failed to create email campaign" });
+    updateData.status = nextStatus;
+    if (nextStatus === "sent") updateData.sentDate = new Date();
   }
-};
+  if (scheduledDate !== undefined) updateData.scheduledDate = scheduledDate ? new Date(scheduledDate) : undefined;
+  if (recipients !== undefined) updateData.recipients = Array.isArray(recipients) ? recipients.map(String).map((x) => x.trim()).filter(Boolean) : [];
 
-export const updateEmailCampaign: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    const { subject, body, status, scheduledDate, recipients } = req.body ?? {};
-    const updateData: any = {};
-    if (subject !== undefined) updateData.subject = String(subject);
-    if (body !== undefined) updateData.body = String(body);
-    if (status !== undefined) {
-      const nextStatus = String(status || "draft");
-      if (!["draft", "scheduled", "sent"].includes(nextStatus)) {
-        return res.status(400).json({ error: "Invalid status" });
+  await connectMongo();
+  const updated = await EmailCampaignModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  if (!updated) throw new ApiError(404, "Campaign not found");
+  res.json({
+    id: idOf(updated),
+    subject: updated.subject,
+    body: updated.body,
+    recipients: updated.recipients || [],
+    sentDate: updated.sentDate ? new Date(updated.sentDate).toISOString() : undefined,
+    status: updated.status || "draft",
+    scheduledDate: updated.scheduledDate ? new Date(updated.scheduledDate).toISOString() : undefined,
+  });
+});
+
+export const deleteEmailCampaign: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const deleted = await EmailCampaignModel.findByIdAndDelete(id).exec();
+  if (!deleted) throw new ApiError(404, "Campaign not found");
+  res.status(204).send();
+});
+
+export const sendEmailCampaign: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+
+  await connectMongo();
+  const campaign = await EmailCampaignModel.findById(id).exec();
+  if (!campaign) throw new ApiError(404, "Campaign not found");
+  if (String(campaign.status || "draft") === "sent") {
+    throw new ApiError(400, "Campaign already sent");
+  }
+
+  // Determine recipients
+  let recipients: string[] = Array.isArray(campaign.recipients) ? campaign.recipients.map(String) : [];
+  recipients = recipients.map((x) => x.trim()).filter(Boolean);
+  if (recipients.length === 0) {
+    const [subs, members] = await Promise.all([
+      EmailSubscriberModel.find({ status: "active" }).select({ email: 1 }).exec(),
+      MemberModel.find({ status: "Active" }).select({ email: 1 }).exec(),
+    ]);
+    const subEmails = subs.map((s: any) => String(s.email || "").trim());
+    const memberEmails = members.map((m: any) => String(m.email || "").trim());
+    recipients = [...subEmails, ...memberEmails].filter(Boolean);
+  }
+  // de-dup
+  recipients = Array.from(new Set(recipients)).filter((e) => e.includes("@"));
+  if (recipients.length === 0) throw new ApiError(400, "No recipients found (need active subscribers)");
+
+  const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
+  const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
+  const subject = String(campaign.subject || "").trim() || `Newsletter - ${siteName}`;
+  const body = String(campaign.body || "");
+
+  // If admin pasted plain text, wrap it as HTML.
+  const isHtml = /<\/?[a-z][\s\S]*>/i.test(body);
+  const html = isHtml
+    ? body
+    : `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827; white-space: pre-wrap;">${escapeHtml(body)}</div>`;
+  const text = isHtml ? stripHtmlToText(body) : String(body || "");
+
+  // Send (rate-friendly batching) + collect failure reasons
+  let sent = 0;
+  let failed = 0;
+  const errors: Array<{ to: string; error: string }> = [];
+
+  const batchSize = 5;
+  for (let i = 0; i < recipients.length; i += batchSize) {
+    const batch = recipients.slice(i, i + batchSize);
+    const results = await Promise.allSettled(
+      batch.map((to) =>
+        sendMail({
+          to,
+          subject,
+          html,
+          text,
+          replyTo: contactEmail || undefined,
+        })
+      )
+    );
+
+    results.forEach((r, idx) => {
+      if (r.status === "fulfilled") {
+        sent += 1;
+        return;
       }
-      updateData.status = nextStatus;
-      if (nextStatus === "sent") updateData.sentDate = new Date();
-    }
-    if (scheduledDate !== undefined) updateData.scheduledDate = scheduledDate ? new Date(scheduledDate) : undefined;
-    if (recipients !== undefined) updateData.recipients = Array.isArray(recipients) ? recipients.map(String).map((x) => x.trim()).filter(Boolean) : [];
-
-    await connectMongo();
-    const updated = await EmailCampaignModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
-    if (!updated) return res.status(404).json({ error: "Campaign not found" });
-    res.json({
-      id: idOf(updated),
-      subject: updated.subject,
-      body: updated.body,
-      recipients: updated.recipients || [],
-      sentDate: updated.sentDate ? new Date(updated.sentDate).toISOString() : undefined,
-      status: updated.status || "draft",
-      scheduledDate: updated.scheduledDate ? new Date(updated.scheduledDate).toISOString() : undefined,
+      failed += 1;
+      const reason: any = r.reason;
+      const msg = String(reason?.message || reason?.error || reason || "Failed to send");
+      if (errors.length < 5) {
+        errors.push({ to: batch[idx], error: msg });
+      }
     });
-  } catch (error) {
-    console.error("Error updating email campaign:", error);
-    res.status(500).json({ error: "Failed to update email campaign" });
   }
-};
 
-export const deleteEmailCampaign: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const deleted = await EmailCampaignModel.findByIdAndDelete(id).exec();
-    if (!deleted) return res.status(404).json({ error: "Campaign not found" });
-    res.status(204).send();
-  } catch (error) {
-    console.error("Error deleting email campaign:", error);
-    res.status(500).json({ error: "Failed to delete email campaign" });
+  // Only mark as sent if all recipients succeeded.
+  if (failed === 0) {
+    campaign.status = "sent";
+    campaign.sentDate = new Date();
+    campaign.recipients = recipients;
+    await campaign.save();
+    return res.json({ ok: true, recipients: recipients.length, sent, failed, errors: [] });
   }
-};
 
-export const sendEmailCampaign: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-
-    await connectMongo();
-    const campaign = await EmailCampaignModel.findById(id).exec();
-    if (!campaign) return res.status(404).json({ error: "Campaign not found" });
-    if (String(campaign.status || "draft") === "sent") {
-      return res.status(400).json({ error: "Campaign already sent" });
-    }
-
-    // Determine recipients
-    let recipients: string[] = Array.isArray(campaign.recipients) ? campaign.recipients.map(String) : [];
-    recipients = recipients.map((x) => x.trim()).filter(Boolean);
-    if (recipients.length === 0) {
-      const [subs, members] = await Promise.all([
-        EmailSubscriberModel.find({ status: "active" }).select({ email: 1 }).exec(),
-        MemberModel.find({ status: "Active" }).select({ email: 1 }).exec(),
-      ]);
-      const subEmails = subs.map((s: any) => String(s.email || "").trim());
-      const memberEmails = members.map((m: any) => String(m.email || "").trim());
-      recipients = [...subEmails, ...memberEmails].filter(Boolean);
-    }
-    // de-dup
-    recipients = Array.from(new Set(recipients)).filter((e) => e.includes("@"));
-    if (recipients.length === 0) return res.status(400).json({ error: "No recipients found (need active subscribers)" });
-
-    const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
-    const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
-    const subject = String(campaign.subject || "").trim() || `Newsletter - ${siteName}`;
-    const body = String(campaign.body || "");
-
-    // If admin pasted plain text, wrap it as HTML.
-    const isHtml = /<\/?[a-z][\s\S]*>/i.test(body);
-    const html = isHtml
-      ? body
-      : `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827; white-space: pre-wrap;">${escapeHtml(body)}</div>`;
-    const text = isHtml ? stripHtmlToText(body) : String(body || "");
-
-    // Send (rate-friendly batching) + collect failure reasons
-    let sent = 0;
-    let failed = 0;
-    const errors: Array<{ to: string; error: string }> = [];
-
-    const batchSize = 5;
-    for (let i = 0; i < recipients.length; i += batchSize) {
-      const batch = recipients.slice(i, i + batchSize);
-      const results = await Promise.allSettled(
-        batch.map((to) =>
-          sendMail({
-            to,
-            subject,
-            html,
-            text,
-            replyTo: contactEmail || undefined,
-          })
-        )
-      );
-
-      results.forEach((r, idx) => {
-        if (r.status === "fulfilled") {
-          sent += 1;
-          return;
-        }
-        failed += 1;
-        const reason: any = r.reason;
-        const msg = String(reason?.message || reason?.error || reason || "Failed to send");
-        if (errors.length < 5) {
-          errors.push({ to: batch[idx], error: msg });
-        }
-      });
-    }
-
-    // Only mark as sent if all recipients succeeded.
-    if (failed === 0) {
-      campaign.status = "sent";
-      campaign.sentDate = new Date();
-      campaign.recipients = recipients;
-      await campaign.save();
-      return res.json({ ok: true, recipients: recipients.length, sent, failed, errors: [] });
-    }
-
-    // If everything failed, return 500 so the UI shows an error toast.
-    if (sent === 0) {
-      return res.status(500).json({
-        ok: false,
-        error: errors[0]?.error || "Campaign failed to send",
-        recipients: recipients.length,
-        sent,
-        failed,
-        errors,
-      });
-    }
-
-    // Partial success: keep as draft so admin can retry if needed.
-    return res.json({
-      ok: false,
-      error: errors[0]?.error || "Some emails failed to send",
-      recipients: recipients.length,
-      sent,
-      failed,
-      errors,
-    });
-  } catch (error: any) {
-    console.error("Error sending email campaign:", error);
-    res.status(500).json({ error: error?.message || "Failed to send campaign" });
+  // If everything failed, throw error so next() handles it via ApiError if we want,
+  // but here the original code returned 500 with custom payload. 
+  // We'll return 200 with partial success info instead of throwing if some succeeded.
+  if (sent === 0) {
+    throw new ApiError(500, errors[0]?.error || "Campaign failed to send");
   }
-};
+
+  // Partial success: keep as draft so admin can retry if needed.
+  return res.json({
+    ok: false,
+    error: errors[0]?.error || "Some emails failed to send",
+    recipients: recipients.length,
+    sent,
+    failed,
+    errors,
+  });
+});
 
 // Committee Members API
-export const getCommitteeMembers: RequestHandler = async (req, res) => {
-  try {
-    const category = req.query.category as string | undefined;
-    const active = req.query.active !== "false";
+export const getCommitteeMembers: RequestHandler = asyncHandler(async (req, res) => {
+  const category = req.query.category as string | undefined;
+  const active = req.query.active !== "false";
 
-    let where: any = {};
-    if (category) {
-      where.category = category;
-    }
-    if (active) {
-      where.active = true;
-    }
-
-    await connectMongo();
-    const result = await CommitteeMemberModel.find(where).sort({ category: 1, order: 1 }).exec();
-
-    const formattedResult = result.map((member) => ({
-      id: idOf(member),
-      position: member.position,
-      name: member.name,
-      church: member.church,
-      phone: member.phone,
-      category: member.category,
-      image: member.image || undefined,
-      email: member.email || undefined,
-      order: member.order,
-      active: member.active,
-    }));
-
-    res.json(formattedResult);
-  } catch (error: any) {
-    console.error("Error fetching committee members:", error);
-    res.status(500).json({ error: "Failed to fetch committee members" });
+  let where: any = {};
+  if (category) {
+    where.category = category;
   }
-};
-
-export const getCommitteeMember: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const member = await CommitteeMemberModel.findById(id).exec();
-
-    if (!member) {
-      return res.status(404).json({ error: "Committee member not found" });
-    }
-
-    res.json({
-      id: idOf(member),
-      position: member.position,
-      name: member.name,
-      church: member.church,
-      phone: member.phone,
-      category: member.category,
-      image: member.image || undefined,
-      email: member.email || undefined,
-      order: member.order,
-      active: member.active,
-    });
-  } catch (error: any) {
-    console.error("Error fetching committee member:", error);
-    res.status(500).json({ error: "Failed to fetch committee member" });
+  if (active) {
+    where.active = true;
   }
-};
 
-export const createCommitteeMember: RequestHandler = async (req, res) => {
-  try {
-    const { position, name, church, phone, category, image, email, order, active } = req.body;
+  await connectMongo();
+  const result = await CommitteeMemberModel.find(where).sort({ category: 1, order: 1 }).exec();
 
-    if (!position || !name || !church || !phone || !category) {
-      return res.status(400).json({ error: "Position, name, church, phone, and category are required" });
-    }
+  const formattedResult = result.map((member) => ({
+    id: idOf(member),
+    position: member.position,
+    name: member.name,
+    church: member.church,
+    phone: member.phone,
+    category: member.category,
+    image: member.image || undefined,
+    email: member.email || undefined,
+    order: member.order,
+    active: member.active,
+  }));
 
-    // Validate category
-    const validCategories = ["leadership", "team", "auditor", "asa_representatives", "board_chancellors"];
-    if (!validCategories.includes(category)) {
-      return res.status(400).json({
-        error: `Invalid category. Must be one of: ${validCategories.join(", ")}`
-      });
-    }
+  res.json(formattedResult);
+});
 
-    // Get count for order if not provided
-    let memberOrder = order;
-    if (memberOrder === undefined || memberOrder === null) {
-      await connectMongo();
-      const count = await CommitteeMemberModel.countDocuments({ category }).exec();
-      memberOrder = count + 1;
-    }
+export const getCommitteeMember: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const member = await CommitteeMemberModel.findById(id).exec();
 
-    await connectMongo();
-    const newMember = await CommitteeMemberModel.create({
-      position: position.trim(),
-      name: name.trim(),
-      church: church.trim(),
-      phone: phone.trim(),
-      category,
-      image: image?.trim() || undefined,
-      email: email?.trim() || undefined,
-      order: memberOrder,
-      active: active !== undefined ? active : true,
-    });
-
-    res.status(201).json({
-      id: idOf(newMember),
-      position: newMember.position,
-      name: newMember.name,
-      church: newMember.church,
-      phone: newMember.phone,
-      category: newMember.category,
-      image: newMember.image || undefined,
-      email: newMember.email || undefined,
-      order: newMember.order,
-      active: newMember.active,
-    });
-  } catch (error: any) {
-    console.error("Error creating committee member:", error);
-    if (error?.code === 11000) {
-      return res.status(400).json({ error: "Duplicate committee member" });
-    }
-    res.status(500).json({
-      error: "Failed to create committee member",
-      details: process.env.NODE_ENV === "development" ? error.message : undefined
-    });
+  if (!member) {
+    throw new ApiError(404, "Committee member not found");
   }
-};
 
-export const updateCommitteeMember: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { position, name, church, phone, category, image, email, order, active } = req.body;
+  res.json({
+    id: idOf(member),
+    position: member.position,
+    name: member.name,
+    church: member.church,
+    phone: member.phone,
+    category: member.category,
+    image: member.image || undefined,
+    email: member.email || undefined,
+    order: member.order,
+    active: member.active,
+  });
+});
 
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    const updateData: any = {};
-    if (position !== undefined) updateData.position = position;
-    if (name !== undefined) updateData.name = name;
-    if (church !== undefined) updateData.church = church;
-    if (phone !== undefined) updateData.phone = phone;
-    if (category !== undefined) updateData.category = category;
-    if (image !== undefined) updateData.image = image || undefined;
-    if (email !== undefined) updateData.email = email || undefined;
-    if (order !== undefined) updateData.order = order;
-    if (active !== undefined) updateData.active = active;
+export const createCommitteeMember: RequestHandler = asyncHandler(async (req, res) => {
+  const { position, name, church, phone, category, image, email, order, active } = req.body;
 
-    await connectMongo();
-    const updatedMember = await CommitteeMemberModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
-    if (!updatedMember) return res.status(404).json({ error: "Committee member not found" });
-
-    res.json({
-      id: idOf(updatedMember),
-      position: updatedMember.position,
-      name: updatedMember.name,
-      church: updatedMember.church,
-      phone: updatedMember.phone,
-      category: updatedMember.category,
-      image: updatedMember.image || undefined,
-      email: updatedMember.email || undefined,
-      order: updatedMember.order,
-      active: updatedMember.active,
-    });
-  } catch (error: any) {
-    console.error("Error updating committee member:", error);
-    res.status(500).json({ error: "Failed to update committee member" });
+  if (!position || !name || !church || !phone || !category) {
+    throw new ApiError(400, "Position, name, church, phone, and category are required");
   }
-};
 
-export const deleteCommitteeMember: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const deleted = await CommitteeMemberModel.findByIdAndDelete(id).exec();
-    if (!deleted) return res.status(404).json({ error: "Committee member not found" });
-    res.status(204).send();
-  } catch (error: any) {
-    console.error("Error deleting committee member:", error);
-    res.status(500).json({ error: "Failed to delete committee member" });
+  // Validate category
+  const validCategories = ["leadership", "team", "auditor", "asa_representatives", "board_chancellors"];
+  if (!validCategories.includes(category)) {
+    throw new ApiError(400, `Invalid category. Must be one of: ${validCategories.join(", ")}`);
   }
-};
+
+  // Get count for order if not provided
+  let memberOrder = order;
+  if (memberOrder === undefined || memberOrder === null) {
+    await connectMongo();
+    const count = await CommitteeMemberModel.countDocuments({ category }).exec();
+    memberOrder = count + 1;
+  }
+
+  await connectMongo();
+  const newMember = await CommitteeMemberModel.create({
+    position: position.trim(),
+    name: name.trim(),
+    church: church.trim(),
+    phone: phone.trim(),
+    category,
+    image: image?.trim() || undefined,
+    email: email?.trim() || undefined,
+    order: memberOrder,
+    active: active !== undefined ? active : true,
+  });
+
+  res.status(201).json({
+    id: idOf(newMember),
+    position: newMember.position,
+    name: newMember.name,
+    church: newMember.church,
+    phone: newMember.phone,
+    category: newMember.category,
+    image: newMember.image || undefined,
+    email: newMember.email || undefined,
+    order: newMember.order,
+    active: newMember.active,
+  });
+});
+
+export const updateCommitteeMember: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { position, name, church, phone, category, image, email, order, active } = req.body;
+
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  const updateData: any = {};
+  if (position !== undefined) updateData.position = position;
+  if (name !== undefined) updateData.name = name;
+  if (church !== undefined) updateData.church = church;
+  if (phone !== undefined) updateData.phone = phone;
+  if (category !== undefined) updateData.category = category;
+  if (image !== undefined) updateData.image = image || undefined;
+  if (email !== undefined) updateData.email = email || undefined;
+  if (order !== undefined) updateData.order = order;
+  if (active !== undefined) updateData.active = active;
+
+  await connectMongo();
+  const updatedMember = await CommitteeMemberModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  if (!updatedMember) throw new ApiError(404, "Committee member not found");
+
+  res.json({
+    id: idOf(updatedMember),
+    position: updatedMember.position,
+    name: updatedMember.name,
+    church: updatedMember.church,
+    phone: updatedMember.phone,
+    category: updatedMember.category,
+    image: updatedMember.image || undefined,
+    email: updatedMember.email || undefined,
+    order: updatedMember.order,
+    active: updatedMember.active,
+  });
+});
+
+export const deleteCommitteeMember: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const deleted = await CommitteeMemberModel.findByIdAndDelete(id).exec();
+  if (!deleted) throw new ApiError(404, "Committee member not found");
+  res.status(204).send();
+});
 
 // Devotions API
-export const getDevotions: RequestHandler = async (req, res) => {
-  try {
-    console.log("Fetching devotions, query params:", req.query);
+export const getDevotions: RequestHandler = asyncHandler(async (req, res) => {
+  console.log("Fetching devotions, query params:", req.query);
 
-    // Build where clause for date filtering
-    let where: any = {};
+  // Build where clause for date filtering
+  let where: any = {};
 
-    const dateFilter = req.query.dateFilter as string | undefined;
-    const days = req.query.days ? parseInt(req.query.days as string) : undefined;
+  const dateFilter = req.query.dateFilter as string | undefined;
+  const days = req.query.days ? parseInt(req.query.days as string) : undefined;
 
-    if (dateFilter === "last7days" || days) {
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - (days || 7));
-      cutoffDate.setHours(0, 0, 0, 0);
-      where.date = { $gte: cutoffDate };
-      console.log("Date filter applied, cutoff date:", cutoffDate.toISOString());
-    }
-
-    // Fetch from database
-    console.log("Querying devotions with where clause:", JSON.stringify(where));
-    await connectMongo();
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
-    const q = DevotionModel.find(where).sort({ date: -1 });
-    if (limit) q.limit(limit);
-    const result = await q.exec();
-
-    console.log(`Found ${result.length} devotions in database`);
-
-    // Convert DB format to API format
-    const formattedResult = result.map((d) => ({
-      id: idOf(d),
-      title: d.title,
-      date: new Date(d.date).toISOString().split("T")[0],
-      excerpt: d.excerpt,
-      content: d.content || undefined,
-      image: d.image || undefined,
-      featuredVideoUrl: d.featuredVideoUrl || undefined,
-      featuredVideoThumbnail: d.featuredVideoThumbnail || undefined,
-      featuredVideoTitle: d.featuredVideoTitle || undefined,
-      createdAt: d.createdAt ? new Date(d.createdAt).toISOString() : new Date().toISOString(),
-    }));
-
-    console.log(`Returning ${formattedResult.length} formatted devotions`);
-    res.json(formattedResult);
-  } catch (error: any) {
-    console.error("Error fetching devotions:", error);
-    console.error("Error details:", error.message, error.stack);
-    console.error("Error code:", error.code);
-    res.status(500).json({
-      error: "Failed to fetch devotions",
-      details: process.env.NODE_ENV === "development" ? error.message : undefined
-    });
+  if (dateFilter === "last7days" || days) {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - (days || 7));
+    cutoffDate.setHours(0, 0, 0, 0);
+    where.date = { $gte: cutoffDate };
+    console.log("Date filter applied, cutoff date:", cutoffDate.toISOString());
   }
-};
 
-export const getDevotion: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const devotion = await DevotionModel.findById(id).exec();
+  // Fetch from database
+  console.log("Querying devotions with where clause:", JSON.stringify(where));
+  await connectMongo();
+  const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+  const q = DevotionModel.find(where).sort({ date: -1 });
+  if (limit) q.limit(limit);
+  const result = await q.exec();
 
-    if (!devotion) {
-      return res.status(404).json({ error: "Devotion not found" });
-    }
+  console.log(`Found ${result.length} devotions in database`);
 
-    // Convert DB format to API format
-    res.json({
-      id: idOf(devotion),
-      title: devotion.title,
-      date: new Date(devotion.date).toISOString().split("T")[0],
-      excerpt: devotion.excerpt,
-      content: devotion.content || undefined,
-      image: devotion.image || undefined,
-      featuredVideoUrl: devotion.featuredVideoUrl || undefined,
-      featuredVideoThumbnail: devotion.featuredVideoThumbnail || undefined,
-      featuredVideoTitle: devotion.featuredVideoTitle || undefined,
-      createdAt: devotion.createdAt ? new Date(devotion.createdAt).toISOString() : new Date().toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error fetching devotion:", error);
-    res.status(500).json({ error: "Failed to fetch devotion" });
+  // Convert DB format to API format
+  const formattedResult = result.map((d) => ({
+    id: idOf(d),
+    title: d.title,
+    date: new Date(d.date).toISOString().split("T")[0],
+    excerpt: d.excerpt,
+    content: d.content || undefined,
+    image: d.image || undefined,
+    featuredVideoUrl: d.featuredVideoUrl || undefined,
+    featuredVideoThumbnail: d.featuredVideoThumbnail || undefined,
+    featuredVideoTitle: d.featuredVideoTitle || undefined,
+    createdAt: d.createdAt ? new Date(d.createdAt).toISOString() : new Date().toISOString(),
+  }));
+
+  console.log(`Returning ${formattedResult.length} formatted devotions`);
+  res.json(formattedResult);
+});
+
+export const getDevotion: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const devotion = await DevotionModel.findById(id).exec();
+
+  if (!devotion) {
+    throw new ApiError(404, "Devotion not found");
   }
-};
 
-export const createDevotion: RequestHandler = async (req, res) => {
-  try {
-    const { title, date, excerpt, content, image, featuredVideoUrl, featuredVideoThumbnail, featuredVideoTitle } = req.body;
+  // Convert DB format to API format
+  res.json({
+    id: idOf(devotion),
+    title: devotion.title,
+    date: new Date(devotion.date).toISOString().split("T")[0],
+    excerpt: devotion.excerpt,
+    content: devotion.content || undefined,
+    image: devotion.image || undefined,
+    featuredVideoUrl: devotion.featuredVideoUrl || undefined,
+    featuredVideoThumbnail: devotion.featuredVideoThumbnail || undefined,
+    featuredVideoTitle: devotion.featuredVideoTitle || undefined,
+    createdAt: devotion.createdAt ? new Date(devotion.createdAt).toISOString() : new Date().toISOString(),
+  });
+});
 
-    if (!title || !date || !excerpt) {
-      return res.status(400).json({ error: "Title, date, and excerpt are required" });
-    }
+export const createDevotion: RequestHandler = asyncHandler(async (req, res) => {
+  const { title, date, excerpt, content, image, featuredVideoUrl, featuredVideoThumbnail, featuredVideoTitle } = req.body;
 
-    // Validate date format
-    let devotionDate: Date;
-    try {
-      devotionDate = new Date(date);
-      if (isNaN(devotionDate.getTime())) {
-        return res.status(400).json({ error: "Invalid date format" });
-      }
-    } catch (e) {
-      return res.status(400).json({ error: "Invalid date format" });
-    }
-
-    await connectMongo();
-    const newDevotion = await DevotionModel.create({
-      title: title.trim(),
-      date: devotionDate,
-      excerpt: excerpt.trim(),
-      content: content?.trim() || undefined,
-      image: image?.trim() || undefined,
-      featuredVideoUrl: featuredVideoUrl?.trim() || undefined,
-      featuredVideoThumbnail: featuredVideoThumbnail?.trim() || undefined,
-      featuredVideoTitle: featuredVideoTitle?.trim() || undefined,
-    });
-
-    // Convert DB format to API format
-    res.status(201).json({
-      id: idOf(newDevotion),
-      title: newDevotion.title,
-      date: new Date(newDevotion.date).toISOString().split("T")[0],
-      excerpt: newDevotion.excerpt,
-      content: newDevotion.content || undefined,
-      image: newDevotion.image || undefined,
-      featuredVideoUrl: newDevotion.featuredVideoUrl || undefined,
-      featuredVideoThumbnail: newDevotion.featuredVideoThumbnail || undefined,
-      featuredVideoTitle: newDevotion.featuredVideoTitle || undefined,
-      createdAt: newDevotion.createdAt ? new Date(newDevotion.createdAt).toISOString() : new Date().toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error creating devotion:", error);
-    if (error?.code === 11000) {
-      return res.status(400).json({ error: "Duplicate devotion" });
-    }
-    res.status(500).json({
-      error: "Failed to create devotion",
-      details: process.env.NODE_ENV === "development" ? error.message : undefined
-    });
+  if (!title || !date || !excerpt) {
+    throw new ApiError(400, "Title, date, and excerpt are required");
   }
-};
 
-export const updateDevotion: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { title, date, excerpt, content, image, featuredVideoUrl, featuredVideoThumbnail, featuredVideoTitle } = req.body;
-
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    // Prepare update data
-    const updateData: any = {};
-    if (title !== undefined) updateData.title = title;
-    if (date !== undefined) updateData.date = new Date(date);
-    if (excerpt !== undefined) updateData.excerpt = excerpt;
-    if (content !== undefined) updateData.content = content || undefined;
-    if (image !== undefined) updateData.image = image || undefined;
-    if (featuredVideoUrl !== undefined) updateData.featuredVideoUrl = featuredVideoUrl || undefined;
-    if (featuredVideoThumbnail !== undefined) updateData.featuredVideoThumbnail = featuredVideoThumbnail || undefined;
-    if (featuredVideoTitle !== undefined) updateData.featuredVideoTitle = featuredVideoTitle || undefined;
-
-    await connectMongo();
-    const updatedDevotion = await DevotionModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
-    if (!updatedDevotion) return res.status(404).json({ error: "Devotion not found" });
-
-    // Convert DB format to API format
-    res.json({
-      id: idOf(updatedDevotion),
-      title: updatedDevotion.title,
-      date: new Date(updatedDevotion.date).toISOString().split("T")[0],
-      excerpt: updatedDevotion.excerpt,
-      content: updatedDevotion.content || undefined,
-      image: updatedDevotion.image || undefined,
-      featuredVideoUrl: updatedDevotion.featuredVideoUrl || undefined,
-      featuredVideoThumbnail: updatedDevotion.featuredVideoThumbnail || undefined,
-      featuredVideoTitle: updatedDevotion.featuredVideoTitle || undefined,
-      createdAt: updatedDevotion.createdAt ? new Date(updatedDevotion.createdAt).toISOString() : new Date().toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error updating devotion:", error);
-    res.status(500).json({ error: "Failed to update devotion" });
+  // Validate date format
+  let devotionDate: Date;
+  devotionDate = new Date(date);
+  if (isNaN(devotionDate.getTime())) {
+    throw new ApiError(400, "Invalid date format");
   }
-};
 
-export const deleteDevotion: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const deleted = await DevotionModel.findByIdAndDelete(id).exec();
-    if (!deleted) return res.status(404).json({ error: "Devotion not found" });
-    res.status(204).send();
-  } catch (error: any) {
-    console.error("Error deleting devotion:", error);
-    res.status(500).json({ error: "Failed to delete devotion" });
-  }
-};
+  await connectMongo();
+  const newDevotion = await DevotionModel.create({
+    title: title.trim(),
+    date: devotionDate,
+    excerpt: excerpt.trim(),
+    content: content?.trim() || undefined,
+    image: image?.trim() || undefined,
+    featuredVideoUrl: featuredVideoUrl?.trim() || undefined,
+    featuredVideoThumbnail: featuredVideoThumbnail?.trim() || undefined,
+    featuredVideoTitle: featuredVideoTitle?.trim() || undefined,
+  });
+
+  // Convert DB format to API format
+  res.status(201).json({
+    id: idOf(newDevotion),
+    title: newDevotion.title,
+    date: new Date(newDevotion.date).toISOString().split("T")[0],
+    excerpt: newDevotion.excerpt,
+    content: newDevotion.content || undefined,
+    image: newDevotion.image || undefined,
+    featuredVideoUrl: newDevotion.featuredVideoUrl || undefined,
+    featuredVideoThumbnail: newDevotion.featuredVideoThumbnail || undefined,
+    featuredVideoTitle: newDevotion.featuredVideoTitle || undefined,
+    createdAt: newDevotion.createdAt ? new Date(newDevotion.createdAt).toISOString() : new Date().toISOString(),
+  });
+});
+
+export const updateDevotion: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { title, date, excerpt, content, image, featuredVideoUrl, featuredVideoThumbnail, featuredVideoTitle } = req.body;
+
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  // Prepare update data
+  const updateData: any = {};
+  if (title !== undefined) updateData.title = title;
+  if (date !== undefined) updateData.date = new Date(date);
+  if (excerpt !== undefined) updateData.excerpt = excerpt;
+  if (content !== undefined) updateData.content = content || undefined;
+  if (image !== undefined) updateData.image = image || undefined;
+  if (featuredVideoUrl !== undefined) updateData.featuredVideoUrl = featuredVideoUrl || undefined;
+  if (featuredVideoThumbnail !== undefined) updateData.featuredVideoThumbnail = featuredVideoThumbnail || undefined;
+  if (featuredVideoTitle !== undefined) updateData.featuredVideoTitle = featuredVideoTitle || undefined;
+
+  await connectMongo();
+  const updatedDevotion = await DevotionModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  if (!updatedDevotion) throw new ApiError(404, "Devotion not found");
+
+  // Convert DB format to API format
+  res.json({
+    id: idOf(updatedDevotion),
+    title: updatedDevotion.title,
+    date: new Date(updatedDevotion.date).toISOString().split("T")[0],
+    excerpt: updatedDevotion.excerpt,
+    content: updatedDevotion.content || undefined,
+    image: updatedDevotion.image || undefined,
+    featuredVideoUrl: updatedDevotion.featuredVideoUrl || undefined,
+    featuredVideoThumbnail: updatedDevotion.featuredVideoThumbnail || undefined,
+    featuredVideoTitle: updatedDevotion.featuredVideoTitle || undefined,
+    createdAt: updatedDevotion.createdAt ? new Date(updatedDevotion.createdAt).toISOString() : new Date().toISOString(),
+  });
+});
+
+export const deleteDevotion: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const deleted = await DevotionModel.findByIdAndDelete(id).exec();
+  if (!deleted) throw new ApiError(404, "Devotion not found");
+  res.status(204).send();
+});
 
 // Contact Submissions API
-export const getContactSubmissions: RequestHandler = async (req, res) => {
-  try {
-    const status = req.query.status as string | undefined;
+export const getContactSubmissions: RequestHandler = asyncHandler(async (req, res) => {
+  const status = req.query.status as string | undefined;
 
-    let where: any = {};
-    if (status) {
-      where.status = status;
-    }
-
-    await connectMongo();
-    const result = await ContactSubmissionModel.find(where).sort({ createdAt: -1 }).exec();
-
-    const formattedResult = result.map((submission) => ({
-      id: idOf(submission),
-      name: submission.name,
-      email: submission.email,
-      subject: submission.subject,
-      message: submission.message,
-      status: submission.status,
-      readAt: submission.readAt ? new Date(submission.readAt).toISOString() : undefined,
-      repliedAt: submission.repliedAt ? new Date(submission.repliedAt).toISOString() : undefined,
-      notes: submission.notes || undefined,
-      createdAt: submission.createdAt ? new Date(submission.createdAt).toISOString() : new Date().toISOString(),
-      updatedAt: submission.updatedAt ? new Date(submission.updatedAt).toISOString() : new Date().toISOString(),
-    }));
-
-    res.json(formattedResult);
-  } catch (error: any) {
-    console.error("Error fetching contact submissions:", error);
-    res.status(500).json({ error: "Failed to fetch contact submissions" });
+  let where: any = {};
+  if (status) {
+    where.status = status;
   }
-};
 
-export const getContactSubmission: RequestHandler = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const submission = await ContactSubmissionModel.findById(id).exec();
+  await connectMongo();
+  const result = await ContactSubmissionModel.find(where).sort({ createdAt: -1 }).exec();
 
-    if (!submission) {
-      return res.status(404).json({ error: "Contact submission not found" });
-    }
+  const formattedResult = result.map((submission) => ({
+    id: idOf(submission),
+    name: submission.name,
+    email: submission.email,
+    subject: submission.subject,
+    message: submission.message,
+    status: submission.status,
+    readAt: submission.readAt ? new Date(submission.readAt).toISOString() : undefined,
+    repliedAt: submission.repliedAt ? new Date(submission.repliedAt).toISOString() : undefined,
+    notes: submission.notes || undefined,
+    createdAt: submission.createdAt ? new Date(submission.createdAt).toISOString() : new Date().toISOString(),
+    updatedAt: submission.updatedAt ? new Date(submission.updatedAt).toISOString() : new Date().toISOString(),
+  }));
 
-    res.json({
-      id: idOf(submission),
-      name: submission.name,
-      email: submission.email,
-      subject: submission.subject,
-      message: submission.message,
-      status: submission.status,
-      readAt: submission.readAt ? new Date(submission.readAt).toISOString() : undefined,
-      repliedAt: submission.repliedAt ? new Date(submission.repliedAt).toISOString() : undefined,
-      notes: submission.notes || undefined,
-      createdAt: submission.createdAt ? new Date(submission.createdAt).toISOString() : new Date().toISOString(),
-      updatedAt: submission.updatedAt ? new Date(submission.updatedAt).toISOString() : new Date().toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error fetching contact submission:", error);
-    res.status(500).json({ error: "Failed to fetch contact submission" });
+  res.json(formattedResult);
+});
+
+export const getContactSubmission: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const submission = await ContactSubmissionModel.findById(id).exec();
+
+  if (!submission) {
+    throw new ApiError(404, "Contact submission not found");
   }
-};
 
-export const createContactSubmission: RequestHandler = async (req, res) => {
-  try {
-    const { name, email, subject, message } = req.body;
+  res.json({
+    id: idOf(submission),
+    name: submission.name,
+    email: submission.email,
+    subject: submission.subject,
+    message: submission.message,
+    status: submission.status,
+    readAt: submission.readAt ? new Date(submission.readAt).toISOString() : undefined,
+    repliedAt: submission.repliedAt ? new Date(submission.repliedAt).toISOString() : undefined,
+    notes: submission.notes || undefined,
+    createdAt: submission.createdAt ? new Date(submission.createdAt).toISOString() : new Date().toISOString(),
+    updatedAt: submission.updatedAt ? new Date(submission.updatedAt).toISOString() : new Date().toISOString(),
+  });
+});
 
-    if (!name || !email || !subject || !message) {
-      return res.status(400).json({ error: "Name, email, subject, and message are required" });
-    }
+export const createContactSubmission: RequestHandler = asyncHandler(async (req, res) => {
+  const { name, email, subject, message } = req.body;
 
-    await connectMongo();
-    const newSubmission = await ContactSubmissionModel.create({
-      name,
-      email,
-      subject,
-      message,
-      status: "new",
-    });
+  if (!name || !email || !subject || !message) {
+    throw new ApiError(400, "Name, email, subject, and message are required");
+  }
 
-    // Emails (non-blocking)
-    const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
-    const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").trim().replace(/\/+$/, "");
-    const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
-    const contactPhone = (process.env.CONTACT_PHONE || "").trim();
-    const adminNotifyEmail = getAdminNotifyEmail();
+  await connectMongo();
+  const newSubmission = await ContactSubmissionModel.create({
+    name,
+    email,
+    subject,
+    message,
+    status: "new",
+  });
 
-    const submissionId = idOf(newSubmission);
-    const safeName = escapeHtml(String(name || "").trim() || "Friend");
-    const safeEmail = String(email || "").trim();
-    const safeSubject = escapeHtml(String(subject || "").trim());
-    const safeMessage = escapeHtml(String(message || "").trim());
+  // Emails (non-blocking)
+  const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
+  const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").trim().replace(/\/+$/, "");
+  const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
+  const contactPhone = (process.env.CONTACT_PHONE || "").trim();
+  const adminNotifyEmail = getAdminNotifyEmail();
 
-    const adminSubject = `New contact submission - ${siteName}`;
-    const adminHtml = `
+  const submissionId = idOf(newSubmission);
+  const safeName = escapeHtml(String(name || "").trim() || "Friend");
+  const safeEmail = String(email || "").trim();
+  const safeSubject = escapeHtml(String(subject || "").trim());
+  const safeMessage = escapeHtml(String(message || "").trim());
+
+  const adminSubject = `New contact submission - ${siteName}`;
+  const adminHtml = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
         <h2 style="margin: 0 0 8px;">New Contact Submission</h2>
         <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #ffffff;">
@@ -3417,7 +2923,7 @@ export const createContactSubmission: RequestHandler = async (req, res) => {
         </div>
       </div>
     `;
-    const adminText = `New contact submission - ${siteName}
+  const adminText = `New contact submission - ${siteName}
 Reference #: ${submissionId}
 Name: ${String(name || "")}
 Email: ${safeEmail}
@@ -3426,8 +2932,8 @@ Message:
 ${String(message || "")}
 `;
 
-    const donorSubject = `We received your message - ${siteName}`;
-    const donorHtml = `
+  const donorSubject = `We received your message - ${siteName}`;
+  const donorHtml = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
         <h2 style="margin: 0 0 8px;">${escapeHtml(siteName)} - Message Received</h2>
         <p style="margin: 0 0 16px;">Dear ${safeName},</p>
@@ -3459,7 +2965,7 @@ ${String(message || "")}
         </p>
       </div>
     `;
-    const donorText = `We received your message - ${siteName}
+  const donorText = `We received your message - ${siteName}
 Reference #: ${submissionId}
 Subject: ${String(subject || "")}
 Message:
@@ -3470,262 +2976,209 @@ Contact: ${contactEmail}${contactPhone ? `, ${contactPhone}` : ""}
 Website: ${siteUrl}
 `;
 
-    const mails: Promise<any>[] = [];
-    if (adminNotifyEmail) {
-      mails.push(
-        sendMail({
-          to: adminNotifyEmail,
-          subject: adminSubject,
-          html: adminHtml,
-          text: adminText,
-          replyTo: safeEmail || undefined,
-        })
-      );
-    }
-    if (safeEmail) {
-      mails.push(
-        sendMail({
-          to: safeEmail,
-          subject: donorSubject,
-          html: donorHtml,
-          text: donorText,
-          replyTo: contactEmail || undefined,
-        })
-      );
-    }
-    if (mails.length) await Promise.allSettled(mails);
-
-    res.status(201).json({
-      id: idOf(newSubmission),
-      name: newSubmission.name,
-      email: newSubmission.email,
-      subject: newSubmission.subject,
-      message: newSubmission.message,
-      status: newSubmission.status,
-      readAt: newSubmission.readAt ? new Date(newSubmission.readAt).toISOString() : undefined,
-      repliedAt: newSubmission.repliedAt ? new Date(newSubmission.repliedAt).toISOString() : undefined,
-      notes: newSubmission.notes || undefined,
-      createdAt: newSubmission.createdAt ? new Date(newSubmission.createdAt).toISOString() : new Date().toISOString(),
-      updatedAt: newSubmission.updatedAt ? new Date(newSubmission.updatedAt).toISOString() : new Date().toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error creating contact submission:", error);
-    res.status(500).json({ error: "Failed to create contact submission" });
+  const mails: Promise<any>[] = [];
+  if (adminNotifyEmail) {
+    mails.push(
+      sendMail({
+        to: adminNotifyEmail,
+        subject: adminSubject,
+        html: adminHtml,
+        text: adminText,
+        replyTo: safeEmail || undefined,
+      })
+    );
   }
-};
+  if (safeEmail) {
+    mails.push(
+      sendMail({
+        to: safeEmail,
+        subject: donorSubject,
+        html: donorHtml,
+        text: donorText,
+        replyTo: contactEmail || undefined,
+      })
+    );
+  }
+  if (mails.length) await Promise.allSettled(mails);
 
-export const updateContactSubmission: RequestHandler = async (req, res) => {
+  res.status(201).json({
+    id: idOf(newSubmission),
+    name: newSubmission.name,
+    email: newSubmission.email,
+    subject: newSubmission.subject,
+    message: newSubmission.message,
+    status: newSubmission.status,
+    readAt: newSubmission.readAt ? new Date(newSubmission.readAt).toISOString() : undefined,
+    repliedAt: newSubmission.repliedAt ? new Date(newSubmission.repliedAt).toISOString() : undefined,
+    notes: newSubmission.notes || undefined,
+    createdAt: newSubmission.createdAt ? new Date(newSubmission.createdAt).toISOString() : new Date().toISOString(),
+    updatedAt: newSubmission.updatedAt ? new Date(newSubmission.updatedAt).toISOString() : new Date().toISOString(),
+  });
+});
+
+export const updateContactSubmission: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { status, notes } = req.body;
+
+  // Get current submission to check status transitions
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const current = await ContactSubmissionModel.findById(id).exec();
+
+  if (!current) {
+    throw new ApiError(404, "Contact submission not found");
+  }
+
+  const updateData: any = {};
+  if (status !== undefined) {
+    updateData.status = status;
+    if (status === "read" && !current.readAt) {
+      updateData.readAt = new Date();
+    }
+    if (status === "replied" && !current.repliedAt) {
+      updateData.repliedAt = new Date();
+    }
+  }
+  if (notes !== undefined) updateData.notes = notes || undefined;
+
+  const updatedSubmission = await ContactSubmissionModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  if (!updatedSubmission) throw new ApiError(404, "Contact submission not found");
+
+  res.json({
+    id: idOf(updatedSubmission),
+    name: updatedSubmission.name,
+    email: updatedSubmission.email,
+    subject: updatedSubmission.subject,
+    message: updatedSubmission.message,
+    status: updatedSubmission.status,
+    readAt: updatedSubmission.readAt ? new Date(updatedSubmission.readAt).toISOString() : undefined,
+    repliedAt: updatedSubmission.repliedAt ? new Date(updatedSubmission.repliedAt).toISOString() : undefined,
+    notes: updatedSubmission.notes || undefined,
+    createdAt: updatedSubmission.createdAt ? new Date(updatedSubmission.createdAt).toISOString() : new Date().toISOString(),
+    updatedAt: updatedSubmission.updatedAt ? new Date(updatedSubmission.updatedAt).toISOString() : new Date().toISOString(),
+  });
+});
+
+export const deleteContactSubmission: RequestHandler = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+  await connectMongo();
+  const deleted = await ContactSubmissionModel.findByIdAndDelete(id).exec();
+  if (!deleted) throw new ApiError(404, "Contact submission not found");
+  res.status(204).send();
+});
+
+export const getAnalytics: RequestHandler = asyncHandler(async (req, res) => {
+  // Get counts from database (Mongo) for migrated models with error handling
+  let totalProjects = 0;
+  let activeProjects = 0;
+  let totalNewsArticles = 0;
+  let totalBooks = 0;
+  let totalCommitteeMembers = 0;
+  let activeCommitteeMembers = 0;
+  let totalDevotions = 0;
+  let totalContactSubmissions = 0;
+  let newContactSubmissions = 0;
+
   try {
-    const { id } = req.params;
-    const { status, notes } = req.body;
-
-    // Get current submission to check status transitions
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
     await connectMongo();
-    const current = await ContactSubmissionModel.findById(id).exec();
+    const [
+      projectsCount,
+      activeProjectsCount,
+      newsCount,
+      booksCount,
+      committeeCount,
+      activeCommitteeCount,
+      devotionsCount,
+      contactCount,
+      newContactCount,
+    ] = await Promise.all([
+      ProjectModel.countDocuments({}).exec().catch((e) => { console.error("Error counting projects:", e); return 0; }),
+      ProjectModel.countDocuments({ status: "ongoing" }).exec().catch((e) => { console.error("Error counting active projects:", e); return 0; }),
+      NewsArticleModel.countDocuments({}).exec().catch((e) => { console.error("Error counting news articles:", e); return 0; }),
+      BookModel.countDocuments({}).exec().catch((e) => { console.error("Error counting books:", e); return 0; }),
+      CommitteeMemberModel.countDocuments({}).exec().catch((e) => { console.error("Error counting committee members:", e); return 0; }),
+      CommitteeMemberModel.countDocuments({ active: true }).exec().catch((e) => { console.error("Error counting active committee members:", e); return 0; }),
+      DevotionModel.countDocuments({}).exec().catch((e) => { console.error("Error counting devotions:", e); return 0; }),
+      ContactSubmissionModel.countDocuments({}).exec().catch((e) => { console.error("Error counting contact submissions:", e); return 0; }),
+      ContactSubmissionModel.countDocuments({ status: "new" }).exec().catch((e) => { console.error("Error counting new contact submissions:", e); return 0; }),
+    ]);
 
-    if (!current) {
-      return res.status(404).json({ error: "Contact submission not found" });
-    }
-
-    const updateData: any = {};
-    if (status !== undefined) {
-      updateData.status = status;
-      if (status === "read" && !current.readAt) {
-        updateData.readAt = new Date();
-      }
-      if (status === "replied" && !current.repliedAt) {
-        updateData.repliedAt = new Date();
-      }
-    }
-    if (notes !== undefined) updateData.notes = notes || undefined;
-
-    const updatedSubmission = await ContactSubmissionModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
-    if (!updatedSubmission) return res.status(404).json({ error: "Contact submission not found" });
-
-    res.json({
-      id: idOf(updatedSubmission),
-      name: updatedSubmission.name,
-      email: updatedSubmission.email,
-      subject: updatedSubmission.subject,
-      message: updatedSubmission.message,
-      status: updatedSubmission.status,
-      readAt: updatedSubmission.readAt ? new Date(updatedSubmission.readAt).toISOString() : undefined,
-      repliedAt: updatedSubmission.repliedAt ? new Date(updatedSubmission.repliedAt).toISOString() : undefined,
-      notes: updatedSubmission.notes || undefined,
-      createdAt: updatedSubmission.createdAt ? new Date(updatedSubmission.createdAt).toISOString() : new Date().toISOString(),
-      updatedAt: updatedSubmission.updatedAt ? new Date(updatedSubmission.updatedAt).toISOString() : new Date().toISOString(),
-    });
-  } catch (error: any) {
-    console.error("Error updating contact submission:", error);
-    res.status(500).json({ error: "Failed to update contact submission" });
+    totalProjects = projectsCount;
+    activeProjects = activeProjectsCount;
+    totalNewsArticles = newsCount;
+    totalBooks = booksCount;
+    totalCommitteeMembers = committeeCount;
+    activeCommitteeMembers = activeCommitteeCount;
+    totalDevotions = devotionsCount;
+    totalContactSubmissions = contactCount;
+    newContactSubmissions = newContactCount;
+  } catch (dbError: any) {
+    console.error("Database query error in analytics:", dbError);
   }
-};
 
-export const deleteContactSubmission: RequestHandler = async (req, res) => {
+  // Get counts from database for migrated models
+  let totalMembers = 0;
+  let activeMembers = 0;
+  let totalDonations = 0;
+  let totalDonationAmount = 0;
+  let totalEvents = 0;
+  let upcomingEvents = 0;
+  let totalSubscribers = 0;
+  let activeSubscribers = 0;
+
   try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ error: "Invalid id" });
-    await connectMongo();
-    const deleted = await ContactSubmissionModel.findByIdAndDelete(id).exec();
-    if (!deleted) return res.status(404).json({ error: "Contact submission not found" });
-    res.status(204).send();
-  } catch (error: any) {
-    console.error("Error deleting contact submission:", error);
-    res.status(500).json({ error: "Failed to delete contact submission" });
+    const [
+      membersCount,
+      activeMembersCount,
+      donationsCount,
+      donationsSum,
+      eventsCount,
+      upcomingEventsCount,
+      subscribersCount,
+      activeSubscribersCount,
+    ] = await Promise.all([
+      MemberModel.countDocuments({}).exec().catch(() => 0),
+      MemberModel.countDocuments({ status: "Active" }).exec().catch(() => 0),
+      DonationModel.countDocuments({}).exec().catch(() => 0),
+      DonationModel.aggregate([{ $group: { _id: null, total: { $sum: "$amount" } } }]).catch(() => []),
+      EventModel.countDocuments({}).exec().catch(() => 0),
+      EventModel.countDocuments({ status: "upcoming" }).exec().catch(() => 0),
+      EmailSubscriberModel.countDocuments({}).exec().catch(() => 0),
+      EmailSubscriberModel.countDocuments({ status: "active" }).exec().catch(() => 0),
+    ]);
+
+    totalMembers = membersCount;
+    activeMembers = activeMembersCount;
+    totalDonations = donationsCount;
+    totalDonationAmount = Array.isArray(donationsSum) && donationsSum[0]?.total ? Number(donationsSum[0].total) : 0;
+    totalEvents = eventsCount;
+    upcomingEvents = upcomingEventsCount;
+    totalSubscribers = subscribersCount;
+    activeSubscribers = activeSubscribersCount;
+  } catch (e) {
+    console.error("Error counting migrated models for analytics:", e);
   }
-};
 
-// Analytics API
-export const getAnalytics: RequestHandler = async (req, res) => {
-  try {
-    // Get counts from database (Mongo) for migrated models with error handling
-    let totalProjects = 0;
-    let activeProjects = 0;
-    let totalNewsArticles = 0;
-    let totalBooks = 0;
-    let totalCommitteeMembers = 0;
-    let activeCommitteeMembers = 0;
-    let totalDevotions = 0;
-    let totalContactSubmissions = 0;
-    let newContactSubmissions = 0;
+  const analytics = {
+    totalMembers,
+    activeMembers,
+    totalProjects,
+    activeProjects,
+    totalDonations,
+    totalDonationAmount,
+    totalEvents,
+    upcomingEvents,
+    totalNewsArticles,
+    totalBooks,
+    totalSubscribers,
+    activeSubscribers,
+    totalCommitteeMembers,
+    activeCommitteeMembers,
+    totalDevotions,
+    totalContactSubmissions,
+    newContactSubmissions,
+  };
 
-    try {
-      await connectMongo();
-      const [
-        projectsCount,
-        activeProjectsCount,
-        newsCount,
-        booksCount,
-        committeeCount,
-        activeCommitteeCount,
-        devotionsCount,
-        contactCount,
-        newContactCount,
-      ] = await Promise.all([
-        ProjectModel.countDocuments({}).exec().catch((e) => { console.error("Error counting projects:", e); return 0; }),
-        ProjectModel.countDocuments({ status: "ongoing" }).exec().catch((e) => { console.error("Error counting active projects:", e); return 0; }),
-        NewsArticleModel.countDocuments({}).exec().catch((e) => { console.error("Error counting news articles:", e); return 0; }),
-        BookModel.countDocuments({}).exec().catch((e) => { console.error("Error counting books:", e); return 0; }),
-        CommitteeMemberModel.countDocuments({}).exec().catch((e) => { console.error("Error counting committee members:", e); return 0; }),
-        CommitteeMemberModel.countDocuments({ active: true }).exec().catch((e) => { console.error("Error counting active committee members:", e); return 0; }),
-        DevotionModel.countDocuments({}).exec().catch((e) => { console.error("Error counting devotions:", e); return 0; }),
-        ContactSubmissionModel.countDocuments({}).exec().catch((e) => { console.error("Error counting contact submissions:", e); return 0; }),
-        ContactSubmissionModel.countDocuments({ status: "new" }).exec().catch((e) => { console.error("Error counting new contact submissions:", e); return 0; }),
-      ]);
-
-      console.log("Analytics counts:", {
-        projects: projectsCount,
-        activeProjects: activeProjectsCount,
-        news: newsCount,
-        books: booksCount,
-        committee: committeeCount,
-        activeCommittee: activeCommitteeCount,
-        devotions: devotionsCount,
-        contacts: contactCount,
-        newContacts: newContactCount,
-      });
-
-      totalProjects = projectsCount;
-      activeProjects = activeProjectsCount;
-      totalNewsArticles = newsCount;
-      totalBooks = booksCount;
-      totalCommitteeMembers = committeeCount;
-      activeCommitteeMembers = activeCommitteeCount;
-      totalDevotions = devotionsCount;
-      totalContactSubmissions = contactCount;
-      newContactSubmissions = newContactCount;
-    } catch (dbError: any) {
-      console.error("Database query error in analytics:", dbError);
-      console.error("Error details:", dbError.message, dbError.stack);
-      // Continue with default values (0) if database queries fail
-    }
-
-    // Get counts from database for migrated models
-    let totalMembers = 0;
-    let activeMembers = 0;
-    let totalDonations = 0;
-    let totalDonationAmount = 0;
-    let totalEvents = 0;
-    let upcomingEvents = 0;
-    let totalSubscribers = 0;
-    let activeSubscribers = 0;
-
-    try {
-      const [
-        membersCount,
-        activeMembersCount,
-        donationsCount,
-        donationsSum,
-        eventsCount,
-        upcomingEventsCount,
-        subscribersCount,
-        activeSubscribersCount,
-      ] = await Promise.all([
-        MemberModel.countDocuments({}).exec().catch(() => 0),
-        MemberModel.countDocuments({ status: "Active" }).exec().catch(() => 0),
-        DonationModel.countDocuments({}).exec().catch(() => 0),
-        DonationModel.aggregate([{ $group: { _id: null, total: { $sum: "$amount" } } }]).catch(() => []),
-        EventModel.countDocuments({}).exec().catch(() => 0),
-        EventModel.countDocuments({ status: "upcoming" }).exec().catch(() => 0),
-        EmailSubscriberModel.countDocuments({}).exec().catch(() => 0),
-        EmailSubscriberModel.countDocuments({ status: "active" }).exec().catch(() => 0),
-      ]);
-
-      totalMembers = membersCount;
-      activeMembers = activeMembersCount;
-      totalDonations = donationsCount;
-      totalDonationAmount = Array.isArray(donationsSum) && donationsSum[0]?.total ? Number(donationsSum[0].total) : 0;
-      totalEvents = eventsCount;
-      upcomingEvents = upcomingEventsCount;
-      totalSubscribers = subscribersCount;
-      activeSubscribers = activeSubscribersCount;
-    } catch (e) {
-      console.error("Error counting migrated models for analytics:", e);
-    }
-
-    const analytics = {
-      totalMembers,
-      activeMembers,
-      totalProjects,
-      activeProjects,
-      totalDonations,
-      totalDonationAmount,
-      totalEvents,
-      upcomingEvents,
-      totalNewsArticles,
-      totalBooks,
-      totalSubscribers,
-      activeSubscribers,
-      totalCommitteeMembers,
-      activeCommitteeMembers,
-      totalDevotions,
-      totalContactSubmissions,
-      newContactSubmissions,
-    };
-
-    res.json(analytics);
-  } catch (error: any) {
-    console.error("Error fetching analytics:", error);
-    // Return default values instead of error to prevent frontend crashes
-    res.json({
-      totalMembers: 0,
-      activeMembers: 0,
-      totalProjects: 0,
-      activeProjects: 0,
-      totalDonations: 0,
-      totalDonationAmount: 0,
-      totalEvents: 0,
-      upcomingEvents: 0,
-      totalNewsArticles: 0,
-      totalBooks: 0,
-      totalSubscribers: 0,
-      activeSubscribers: 0,
-      totalCommitteeMembers: 0,
-      activeCommitteeMembers: 0,
-      totalDevotions: 0,
-      totalContactSubmissions: 0,
-      newContactSubmissions: 0,
-    });
-  }
-};
+  res.json(analytics);
+});

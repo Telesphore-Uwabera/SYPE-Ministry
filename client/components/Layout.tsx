@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Navigation from "./Navigation";
 import Footer from "./Footer";
@@ -6,6 +6,7 @@ import BackToTop from "./BackToTop";
 import SEO from "./SEO";
 import MTNPayment from "./MTNPayment";
 import CookieConsent from "./CookieConsent";
+import { cn } from "@/lib/utils";
 
 // Initialize Netlify Identity
 declare global {
@@ -25,13 +26,14 @@ interface LayoutProps {
 }
 
 export default function Layout({ children }: LayoutProps) {
+  const [isContactBarVisible, setIsContactBarVisible] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
     // Initialize Netlify Identity if available
     if (window.netlifyIdentity) {
       window.netlifyIdentity.init();
-      
+
       // Handle invite tokens in the URL hash
       const hash = window.location.hash;
       if (hash && hash.includes('invite_token')) {
@@ -188,8 +190,20 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <SEO {...pageSEO} />
-      <Navigation />
-      <main className="flex-1 pt-[144px] md:pt-[168px]">{children}</main>
+      <Navigation
+        isContactBarVisible={isContactBarVisible}
+        setIsContactBarVisible={setIsContactBarVisible}
+      />
+      <main
+        className={cn(
+          "flex-1 transition-all duration-500",
+          isContactBarVisible
+            ? "pt-[144px] md:pt-[176px]"
+            : "pt-[104px] md:pt-[128px]"
+        )}
+      >
+        {children}
+      </main>
       <Footer />
       <BackToTop />
       {/* Floating MTN Payment - Appears on all pages */}

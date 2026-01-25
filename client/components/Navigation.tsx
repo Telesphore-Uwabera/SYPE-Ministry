@@ -15,7 +15,12 @@ interface SearchResult {
   icon: React.ComponentType<{ size?: number | string; className?: string }>;
 }
 
-export default function Navigation() {
+interface NavigationProps {
+  isContactBarVisible: boolean;
+  setIsContactBarVisible: (visible: boolean) => void;
+}
+
+export default function Navigation({ isContactBarVisible, setIsContactBarVisible }: NavigationProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [scrollDirection, setScrollDirection] = useState<"up" | "down">("up");
@@ -195,10 +200,16 @@ export default function Navigation() {
   return (
     <>
       {/* Contact Info Bar */}
-      <ContactInfoBar />
+      <ContactInfoBar
+        isVisible={isContactBarVisible}
+        onClose={() => setIsContactBarVisible(false)}
+      />
 
       {/* MTN Payment Bar */}
-      <MTNPayment variant="bar" />
+      <MTNPayment
+        variant="bar"
+        topOffset={!isContactBarVisible ? "0px" : undefined}
+      />
 
       {/* Scroll Progress Indicator */}
       <motion.div
@@ -206,7 +217,9 @@ export default function Navigation() {
         animate={{ scaleX: scrollProgress / 100 }}
         initial={{ scaleX: 0 }}
         transition={{ duration: 0.1 }}
-        style={{ top: "80px" }} // Adjust based on contact bar (40px) + MTN bar (40px)
+        style={{
+          top: isContactBarVisible ? "80px" : "40px"
+        }} // Dynamic based on visible bars
       />
 
       {/* Main Navigation with fade and zoom effects */}
@@ -228,8 +241,11 @@ export default function Navigation() {
           // Keep navbar/menu BELOW the MTN bar so the yellow content stays on top
           "fixed left-0 right-0 z-50 transition-all duration-500",
           isScrolled
-            ? "bg-white/95 backdrop-blur-xl border-b border-border/50 shadow-lg top-[80px] md:top-[96px]"
-            : "bg-white/80 backdrop-blur-sm border-b border-border/30 shadow-sm top-[80px] md:top-[96px]"
+            ? "bg-white/95 backdrop-blur-xl border-b border-border/50 shadow-lg"
+            : "bg-white/80 backdrop-blur-sm border-b border-border/30 shadow-sm",
+          isContactBarVisible
+            ? "top-[80px] md:top-[96px]"
+            : "top-[40px] md:top-[48px]"
         )}
       >
         <div className="container mx-auto px-4">
@@ -588,7 +604,10 @@ export default function Navigation() {
         }}
         className={cn(
           "fixed left-0 right-0 z-40 transition-all duration-500 w-full",
-          "bg-white/90 backdrop-blur-lg border-b border-border/40 shadow-xl top-[80px] md:top-[96px]"
+          "bg-white/90 backdrop-blur-lg border-b border-border/40 shadow-xl",
+          isContactBarVisible
+            ? "top-[80px] md:top-[96px]"
+            : "top-[40px] md:top-[48px]"
         )}
       >
         <div className="w-full px-6 md:px-8 lg:px-12">

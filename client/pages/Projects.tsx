@@ -59,6 +59,7 @@ export default function Projects() {
       const response = await fetch(apiUrl, { cache: "no-store" });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
+      console.log("Events data received:", data);
       setEvents(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching events:", error);

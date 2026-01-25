@@ -3,8 +3,12 @@ import { Phone, Mail, MapPin, Clock, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 
-export default function ContactInfoBar() {
-  const [isVisible, setIsVisible] = useState(true);
+interface ContactInfoBarProps {
+  isVisible?: boolean;
+  onClose?: () => void;
+}
+
+export default function ContactInfoBar({ isVisible = true, onClose }: ContactInfoBarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -74,9 +78,9 @@ export default function ContactInfoBar() {
                   const IconComponent = info.icon;
                   const content = (
                     <div className="flex items-center gap-2 group">
-                      <IconComponent 
-                        size={14} 
-                        className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0" 
+                      <IconComponent
+                        size={14}
+                        className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0"
                       />
                       <span className="text-xs md:text-sm text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
                         {info.text}
@@ -99,9 +103,9 @@ export default function ContactInfoBar() {
                             className="flex items-center gap-2 group"
                             aria-label={info.label}
                           >
-                            <IconComponent 
-                              size={14} 
-                              className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0" 
+                            <IconComponent
+                              size={14}
+                              className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0"
                             />
                             <span className="text-xs md:text-sm text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
                               {info.text}
@@ -113,9 +117,9 @@ export default function ContactInfoBar() {
                             className="flex items-center gap-2 group"
                             aria-label={info.label}
                           >
-                            <IconComponent 
-                              size={14} 
-                              className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0" 
+                            <IconComponent
+                              size={14}
+                              className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0"
                             />
                             <span className="text-xs md:text-sm text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
                               {info.text}
@@ -265,7 +269,7 @@ export default function ContactInfoBar() {
 
               {/* Close Button */}
               <motion.button
-                onClick={() => setIsVisible(false)}
+                onClick={onClose}
                 className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-white/70 hover:text-white ml-4"
                 aria-label="Close contact bar"
                 whileHover={{ scale: 1.1, rotate: 90 }}

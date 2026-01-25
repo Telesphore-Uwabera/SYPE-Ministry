@@ -6,9 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 interface MTNPaymentProps {
   variant?: "bar" | "floating" | "footer";
   className?: string;
+  topOffset?: string;
 }
 
-export default function MTNPayment({ variant = "bar", className = "" }: MTNPaymentProps) {
+export default function MTNPayment({ variant = "bar", className = "", topOffset }: MTNPaymentProps) {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
   const paymentCode = "*182*1*1*0782789883#";
@@ -113,10 +114,13 @@ export default function MTNPayment({ variant = "bar", className = "" }: MTNPayme
     );
   }
 
-  // Default bar variant
+  // On small screens, keep the yellow bar ABOVE the contact bar
+  const defaultTop = "md:top-12 top-0";
   return (
-    // On small screens, keep the yellow bar ABOVE the contact bar
-    <div className={`fixed top-0 md:top-12 left-0 right-0 z-[70] bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-white ${className}`}>
+    <div
+      className={`fixed left-0 right-0 z-[70] bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-white transition-all duration-300 ${className}`}
+      style={topOffset ? { top: topOffset } : {}}
+    >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between gap-2 h-10 md:h-10 lg:h-12">
           <div className="flex items-center gap-2 md:gap-3 flex-1 w-full md:w-auto">

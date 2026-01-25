@@ -1,21 +1,21 @@
 import { RequestHandler } from "express";
 import { connectMongo } from "../lib/mongoose";
 import { NewsArticleModel, DevotionModel, EventModel } from "../models/core";
+import { asyncHandler } from "../middleware/asyncHandler";
 
-export const getSitemap: RequestHandler = async (req, res) => {
-    try {
-        await connectMongo();
+export const getSitemap: RequestHandler = asyncHandler(async (req, res) => {
+  await connectMongo();
 
-        const [news, devotions, events] = await Promise.all([
-            NewsArticleModel.find({}).select("_id updatedAt").lean().exec(),
-            DevotionModel.find({}).select("_id updatedAt").lean().exec(),
-            EventModel.find({}).select("_id updatedAt").lean().exec(),
-        ]);
+  const [news, devotions, events] = await Promise.all([
+    NewsArticleModel.find({}).select("_id updatedAt").lean().exec(),
+    DevotionModel.find({}).select("_id updatedAt").lean().exec(),
+    EventModel.find({}).select("_id updatedAt").lean().exec(),
+  ]);
 
-        const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").replace(/\/+$/, "");
-        const today = new Date().toISOString().split("T")[0];
+  const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").replace(/\/+$/, "");
+  const today = new Date().toISOString().split("T")[0];
 
-        let xml = `<?xml version="1.0" encoding="UTF-8"?>
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>${siteUrl}/</loc>
@@ -72,46 +72,42 @@ export const getSitemap: RequestHandler = async (req, res) => {
     <priority>0.5</priority>
   </url>`;
 
-        // Add News Articles
-        news.forEach((n: any) => {
-            xml += `
+  // Add News Articles
+  news.forEach((n: any) => {
+    xml += `
   <url>
     <loc>${siteUrl}/news/${n._id}</loc>
     <lastmod>${new Date(n.updatedAt || new Date()).toISOString().split("T")[0]}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>`;
-        });
+  });
 
-        // Add Devotions
-        devotions.forEach((d: any) => {
-            xml += `
+  // Add Devotions
+  devotions.forEach((d: any) => {
+    xml += `
   <url>
     <loc>${siteUrl}/devotions/${d._id}</loc>
     <lastmod>${new Date(d.updatedAt || new Date()).toISOString().split("T")[0]}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>`;
-        });
+  });
 
-        // Add Events
-        events.forEach((e: any) => {
-            xml += `
+  // Add Events
+  events.forEach((e: any) => {
+    xml += `
   <url>
     <loc>${siteUrl}/events/${e._id}</loc>
     <lastmod>${new Date(e.updatedAt || new Date()).toISOString().split("T")[0]}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>`;
-        });
+  });
 
-        xml += `
+  xml += `
 </urlset>`;
 
-        res.header("Content-Type", "application/xml");
-        res.send(xml);
-    } catch (error) {
-        console.error("Error generating sitemap:", error);
-        res.status(500).send("Error generating sitemap");
-    }
-};
+  res.header("Content-Type", "application/xml");
+  res.send(xml);
+});

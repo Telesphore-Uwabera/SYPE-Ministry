@@ -76,7 +76,7 @@ export const sendTestEmail: RequestHandler = async (req, res) => {
         </div>
       </div>
     `;
-    const text = `Test email - ${siteName}\n\nIf you received this email, your mailing configuration is working.\nSent at: ${when}\nWebsite: ${siteUrl}\n`;
+    const text = `Test email - ${siteName}\n\nIf you received this email, your mailing configuration is working.\nSent at: ${when}\nWebsite: ${siteUrl}\n\nContact Us:\nEmail: ${getAdminNotifyEmail()}\nPhone: 0782789883 / 0780430990\nWebsite: ${siteUrl}\n`;
 
     const { messageId } = await sendMail({ to, subject, html, text });
     res.json({ ok: true, messageId });
@@ -810,14 +810,12 @@ export const createPublicDonation: RequestHandler = async (req, res) => {
           <em>"Whatever you do, work at it with all your heart, as working for the Lord"</em> (Colossians 3:23). 
           We pray that God will bless you abundantly for your faithfulness and generosity.
         </p>
-        <p style="margin: 16px 0 0;">
-          If you have any questions, please reach out to us at
-          <a href="mailto:${escapeHtml(contactEmail)}">${escapeHtml(contactEmail)}</a>
-          ${contactPhone ? ` or ${escapeHtml(contactPhone)}` : ""}.
-        </p>
-        <p style="margin: 8px 0 0;">
-          Visit us: <a href="${escapeHtml(siteUrl)}">${escapeHtml(siteUrl)}</a>
-        </p>
+        <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+          <p style="margin: 0 0 12px 0; font-weight: bold; color: #2c5282;">Contact Us:</p>
+          <p style="margin: 4px 0; font-size: 14px;">📧 Email: <a href="mailto:${escapeHtml(contactEmail)}" style="color: #2c5282;">${escapeHtml(contactEmail)}</a></p>
+          <p style="margin: 4px 0; font-size: 14px;">📱 Phone: <a href="tel:0782789883" style="color: #2c5282;">0782789883</a> / <a href="tel:0780430990" style="color: #2c5282;">0780430990</a></p>
+          <p style="margin: 4px 0; font-size: 14px;">🌐 Website: <a href="${escapeHtml(siteUrl)}" style="color: #2c5282;">${escapeHtml(siteUrl)}</a></p>
+        </div>
         <p style="margin: 24px 0 0;">
           May God's grace be with you,<br />
           <strong>${escapeHtml(siteName)}</strong><br />

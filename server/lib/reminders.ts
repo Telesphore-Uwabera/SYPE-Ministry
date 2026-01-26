@@ -47,7 +47,7 @@ export async function sendMonthlyContributionReminder() {
           <div style="padding: 32px; background-color: white;">
             <p><strong>${greeting}</strong></p>
             <p style="font-style: italic; color: #4a5568; margin: 20px 0;">"Ukundishe Uwiteka Imana yawe umutima wawe wose n'ubugingo bwawe bwose n'imbaraga zawe zose." <strong>Gutegeka kwa kabiri 6:5</strong></p>
-            <p>Tuributsa abanyamuryango bose ko amafaranga <strong>500 FRW na 1000 FRW (minimum)</strong> ya buri kwezi atangwa na buri munyanuryango kugira ngo akoreshwe mu murimo mugari dufite w'ivugabutumwa.</p>
+            <p>Tuributsa abanyamuryango bose ko amafaranga <strong>500 FRW ku munyeshuri na 1000 FRW ku warangije kwiga (minimum)</strong> ya buri kwezi atangwa na buri munyanuryango kugira ngo akoreshwe mu murimo mugari dufite w'ivugabutumwa.</p>
             <p>Umusanzu woherezwa kuri iyi nimero ikurikira cyangwa ukayabaha cash mu gihe mubasha kubonana:</p>
             <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
               <p style="margin: 0; font-size: 20px; color: #2c5282;"><strong>0782789883</strong></p>
@@ -69,7 +69,7 @@ export async function sendMonthlyContributionReminder() {
         </div>
       `;
 
-      const text = `Subject: ${subject}\n\n${greeting}\n\n"Ukundishe Uwiteka Imana yawe umutima wawe wose n'ubugingo bwawe bwose n'imbaraga zawe zose." Gutegeka kwa kabiri 6:5\n\nTuributsa abanyamuryango bose ko amafaranga 500 FRW na 1000 FRW (minimim) ya buri kwezi atangwa na buri munyanuryango kugira ngo akoreshwe mu murimo mugari dufite w'ivugabutumwa.\n\nUmusanzu woherezwa kuri iyi nimero ikurikira cyangwa ukayabaha cash mu gihe mubasha kubonana.\n\n0782789883 (Simeon Niyonkuru) - Treasurer\n\nImana iguhe umugisha, ikurebe neza kandi iguhe amahoro.\n\nContact Us:\nEmail: ${contactEmail}\nPhone: ${contactPhone}\nWebsite: ${siteUrl}\n\nSYPE Ministry`;
+      const text = `Subject: ${subject}\n\n${greeting}\n\n"Ukundishe Uwiteka Imana yawe umutima wawe wose n'ubugingo bwawe bwose n'imbaraga zawe zose." Gutegeka kwa kabiri 6:5\n\nTuributsa abanyamuryango bose ko amafaranga 500 FRW ku munyeshuri na 1000 FRW ku warangije kwiga (minimum) ya buri kwezi atangwa na buri munyanuryango kugira ngo akoreshwe mu murimo mugari dufite w'ivugabutumwa.\n\nUmusanzu woherezwa kuri iyi nimero ikurikira cyangwa ukayabaha cash mu gihe mubasha kubonana.\n\n0782789883 (Simeon Niyonkuru) - Treasurer\n\nImana iguhe umugisha, ikurebe neza kandi iguhe amahoro.\n\nContact Us:\nEmail: ${contactEmail}\nPhone: ${contactPhone}\nWebsite: ${siteUrl}\n\nSYPE Ministry`;
 
       await sendMail({
         to: email,

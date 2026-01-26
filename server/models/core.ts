@@ -158,6 +158,7 @@ export const MemberModel: any =
         status: { type: String, required: true }, // Active | Inactive | Pending
         joinDate: { type: Date, default: () => new Date() },
         department: { type: String },
+        association: { type: String },
         notes: { type: String },
       },
       { timestamps: true, collection: "members" }

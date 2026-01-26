@@ -1,7 +1,72 @@
-import { DonationModel } from "../models/core";
+import { DonationModel, MemberModel, EmailSubscriberModel } from "../models/core";
 import { sendMail } from "./mailer";
 import { connectMongo } from "./mongoose";
 import { syncYouTubeAndNotify } from "./youtubeSync";
+
+export async function sendMonthlyContributionReminder() {
+  try {
+    const activeMembers = await MemberModel.find({ status: "Active" }).exec();
+    const subscribers = await EmailSubscriberModel.find({ status: "active" }).exec();
+
+    const emails = new Set<string>();
+    activeMembers.forEach((m: any) => { if (m.email) emails.add(m.email.toLowerCase().trim()); });
+    subscribers.forEach((s: any) => { if (s.email) emails.add(s.email.toLowerCase().trim()); });
+
+    if (emails.size === 0) return;
+
+    const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
+    const siteUrl = (process.env.SITE_URL || "https://sypeministry.org").trim();
+    const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
+    const contactPhone = (process.env.CONTACT_PHONE || "+250 788 469 086").trim();
+    const subject = "UMUSANZU WA BURI KWEZI";
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+        <div style="background-color: #2c5282; color: white; padding: 24px; text-align: center;">
+          <h2 style="margin: 0;">${subject}</h2>
+        </div>
+        <div style="padding: 32px; background-color: white;">
+          <p>Shalom!</p>
+          <p style="font-style: italic; color: #4a5568; margin: 20px 0;">"Ukundishe Uwiteka Imana yawe umutima wawe wose n'ubugingo bwawe bwose n'imbaraga zawe zose." <strong>Gutegeka kwa kabiri 6:5</strong></p>
+          <p>Tuributsa abanyamuryango bose ko amafaranga <strong>500 FRW na 1000 FRW (minimum)</strong> ya buri kwezi atangwa na buri munyanuryango kugira ngo akoreshwe mu murimo mugari dufite w'ivugabutumwa.</p>
+          <p>Umusanzu woherezwa kuri iyi nimero ikurikira cyangwa ukayabaha cash mu gihe mubasha kubonana:</p>
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
+            <p style="margin: 0; font-size: 20px; color: #2c5282;"><strong>0782789883</strong></p>
+            <p style="margin: 4px 0;"><strong>Simeon Niyonkuru</strong> (Treasurer)</p>
+          </div>
+          <p>Imana iguhe umugisha, ikurebe neza kandi iguhe amahoro.</p>
+          
+          <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+            <p style="margin: 0 0 12px 0; font-weight: bold; color: #2c5282;">Contact Us:</p>
+            <p style="margin: 4px 0; font-size: 14px;">📧 Email: <a href="mailto:${contactEmail}" style="color: #2c5282;">${contactEmail}</a></p>
+            <p style="margin: 4px 0; font-size: 14px;">📱 Phone: <a href="tel:${contactPhone.replace(/\s/g, '')}" style="color: #2c5282;">${contactPhone}</a></p>
+            <p style="margin: 4px 0; font-size: 14px;">🌐 Website: <a href="${siteUrl}" style="color: #2c5282;">${siteUrl}</a></p>
+          </div>
+          
+          <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #718096; text-align: center;">
+            <strong>SYPE Ministry</strong>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const text = `Subject: ${subject}\n\nShalom!\n\n"Ukundishe Uwiteka Imana yawe umutima wawe wose n'ubugingo bwawe bwose n'imbaraga zawe zose." Gutegeka kwa kabiri 6:5\n\nTuributsa abanyamuryango bose ko amafaranga 500 FRW na 1000 FRW (minimim) ya buri kwezi atangwa na buri munyanuryango kugira ngo akoreshwe mu murimo mugari dufite w'ivugabutumwa.\n\nUmusanzu woherezwa kuri iyi nimero ikurikira cyangwa ukayabaha cash mu gihe mubasha kubonana.\n\n0782789883 (Simeon Niyonkuru) - Treasurer\n\nImana iguhe umugisha, ikurebe neza kandi iguhe amahoro.\n\nContact Us:\nEmail: ${contactEmail}\nPhone: ${contactPhone}\nWebsite: ${siteUrl}\n\nSYPE Ministry`;
+
+    console.log(`[Reminders] Sending monthly contribution reminder to ${emails.size} recipients.`);
+
+    for (const email of emails) {
+      await sendMail({
+        to: email,
+        subject,
+        html,
+        text
+      }).catch(err => console.error(`[Reminders] Failed to send monthly reminder to ${email}:`, err));
+    }
+    console.log(`[Reminders] Monthly contribution reminder task finished.`);
+  } catch (err) {
+    console.error("[Reminders] Error in monthly contribution reminder:", err);
+  }
+}
 
 function escapeHtml(value: string) {
   return value
@@ -20,6 +85,12 @@ export async function runReminders() {
     await syncYouTubeAndNotify().catch(err => console.error("[Reminders] YouTube sync failed:", err));
 
     const today = new Date();
+
+    // Send monthly contribution reminder on the 1st of each month at 8 AM
+    if (today.getDate() === 1 && today.getHours() === 8) {
+      await sendMonthlyContributionReminder().catch(err => console.error("[Reminders] Monthly contribution reminder failed:", err));
+    }
+
     today.setHours(0, 0, 0, 0);
 
     // Find donations where payment is due today or was due and still unpaid

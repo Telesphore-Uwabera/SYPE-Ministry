@@ -100,6 +100,7 @@ export const getMembers: RequestHandler = asyncHandler(async (req, res) => {
       status: m.status,
       joinDate: m.joinDate ? new Date(m.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
       department: m.department || "",
+      association: m.association || "",
       notes: m.notes || "",
     }))
   );
@@ -120,12 +121,13 @@ export const getMember: RequestHandler = asyncHandler(async (req, res) => {
     status: member.status,
     joinDate: member.joinDate ? new Date(member.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
     department: member.department || "",
+    association: member.association || "",
     notes: member.notes || "",
   });
 });
 
 export const createMember: RequestHandler = asyncHandler(async (req, res) => {
-  const { name, email, phone, role, status, joinDate, department, notes } = req.body ?? {};
+  const { name, email, phone, role, status, joinDate, department, association, notes } = req.body ?? {};
   if (!name || !email || !role || !status) {
     throw new ApiError(400, "name, email, role, and status are required");
   }
@@ -138,6 +140,7 @@ export const createMember: RequestHandler = asyncHandler(async (req, res) => {
     status,
     joinDate: joinDate ? new Date(joinDate) : new Date(),
     department: department || "",
+    association: association || "",
     notes: notes || "",
   });
   res.status(201).json({
@@ -149,6 +152,7 @@ export const createMember: RequestHandler = asyncHandler(async (req, res) => {
     status: created.status,
     joinDate: created.joinDate ? new Date(created.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
     department: created.department || "",
+    association: created.association || "",
     notes: created.notes || "",
   });
 });
@@ -156,7 +160,7 @@ export const createMember: RequestHandler = asyncHandler(async (req, res) => {
 export const updateMember: RequestHandler = asyncHandler(async (req, res) => {
   const { id } = req.params;
   if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
-  const { name, email, phone, role, status, joinDate, department, notes } = req.body ?? {};
+  const { name, email, phone, role, status, joinDate, department, association, notes } = req.body ?? {};
   const updateData: any = {};
   if (name !== undefined) updateData.name = name;
   if (email !== undefined) updateData.email = email;
@@ -165,6 +169,7 @@ export const updateMember: RequestHandler = asyncHandler(async (req, res) => {
   if (status !== undefined) updateData.status = status;
   if (joinDate !== undefined) updateData.joinDate = new Date(joinDate);
   if (department !== undefined) updateData.department = department;
+  if (association !== undefined) updateData.association = association;
   if (notes !== undefined) updateData.notes = notes;
 
   await connectMongo();
@@ -179,6 +184,7 @@ export const updateMember: RequestHandler = asyncHandler(async (req, res) => {
     status: updated.status,
     joinDate: updated.joinDate ? new Date(updated.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
     department: updated.department || "",
+    association: updated.association || "",
     notes: updated.notes || "",
   });
 });

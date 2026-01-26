@@ -1,5 +1,8 @@
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
+import { Member } from "@/types/admin";
+import { buildApiUrl } from "@/lib/apiConfig";
 import { Button } from "@/components/ui/button";
 import {
   Users,
@@ -13,6 +16,26 @@ import {
 } from "lucide-react";
 
 export default function Membership() {
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const response = await fetch(buildApiUrl("/api/admin/members"));
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setMembers(data.filter((m: Member) => m.status === "Active"));
+        }
+      } catch (error) {
+        console.error("Error fetching members:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMembers();
+  }, []);
+
   const benefits = [
     {
       icon: BookOpen,
@@ -297,6 +320,40 @@ export default function Membership() {
           </Button>
         </div>
       </section>
+
+      {/* Our Members Section */}
+      {!loading && members.length > 0 && (
+        <section className="py-16 md:py-24 bg-white relative overflow-hidden">
+          <div className="container mx-auto px-4 relative z-10">
+            <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary text-center mb-12">
+              Our Community Members
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {members.slice(0, 100).map((member) => (
+                <div
+                  key={member.id}
+                  className="bg-muted/30 rounded-lg p-5 border border-border flex flex-col items-center text-center hover:shadow-md transition-shadow"
+                >
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-3 text-primary font-bold text-xl">
+                    {member.name.charAt(0)}
+                  </div>
+                  <h3 className="font-heading font-bold text-primary text-lg mb-1 leading-tight">
+                    {member.name}
+                  </h3>
+                  <p className="text-sm text-foreground/60 mb-2">
+                    {member.association || "SYPE Community"}
+                  </p>
+                </div>
+              ))}
+            </div>
+            {members.length > 100 && (
+              <p className="text-center mt-8 text-foreground/50">
+                And {members.length - 100} more dedicated members...
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* WhatsApp Training Group Section */}
       <section className="py-16 md:py-24 bg-muted/30">

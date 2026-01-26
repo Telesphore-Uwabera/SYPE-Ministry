@@ -9,6 +9,7 @@ export interface Member {
   status: "Active" | "Inactive" | "Pending";
   joinDate: string;
   department?: string;
+  association?: string;
   notes?: string;
 }
 

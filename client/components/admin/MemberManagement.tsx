@@ -50,6 +50,7 @@ export default function MemberManagement() {
     status: "Pending",
     joinDate: new Date().toISOString().split("T")[0],
     department: "",
+    association: "",
     notes: "",
   });
 
@@ -130,6 +131,7 @@ export default function MemberManagement() {
       status: member.status,
       joinDate: member.joinDate,
       department: member.department || "",
+      association: member.association || "",
       notes: member.notes || "",
     });
     setIsDialogOpen(true);
@@ -167,6 +169,7 @@ export default function MemberManagement() {
       status: "Pending",
       joinDate: new Date().toISOString().split("T")[0],
       department: "",
+      association: "",
       notes: "",
     });
   };
@@ -182,7 +185,7 @@ export default function MemberManagement() {
   });
 
   const exportToCSV = () => {
-    const headers = ["Name", "Email", "Phone", "Role", "Status", "Join Date", "Department"];
+    const headers = ["Name", "Email", "Phone", "Role", "Status", "Join Date", "Department", "Association"];
     const rows = filteredMembers.map((m) => [
       m.name,
       m.email,
@@ -191,6 +194,7 @@ export default function MemberManagement() {
       m.status,
       m.joinDate,
       m.department || "",
+      m.association || "",
     ]);
     const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -330,13 +334,23 @@ export default function MemberManagement() {
                     />
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="department">Department</Label>
-                  <Input
-                    id="department"
-                    value={formData.department}
-                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="department">Department</Label>
+                    <Input
+                      id="department"
+                      value={formData.department}
+                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="association">Church/Association</Label>
+                    <Input
+                      id="association"
+                      value={formData.association}
+                      onChange={(e) => setFormData({ ...formData, association: e.target.value })}
+                    />
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="notes">Notes</Label>
@@ -424,6 +438,7 @@ export default function MemberManagement() {
                   <TableHead>Status</TableHead>
                   <TableHead>Join Date</TableHead>
                   <TableHead>Department</TableHead>
+                  <TableHead>Association</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -450,6 +465,7 @@ export default function MemberManagement() {
                       </TableCell>
                       <TableCell>{new Date(member.joinDate).toLocaleDateString()}</TableCell>
                       <TableCell>{member.department || "-"}</TableCell>
+                      <TableCell>{member.association || "-"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button

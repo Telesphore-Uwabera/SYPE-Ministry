@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Analytics } from "@/types/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, Users, BookOpen, DollarSign, Calendar, Newspaper } from "lucide-react";
+import { BarChart3, Users, BookOpen, DollarSign, Calendar, Newspaper, Mail } from "lucide-react";
 import { buildApiUrl } from "@/lib/apiConfig";
 
 interface AnalyticsDashboardProps {
@@ -129,6 +129,14 @@ export default function AnalyticsDashboard({ analytics: propAnalytics, onRefresh
       icon: Newspaper,
       color: "text-red-500",
       bgColor: "bg-red-500/10",
+    },
+    {
+      title: "Total Subscribers",
+      value: analytics.totalSubscribers,
+      description: `${analytics.activeSubscribers} active`,
+      icon: Mail,
+      color: "text-cyan-500",
+      bgColor: "bg-cyan-500/10",
     },
   ];
 

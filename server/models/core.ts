@@ -267,6 +267,7 @@ export const EmailCampaignModel: any =
     )
   ) as any);
 
+
 export const YouTubeSyncModel: any =
   (mongoose.models.YouTubeSync as any) ??
   (mongoose.model(
@@ -278,5 +279,18 @@ export const YouTubeSyncModel: any =
         title: { type: String },
       },
       { timestamps: true, collection: "youtube_sync" }
+    )
+  ) as any);
+
+export const MetadataModel: any =
+  (mongoose.models.Metadata as any) ??
+  (mongoose.model(
+    "Metadata",
+    new Schema(
+      {
+        key: { type: String, required: true, unique: true },
+        value: { type: Schema.Types.Mixed, required: true },
+      },
+      { timestamps: true, collection: "metadata" }
     )
   ) as any);

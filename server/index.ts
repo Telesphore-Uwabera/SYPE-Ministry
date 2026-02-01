@@ -266,6 +266,9 @@ export function createServer() {
   // Admin API Routes - Analytics
   app.get("/api/admin/analytics", adminRoutes.getAnalytics);
 
+  // Administrative Actions
+  app.post("/api/admin/reminders/monthly", adminRoutes.triggerMonthlyReminders);
+
   // Contact Submissions API (Public - for form submission)
   app.post("/api/contact", adminRoutes.createContactSubmission);
 

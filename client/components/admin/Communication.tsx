@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Mail, Plus, Search, Edit, Trash2, Download, Users, UserCheck, UserX, MessageSquare } from "lucide-react";
+import { Mail, Plus, Search, Edit, Trash2, Download, Users, UserCheck, UserX, MessageSquare, Send } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { EmailCampaign, EmailSubscriber } from "@/types/admin";
@@ -480,6 +480,70 @@ export default function Communication() {
         </Card>
       </div>
 
+      {/* System Reminders Card */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Send className="w-5 h-5 text-primary" />
+            System Reminders
+          </CardTitle>
+          <CardDescription>
+            Trigger automated system notifications manually
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <h4 className="font-medium text-sm">Monthly Contribution Reminder</h4>
+              <p className="text-xs text-muted-foreground mt-1">
+                Sends "UMUSANZU WA BURI KWEZI" email to all active members and subscribers.
+                The system normally sends this automatically on the 1st of each month.
+              </p>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button disabled={sendingCampaignId === "monthly-reminder"}>
+                  {sendingCampaignId === "monthly-reminder" ? "Sending..." : "Run Monthly Reminders"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Trigger Monthly Reminders?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will send the contribution reminder email to all active members and subscribers.
+                    Please ensure you want to send this notification now.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={async () => {
+                    try {
+                      setSendingCampaignId("monthly-reminder");
+                      const response = await fetch("/api/admin/reminders/monthly", { method: "POST" });
+                      if (!response.ok) throw new Error("Failed to trigger reminders");
+                      toast({
+                        title: "Success",
+                        description: "Monthly contribution reminders have been initiated.",
+                      });
+                    } catch (error) {
+                      toast({
+                        title: "Error",
+                        description: "Failed to trigger monthly reminders.",
+                        variant: "destructive",
+                      });
+                    } finally {
+                      setSendingCampaignId(null);
+                    }
+                  }}>
+                    Confirm & Send
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Email Subscribers */}
       <Card>
         <CardHeader>
@@ -639,7 +703,7 @@ export default function Communication() {
               <TableBody>
                 {contactSubmissions
                   .filter((sub) => {
-                    const matchesSearch = 
+                    const matchesSearch =
                       sub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                       sub.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                       sub.subject.toLowerCase().includes(searchTerm.toLowerCase());
@@ -657,10 +721,10 @@ export default function Communication() {
                             submission.status === "new"
                               ? "default"
                               : submission.status === "read"
-                              ? "secondary"
-                              : submission.status === "replied"
-                              ? "outline"
-                              : "destructive"
+                                ? "secondary"
+                                : submission.status === "replied"
+                                  ? "outline"
+                                  : "destructive"
                           }
                         >
                           {submission.status}

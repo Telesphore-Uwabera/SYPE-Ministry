@@ -17,8 +17,10 @@ import {
   MemberModel,
   NewsArticleModel,
   ProjectModel,
+  MetadataModel,
 } from "../models/core";
 import { sendMail } from "../lib/mailer";
+import { sendMonthlyContributionReminder } from "../lib/reminders";
 
 // All data is persisted in MongoDB via Mongoose models.
 
@@ -2957,6 +2959,26 @@ export const deleteContactSubmission: RequestHandler = asyncHandler(async (req, 
   const deleted = await ContactSubmissionModel.findByIdAndDelete(id).exec();
   if (!deleted) throw new ApiError(404, "Contact submission not found");
   res.status(204).send();
+});
+
+// Administrative Actions
+export const triggerMonthlyReminders: RequestHandler = asyncHandler(async (req, res) => {
+  await connectMongo();
+
+  const today = new Date();
+  const currentMonthKey = `last_monthly_reminder_${today.getFullYear()}_${today.getMonth() + 1}`;
+
+  console.log(`[Admin] Manually triggering monthly reminders for ${currentMonthKey}`);
+
+  await sendMonthlyContributionReminder();
+
+  await MetadataModel.findOneAndUpdate(
+    { key: currentMonthKey },
+    { key: currentMonthKey, value: { sentAt: new Date(), status: "success", triggeredBy: "admin" } },
+    { upsert: true }
+  );
+
+  res.json({ ok: true, message: "Monthly reminders sending initiated." });
 });
 
 export const getAnalytics: RequestHandler = asyncHandler(async (req, res) => {

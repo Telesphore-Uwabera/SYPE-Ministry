@@ -709,10 +709,10 @@ export default function About() {
                               <img
                                 src={member.image}
                                 alt={member.name}
-                                className="w-48 h-48 rounded-full object-cover mb-4 border-4 border-primary/20 shadow-lg"
+                                className="w-full max-w-[240px] aspect-[3/4] rounded-xl object-cover mb-4 border-4 border-primary/20 shadow-lg"
                               />
                             ) : (
-                              <div className="w-48 h-48 rounded-full bg-primary/10 flex items-center justify-center mb-4 border-4 border-primary/20 shadow-inner">
+                              <div className="w-full max-w-[240px] aspect-[3/4] rounded-xl bg-primary/10 flex items-center justify-center mb-4 border-4 border-primary/20 shadow-inner">
                                 <UserCircle className="w-24 h-24 text-primary/60" />
                               </div>
                             )}
@@ -769,10 +769,10 @@ export default function About() {
                               <img
                                 src={member.image}
                                 alt={member.name}
-                                className="w-48 h-48 rounded-full object-cover mb-4 border-4 border-primary/20 shadow-lg"
+                                className="w-full max-w-[240px] aspect-[3/4] rounded-xl object-cover mb-4 border-4 border-primary/20 shadow-lg"
                               />
                             ) : (
-                              <div className="w-48 h-48 rounded-full bg-primary/10 flex items-center justify-center mb-4 border-4 border-primary/20 shadow-inner">
+                              <div className="w-full max-w-[240px] aspect-[3/4] rounded-xl bg-primary/10 flex items-center justify-center mb-4 border-4 border-primary/20 shadow-inner">
                                 <UserCircle className="w-24 h-24 text-primary/60" />
                               </div>
                             )}
@@ -829,10 +829,10 @@ export default function About() {
                               <img
                                 src={member.image}
                                 alt={member.name}
-                                className="w-48 h-48 rounded-full object-cover mb-4 border-4 border-primary/20 shadow-lg"
+                                className="w-full max-w-[240px] aspect-[3/4] rounded-xl object-cover mb-4 border-4 border-primary/20 shadow-lg"
                               />
                             ) : (
-                              <div className="w-48 h-48 rounded-full bg-primary/10 flex items-center justify-center mb-4 border-4 border-primary/20 shadow-inner">
+                              <div className="w-full max-w-[240px] aspect-[3/4] rounded-xl bg-primary/10 flex items-center justify-center mb-4 border-4 border-primary/20 shadow-inner">
                                 <UserCircle className="w-24 h-24 text-primary/60" />
                               </div>
                             )}
@@ -889,10 +889,10 @@ export default function About() {
                               <img
                                 src={member.image}
                                 alt={member.name}
-                                className="w-48 h-48 rounded-full object-cover mb-4 border-4 border-primary/20 shadow-lg"
+                                className="w-full max-w-[240px] aspect-[3/4] rounded-xl object-cover mb-4 border-4 border-primary/20 shadow-lg"
                               />
                             ) : (
-                              <div className="w-48 h-48 rounded-full bg-primary/10 flex items-center justify-center mb-4 border-4 border-primary/20 shadow-inner">
+                              <div className="w-full max-w-[240px] aspect-[3/4] rounded-xl bg-primary/10 flex items-center justify-center mb-4 border-4 border-primary/20 shadow-inner">
                                 <UserCircle className="w-24 h-24 text-primary/60" />
                               </div>
                             )}
@@ -949,10 +949,10 @@ export default function About() {
                               <img
                                 src={member.image}
                                 alt={member.name}
-                                className="w-48 h-48 rounded-full object-cover mb-4 border-4 border-primary/20 shadow-lg"
+                                className="w-full max-w-[240px] aspect-[3/4] rounded-xl object-cover mb-4 border-4 border-primary/20 shadow-lg"
                               />
                             ) : (
-                              <div className="w-48 h-48 rounded-full bg-primary/10 flex items-center justify-center mb-4 border-4 border-primary/20 shadow-inner">
+                              <div className="w-full max-w-[240px] aspect-[3/4] rounded-xl bg-primary/10 flex items-center justify-center mb-4 border-4 border-primary/20 shadow-inner">
                                 <UserCircle className="w-24 h-24 text-primary/60" />
                               </div>
                             )}

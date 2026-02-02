@@ -112,6 +112,8 @@ async function sendViaBrevo(options: {
   html: string;
   text?: string;
   replyTo?: string;
+  importance?: "high" | "normal" | "low";
+  headers?: Record<string, string>;
 }): Promise<{ messageId: string }> {
   const apiKey = getBrevoApiKey();
   if (!apiKey) throw new Error("BREVO_API_KEY is not configured.");
@@ -145,6 +147,12 @@ async function sendViaBrevo(options: {
       subject: options.subject,
       htmlContent: options.html,
       textContent: options.text,
+      headers: {
+        ...(options.headers || {}),
+        ...(options.importance === "high"
+          ? { "X-Priority": "1", "X-MSMail-Priority": "High", Importance: "high" }
+          : {}),
+      },
     }),
   });
 
@@ -164,6 +172,8 @@ export async function sendMail(options: {
   html: string;
   text?: string;
   replyTo?: string;
+  importance?: "high" | "normal" | "low";
+  headers?: Record<string, string>;
 }): Promise<{ messageId: string }> {
   // If BREVO_API_KEY is present, prefer Brevo HTTPS API (works on Render Free).
   if (getBrevoApiKey()) {
@@ -183,6 +193,13 @@ export async function sendMail(options: {
       html: options.html,
       text: options.text,
       replyTo: options.replyTo,
+      priority: options.importance === "high" ? "high" : "normal",
+      headers: {
+        ...(options.headers || {}),
+        ...(options.importance === "high"
+          ? { "X-Priority": "1", "X-MSMail-Priority": "High", Importance: "high" }
+          : {}),
+      },
     });
   } catch (err: any) {
     const summarized = summarizeSmtpError(err, cfg);

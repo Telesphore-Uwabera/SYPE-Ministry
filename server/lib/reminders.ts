@@ -45,7 +45,7 @@ export async function sendMonthlyContributionReminder() {
             <h2 style="margin: 0;">${subject}</h2>
           </div>
           <div style="padding: 32px; background-color: white;">
-            <p><strong>${greeting}</strong></p>
+            <p>${greeting}</p>
             <p style="font-style: italic; color: #4a5568; margin: 20px 0;">"Ukundishe Uwiteka Imana yawe umutima wawe wose n'ubugingo bwawe bwose n'imbaraga zawe zose." <strong>Gutegeka kwa kabiri 6:5</strong></p>
             <p>Tuributsa abanyamuryango bose ko amafaranga <strong>500 FRW ku munyeshuri na 1000 FRW ku warangije kwiga (minimum)</strong> ya buri kwezi atangwa na buri munyanuryango kugira ngo akoreshwe mu murimo mugari dufite w'ivugabutumwa.</p>
             <p>Umusanzu woherezwa kuri iyi nimero ikurikira cyangwa ukayabaha cash mu gihe mubasha kubonana:</p>
@@ -75,7 +75,8 @@ export async function sendMonthlyContributionReminder() {
         to: email,
         subject,
         html,
-        text
+        text,
+        importance: "high"
       }).catch(err => console.error(`[Reminders] Failed to send monthly reminder to ${email}:`, err));
     }
     console.log(`[Reminders] Monthly contribution reminder task finished.`);

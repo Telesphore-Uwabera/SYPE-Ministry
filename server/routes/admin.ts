@@ -2481,7 +2481,7 @@ export const createCommitteeMember: RequestHandler = asyncHandler(async (req, re
   }
 
   // Validate category
-  const validCategories = ["leadership", "team", "auditor", "asa_representatives", "board_chancellors"];
+  const validCategories = ["leadership", "team", "auditor", "asa_representatives", "board_counsellors"];
   if (!validCategories.includes(category)) {
     throw new ApiError(400, `Invalid category. Must be one of: ${validCategories.join(", ")}`);
   }

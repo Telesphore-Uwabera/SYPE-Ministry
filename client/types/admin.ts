@@ -158,7 +158,7 @@ export interface CommitteeMember {
   name: string;
   church: string;
   phone: string;
-  category: "leadership" | "team" | "auditor" | "asa_representatives" | "board_chancellors"; // For grouping on About page
+  category: "leadership" | "team" | "auditor" | "asa_representatives" | "board_counsellors"; // For grouping on About page
   image?: string; // URL to member photo
   email?: string;
   order: number; // For sorting within category

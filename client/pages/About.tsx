@@ -52,7 +52,7 @@ export default function About() {
   const teamHeads = committeeMembers.filter(m => m.category === "team");
   const auditorsTeam = committeeMembers.filter(m => m.category === "auditor");
   const asaRepresentatives = committeeMembers.filter(m => m.category === "asa_representatives");
-  const boardChancellors = committeeMembers.filter(m => m.category === "board_chancellors");
+  const boardCounsellors = committeeMembers.filter(m => m.category === "board_counsellors");
 
   return (
     <Layout>
@@ -925,12 +925,12 @@ export default function About() {
               </div>
             )}
 
-            {/* Board of Chancellors */}
-            {boardChancellors.length > 0 && (
+            {/* Board of Counsellors */}
+            {boardCounsellors.length > 0 && (
               <div className="mt-12">
                 <ScrollAnimation direction="fade" delay={0.4}>
                   <h3 className="font-heading font-semibold text-2xl text-primary mb-6 text-center">
-                    Board of Chancellors
+                    Board of Counsellors
                   </h3>
                 </ScrollAnimation>
                 <StaggerContainer
@@ -939,7 +939,7 @@ export default function About() {
                   direction="up"
                   detectScrollDirection
                 >
-                  {boardChancellors.map((member) => (
+                  {boardCounsellors.map((member) => (
                     <HoverAnimation key={member.id} scale={1.02} y={-5}>
                       <Card className="h-full border-2 hover:border-primary/50 hover:shadow-xl transition-all bg-gradient-to-br from-white to-primary/5">
                         <CardContent className="pt-6">

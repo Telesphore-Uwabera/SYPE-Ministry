@@ -195,8 +195,8 @@ export default function CommitteeManagement() {
         return <Badge className="bg-purple-500">Auditor</Badge>;
       case "asa_representatives":
         return <Badge className="bg-orange-500">ASA Representatives</Badge>;
-      case "board_chancellors":
-        return <Badge className="bg-red-500">Board of Chancellors</Badge>;
+      case "board_counsellors":
+        return <Badge className="bg-red-500">Board of Counsellors</Badge>;
       default:
         return <Badge>{category}</Badge>;
     }
@@ -292,7 +292,7 @@ export default function CommitteeManagement() {
                       <SelectItem value="team">Team & Department Heads</SelectItem>
                       <SelectItem value="auditor">Auditors Team</SelectItem>
                       <SelectItem value="asa_representatives">ASA Representatives</SelectItem>
-                      <SelectItem value="board_chancellors">Board of Chancellors</SelectItem>
+                      <SelectItem value="board_counsellors">Board of Counsellors</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -380,7 +380,7 @@ export default function CommitteeManagement() {
                 <SelectItem value="team">Team & Department</SelectItem>
                 <SelectItem value="auditor">Auditors</SelectItem>
                 <SelectItem value="asa_representatives">ASA Representatives</SelectItem>
-                <SelectItem value="board_chancellors">Board of Chancellors</SelectItem>
+                <SelectItem value="board_counsellors">Board of Counsellors</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -134,7 +134,7 @@ function LatestDevotionsCards() {
   useEffect(() => {
     const fetchDevotions = async () => {
       try {
-        const apiUrl = buildApiUrl("/api/devotions?days=7");
+        const apiUrl = buildApiUrl("/api/devotions?limit=3");
         console.log("Fetching devotions from:", apiUrl);
 
         const res = await fetch(apiUrl);
@@ -350,7 +350,7 @@ function LatestEventsCards() {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const apiUrl = buildApiUrl("/api/events?limit=3");
+        const apiUrl = buildApiUrl("/api/events?limit=3&upcoming=true");
         const res = await fetch(apiUrl, { cache: "no-store" });
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();

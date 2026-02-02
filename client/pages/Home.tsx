@@ -81,8 +81,8 @@ function LatestNewsCards() {
   return (
     <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
       {news.map((article) => (
-        <HoverAnimation key={article.id} scale={1.02} y={-8}>
-          <Link to={`/news/${article.id}`}>
+        <HoverAnimation key={article.id} scale={1.02} y={-8} className="h-full">
+          <Link to={`/news/${article.id}`} className="block h-full">
             <Card className="h-full flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer">
               {article.image ? (
                 <div className="relative h-48 overflow-hidden">
@@ -188,8 +188,8 @@ function LatestDevotionsCards() {
   return (
     <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
       {devotions.map((devotion) => (
-        <HoverAnimation key={devotion.id} scale={1.02} y={-8}>
-          <Link to={`/devotions/${devotion.id}`}>
+        <HoverAnimation key={devotion.id} scale={1.02} y={-8} className="h-full">
+          <Link to={`/devotions/${devotion.id}`} className="block h-full">
             <Card className="h-full flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer">
               {devotion.image ? (
                 <div className="relative h-48 overflow-hidden">
@@ -387,7 +387,7 @@ function LatestEventsCards() {
   return (
     <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
       {events.map((event) => (
-        <HoverAnimation key={event.id} scale={1.02} y={-8}>
+        <HoverAnimation key={event.id} scale={1.02} y={-8} className="h-full">
           <Link to={`/events/${event.id}`} className="block h-full">
             <Card className="h-full flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300">
               <CardHeader>

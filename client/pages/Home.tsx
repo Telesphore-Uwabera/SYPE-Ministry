@@ -83,7 +83,7 @@ function LatestNewsCards() {
       {news.map((article) => (
         <HoverAnimation key={article.id} scale={1.02} y={-8}>
           <Link to={`/news/${article.id}`}>
-            <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer">
+            <Card className="h-full flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer">
               {article.image ? (
                 <div className="relative h-48 overflow-hidden">
                   <img
@@ -104,13 +104,13 @@ function LatestNewsCards() {
                   {new Date(article.publishDate).toLocaleDateString()}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-grow flex flex-col">
                 <p className="text-sm text-foreground/70 line-clamp-3 mb-4">{article.excerpt}</p>
                 <Button
                   asChild
                   variant="outline"
                   size="sm"
-                  className="w-full pointer-events-none"
+                  className="w-full pointer-events-none mt-auto"
                 >
                   <span className="inline-flex items-center justify-center gap-2">
                     Read More
@@ -190,7 +190,7 @@ function LatestDevotionsCards() {
       {devotions.map((devotion) => (
         <HoverAnimation key={devotion.id} scale={1.02} y={-8}>
           <Link to={`/devotions/${devotion.id}`}>
-            <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer">
+            <Card className="h-full flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer">
               {devotion.image ? (
                 <div className="relative h-48 overflow-hidden">
                   <img
@@ -211,7 +211,7 @@ function LatestDevotionsCards() {
                   Daily 6:00 AM - 7:00 AM
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-grow flex flex-col">
                 <p className="text-sm text-foreground/70 line-clamp-3 mb-4">{devotion.excerpt}</p>
                 {devotion.featuredVideoUrl && (
                   <Button
@@ -236,7 +236,7 @@ function LatestDevotionsCards() {
                   asChild
                   variant="outline"
                   size="sm"
-                  className="w-full"
+                  className="w-full mt-auto"
                 >
                   <Link to={`/devotions/${devotion.id}`} className="inline-flex items-center justify-center gap-2">
                     Read More
@@ -350,7 +350,7 @@ function LatestEventsCards() {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const apiUrl = buildApiUrl("/api/events?limit=3&upcoming=true");
+        const apiUrl = buildApiUrl("/api/events?limit=3");
         const res = await fetch(apiUrl, { cache: "no-store" });
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
@@ -389,7 +389,7 @@ function LatestEventsCards() {
       {events.map((event) => (
         <HoverAnimation key={event.id} scale={1.02} y={-8}>
           <Link to={`/events/${event.id}`} className="block h-full">
-            <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300">
+            <Card className="h-full flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300">
               <CardHeader>
                 <CardTitle className="line-clamp-2">{event.title}</CardTitle>
                 <CardDescription className="flex flex-col gap-1 text-xs">
@@ -403,9 +403,9 @@ function LatestEventsCards() {
                   </span>
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-grow flex flex-col">
                 <p className="text-sm text-foreground/70 line-clamp-3 mb-3">{event.description}</p>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mt-auto">
                   <span className="text-xs text-foreground/60">{event.category}</span>
                   <Button asChild size="sm" variant="outline" className="pointer-events-none">
                     <span className="inline-flex items-center gap-2">

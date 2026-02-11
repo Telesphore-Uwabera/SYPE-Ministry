@@ -203,7 +203,7 @@ CLOUDINARY_API_SECRET=E92nCg5QzQEuh7yl4kXnL35yoKo
 
 # Frontend + CORS
 ALLOWED_ORIGINS=https://sypeministry.netlify.app,https://sypeministry.org,https://www.sypeministry.org
-SITE_URL=https://sypeministry.netlify.app
+SITE_URL=https://sypeministry.org
 SITE_NAME="SYPE Ministry"
 
 # Optional / still used

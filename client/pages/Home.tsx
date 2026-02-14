@@ -38,25 +38,39 @@ function LatestNewsCards() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(buildApiUrl("/api/news?limit=3"))
-      .then((res) => {
+    let isMounted = true;
+    const fetchNews = async (forceFresh = false) => {
+      try {
+        const res = await fetch(buildApiUrl("/api/news?limit=3"), {
+          cache: forceFresh ? "no-store" : "default",
+        });
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
-        return res.json();
-      })
-      .then((data) => {
-        // Sort by publishDate (newest first) and take first 3
+        const data = await res.json();
+        if (!isMounted) return;
         const sortedNews = (Array.isArray(data) ? data : []).sort(
           (a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
         );
         setNews(sortedNews.slice(0, 3));
-        setLoading(false);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Error fetching news:", error);
-        setLoading(false);
-      });
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchNews();
+    const interval = window.setInterval(() => {
+      fetchNews(true);
+    }, 5 * 60 * 1000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(interval);
+    };
   }, []);
 
   if (loading) {
@@ -132,37 +146,46 @@ function LatestDevotionsCards() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDevotions = async () => {
+    let isMounted = true;
+    const fetchDevotions = async (forceFresh = false) => {
       try {
         const apiUrl = buildApiUrl("/api/devotions?limit=3");
-        console.log("Fetching devotions from:", apiUrl);
-
-        const res = await fetch(apiUrl);
+        const res = await fetch(apiUrl, {
+          cache: forceFresh ? "no-store" : "default",
+        });
 
         if (!res.ok) {
           console.error(`HTTP error! status: ${res.status}`);
-          setLoading(false);
           return;
         }
 
         const data = await res.json();
-        console.log("Devotions data received:", data);
 
-        // Get latest 3 devotions
         const devotionsData = (Array.isArray(data) ? data : [])
           .sort((a: Devotion, b: Devotion) => new Date(b.date).getTime() - new Date(a.date).getTime())
           .slice(0, 3);
-        console.log("Latest 3 devotions:", devotionsData);
+        if (!isMounted) return;
         setDevotions(devotionsData);
-        setLoading(false);
       } catch (error) {
         console.error("Error fetching devotions:", error);
-        setLoading(false);
+        if (!isMounted) return;
         setDevotions([]);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchDevotions();
+    const interval = window.setInterval(() => {
+      fetchDevotions(true);
+    }, 5 * 60 * 1000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(interval);
+    };
   }, []);
 
   if (loading) {
@@ -258,17 +281,38 @@ function LatestVideosCards() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/youtube/latest?limit=3")
-      .then((res) => res.json())
-      .then((data) => {
+    let isMounted = true;
+    const fetchVideos = async (forceFresh = false) => {
+      try {
+        const res = await fetch("/api/youtube/latest?limit=3", {
+          cache: forceFresh ? "no-store" : "default",
+        });
+        const data = await res.json();
+        if (!isMounted) return;
         if (Array.isArray(data)) {
           setVideos(data.slice(0, 3));
+        } else {
+          setVideos([]);
         }
-        setLoading(false);
-      })
-      .catch(() => {
-        setLoading(false);
-      });
+      } catch {
+        if (!isMounted) return;
+        setVideos([]);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchVideos();
+    const interval = window.setInterval(() => {
+      fetchVideos(true);
+    }, 5 * 60 * 1000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(interval);
+    };
   }, []);
 
   if (loading) {
@@ -315,15 +359,14 @@ function LatestVideosCards() {
             className="block h-full"
           >
             <Card className="h-full flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer">
-              <div className="relative h-48 overflow-hidden group flex-shrink-0">
-                <img
-                  src={video.thumbnail}
-                  alt={video.title}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+              <div className="relative h-48 overflow-hidden flex-shrink-0">
+                <iframe
+                  className="w-full h-full"
+                  src={`https://www.youtube.com/embed/${video.videoId}?autoplay=1&mute=1&loop=1&playlist=${video.videoId}&controls=0&modestbranding=1&rel=0`}
+                  title={video.title}
+                  allow="autoplay; encrypted-media"
+                  allowFullScreen
                 />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                  <Play className="w-16 h-16 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
               </div>
               <CardHeader className="flex-shrink-0">
                 <CardTitle className="line-clamp-2">{video.title}</CardTitle>
@@ -348,21 +391,35 @@ function LatestEventsCards() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchEvents = async () => {
+    let isMounted = true;
+    const fetchEvents = async (forceFresh = false) => {
       try {
         const apiUrl = buildApiUrl("/api/events?limit=3");
-        const res = await fetch(apiUrl);
+        const res = await fetch(apiUrl, {
+          cache: forceFresh ? "no-store" : "default",
+        });
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
+        if (!isMounted) return;
         setEvents(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Error fetching events:", error);
+        if (!isMounted) return;
         setEvents([]);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
     fetchEvents();
+    const interval = window.setInterval(() => {
+      fetchEvents(true);
+    }, 5 * 60 * 1000);
+    return () => {
+      isMounted = false;
+      window.clearInterval(interval);
+    };
   }, []);
 
   if (loading) {

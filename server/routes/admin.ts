@@ -175,20 +175,27 @@ export const updateMember: RequestHandler = asyncHandler(async (req, res) => {
   if (notes !== undefined) updateData.notes = notes;
 
   await connectMongo();
-  const updated = await MemberModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
-  if (!updated) throw new ApiError(404, "Member not found");
-  res.json({
-    id: idOf(updated),
-    name: updated.name,
-    email: updated.email,
-    phone: updated.phone || "",
-    role: updated.role,
-    status: updated.status,
-    joinDate: updated.joinDate ? new Date(updated.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-    department: updated.department || "",
-    association: updated.association || "",
-    notes: updated.notes || "",
-  });
+  try {
+    const updated = await MemberModel.findByIdAndUpdate(id, updateData, { new: true, runValidators: true }).exec();
+    if (!updated) throw new ApiError(404, "Member not found");
+    res.json({
+      id: idOf(updated),
+      name: updated.name,
+      email: updated.email,
+      phone: updated.phone || "",
+      role: updated.role,
+      status: updated.status,
+      joinDate: updated.joinDate ? new Date(updated.joinDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      department: updated.department || "",
+      association: updated.association || "",
+      notes: updated.notes || "",
+    });
+  } catch (error: any) {
+    if (error.code === 11000 && error.keyPattern?.email) {
+      throw new ApiError(400, "Email address is already in use by another member");
+    }
+    throw error;
+  }
 });
 
 export const deleteMember: RequestHandler = asyncHandler(async (req, res) => {

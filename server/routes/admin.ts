@@ -91,7 +91,7 @@ export const sendTestEmail: RequestHandler = async (req, res) => {
 // Members API
 export const getMembers: RequestHandler = asyncHandler(async (req, res) => {
   await connectMongo();
-  const result = await MemberModel.find().sort({ joinDate: -1 }).exec();
+  const result = await MemberModel.find().sort({ name: 1 }).exec();
   res.json(
     result.map((m: any) => ({
       id: idOf(m),

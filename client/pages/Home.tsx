@@ -351,7 +351,7 @@ function LatestEventsCards() {
     const fetchEvents = async () => {
       try {
         const apiUrl = buildApiUrl("/api/events?limit=3");
-        const res = await fetch(apiUrl, { cache: "no-store" });
+        const res = await fetch(apiUrl);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
         setEvents(Array.isArray(data) ? data : []);

@@ -45,6 +45,17 @@ function AppContent() {
       return;
     }
 
+    const prefetchEndpoints = [
+      "/api/news?limit=3",
+      "/api/devotions?limit=3",
+      "/api/youtube/latest?limit=3",
+      "/api/events?limit=3",
+    ];
+
+    prefetchEndpoints.forEach((endpoint) => {
+      fetch(endpoint).catch(() => {});
+    });
+
     const timer = window.setTimeout(() => {
       setShowSplash(false);
       sessionStorage.setItem("sypeSplashShown", "true");

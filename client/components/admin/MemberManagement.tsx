@@ -60,7 +60,7 @@ export default function MemberManagement() {
 
   const loadMembers = async () => {
     try {
-      const response = await fetch("/api/admin/members");
+      const response = await fetch("/api/admin/members", { cache: "no-store" });
       const data = await response.json();
       if (Array.isArray(data)) {
         setMembers(data);

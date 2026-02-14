@@ -25,7 +25,7 @@ export default function AnalyticsDashboard({ analytics: propAnalytics, onRefresh
       const apiUrl = buildApiUrl("/api/admin/analytics");
       console.log("Fetching analytics from:", apiUrl);
 
-      const response = await fetch(apiUrl);
+      const response = await fetch(apiUrl, { cache: "no-store" });
 
       if (!response.ok) {
         const errorText = await response.text();

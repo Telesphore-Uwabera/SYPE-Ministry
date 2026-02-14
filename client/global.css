@@ -151,7 +151,7 @@
   }
 
   .animate-welcome-progress {
-    animation: welcome-progress 2s linear forwards;
+    animation: welcome-progress 7s linear forwards;
   }
 
   .animate-welcome-float {

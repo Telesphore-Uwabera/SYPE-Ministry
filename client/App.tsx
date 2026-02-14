@@ -48,7 +48,7 @@ function AppContent() {
     const timer = window.setTimeout(() => {
       setShowSplash(false);
       sessionStorage.setItem("sypeSplashShown", "true");
-    }, 2000);
+    }, 7000);
 
     return () => {
       window.clearTimeout(timer);

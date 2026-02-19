@@ -232,15 +232,15 @@ export default function Devotions() {
               direction="up"
             >
               {devotions.map((devotion) => (
-                <HoverAnimation key={devotion.id} scale={1.02} y={-5}>
+                <HoverAnimation key={devotion.id} scale={1.02} y={-5} className="h-full">
                   <Link to={`/devotions/${devotion.id}`} className="block h-full">
-                    <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300">
+                    <Card className="h-full flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300">
                       {devotion.image ? (
-                        <div className="relative h-48 overflow-hidden">
+                        <div className="relative h-48 overflow-hidden bg-muted/10">
                           <img
                             src={devotion.image}
                             alt={devotion.title}
-                            className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                            className="w-full h-full object-contain transition-transform duration-300 hover:scale-110"
                           />
                         </div>
                       ) : (
@@ -259,21 +259,23 @@ export default function Devotions() {
                         </CardDescription>
                         <CardTitle className="line-clamp-2 text-lg">{devotion.title}</CardTitle>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="flex-grow">
                         <p className="text-sm text-foreground/70 line-clamp-3 mb-4">
                           {devotion.excerpt}
                         </p>
                         {devotion.content && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground pointer-events-none"
-                          >
-                            <span className="w-full inline-flex items-center justify-center">
-                              Read More
-                              <ArrowRight className="w-3 h-3 ml-2" />
-                            </span>
-                          </Button>
+                          <div className="mt-auto">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground pointer-events-none"
+                            >
+                              <span className="w-full inline-flex items-center justify-center">
+                                Read More
+                                <ArrowRight className="w-3 h-3 ml-2" />
+                              </span>
+                            </Button>
+                          </div>
                         )}
                       </CardContent>
                     </Card>

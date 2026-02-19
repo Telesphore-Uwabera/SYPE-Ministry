@@ -141,15 +141,15 @@ export default function News() {
               direction="up"
             >
               {filteredNews.map((article) => (
-                <HoverAnimation key={article.id} scale={1.02} y={-5}>
+                <HoverAnimation key={article.id} scale={1.02} y={-5} className="h-full">
                   <Link to={`/news/${article.id}`} className="block h-full">
-                    <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300">
+                    <Card className="h-full flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300">
                       {article.image ? (
-                        <div className="relative h-48 overflow-hidden">
+                        <div className="relative h-48 overflow-hidden bg-muted/10">
                           <img
                             src={article.image}
                             alt={article.title}
-                            className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                            className="w-full h-full object-contain transition-transform duration-300 hover:scale-110"
                           />
                           {article.featured && (
                             <div className="absolute top-2 right-2">
@@ -181,7 +181,7 @@ export default function News() {
                         </CardDescription>
                         <CardTitle className="line-clamp-2 text-lg">{article.title}</CardTitle>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="flex-grow flex flex-col">
                         <p className="text-sm text-foreground/70 line-clamp-3 mb-4">
                           {article.excerpt || article.body?.substring(0, 150) + "..."}
                         </p>
@@ -204,16 +204,18 @@ export default function News() {
                             ))}
                           </div>
                         )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground pointer-events-none"
-                        >
-                          <span className="w-full inline-flex items-center justify-center">
-                            Read More
-                            <ArrowRight className="w-3 h-3 ml-2" />
-                          </span>
-                        </Button>
+                        <div className="mt-auto">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground pointer-events-none"
+                          >
+                            <span className="w-full inline-flex items-center justify-center">
+                              Read More
+                              <ArrowRight className="w-3 h-3 ml-2" />
+                            </span>
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                   </Link>

@@ -99,11 +99,11 @@ function LatestNewsCards() {
           <Link to={`/news/${article.id}`} className="block h-full">
             <Card className="h-full flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer">
               {article.image ? (
-                <div className="relative h-48 overflow-hidden">
+                <div className="relative h-48 overflow-hidden bg-muted/10">
                   <img
                     src={article.image}
                     alt={article.title}
-                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                    className="w-full h-full object-contain transition-transform duration-300 hover:scale-110"
                   />
                 </div>
               ) : (
@@ -215,11 +215,11 @@ function LatestDevotionsCards() {
           <Link to={`/devotions/${devotion.id}`} className="block h-full">
             <Card className="h-full flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer">
               {devotion.image ? (
-                <div className="relative h-48 overflow-hidden">
+                <div className="relative h-48 overflow-hidden bg-muted/10">
                   <img
                     src={devotion.image}
                     alt={devotion.title}
-                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                    className="w-full h-full object-contain transition-transform duration-300 hover:scale-110"
                   />
                 </div>
               ) : (

@@ -526,7 +526,7 @@ export default function Home() {
           "@type": "Organization",
           "name": "SYPE Ministry",
           "url": "https://sypeministry.org",
-          "logo": "https://www.sypeministry.org/Sype%20logo.webp",
+          "logo": "https://www.sypeministry.org/sype-logo.webp",
           "sameAs": [
             "https://www.facebook.com/sypesda",
             "https://www.youtube.com/@sypeministry5276",

@@ -89,6 +89,11 @@ export default function SEO({
     updateMetaTag("robots", "index, follow");
     updateMetaTag("theme-color", "#186d84");
 
+    // Provide alt text for social images and twitter creator handle
+    updateMetaTag("og:image:alt", fullTitle, "property");
+    updateMetaTag("twitter:image:alt", fullTitle);
+    updateMetaTag("twitter:creator", "@sypeministry5276");
+
     // Canonical URL
     let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
     if (!canonical) {
@@ -97,6 +102,16 @@ export default function SEO({
       document.head.appendChild(canonical);
     }
     canonical.setAttribute("href", currentUrl);
+
+    // Add hreflang link for English (helps international SEO)
+    let hreflang = document.querySelector('link[rel="alternate"][hreflang]') as HTMLLinkElement;
+    if (!hreflang) {
+      hreflang = document.createElement("link");
+      hreflang.setAttribute("rel", "alternate");
+      hreflang.setAttribute("hreflang", "en");
+      document.head.appendChild(hreflang);
+    }
+    hreflang.setAttribute("href", currentUrl);
   }, [title, description, keywords, image, currentUrl, type, fullTitle]);
 
   // Generate breadcrumb schema automatically for most pages

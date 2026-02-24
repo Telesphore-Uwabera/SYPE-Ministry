@@ -23,6 +23,9 @@
     "typecheck": "tsc",
     "postinstall": "echo \"postinstall ok\""
   },
+  "scripts": {
+    "generate-seo-keywords": "node scripts/generate-seo-keywords.cjs"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.90.1",
     "@types/multer": "^2.0.0",

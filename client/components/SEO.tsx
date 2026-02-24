@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import StructuredData from "./StructuredData";
 
@@ -63,10 +63,18 @@ export default function SEO({
   schema,
 }: SEOProps) {
   const location = useLocation();
+  const [seoMap, setSeoMap] = useState<Record<string, string> | null>(null);
   const currentUrl = url || `${defaultSEO.url}${location.pathname}`;
   const fullTitle = title.includes("SYPE Ministry") ? title : `${title} | SYPE Ministry`;
 
   useEffect(() => {
+    // Try to load per-route keywords mapping generated at build time
+    if (!seoMap) {
+      fetch('/seo-keywords.json')
+        .then((r) => r.json())
+        .then((m) => setSeoMap(m))
+        .catch(() => null);
+    }
     // Update document title
     document.title = fullTitle;
 
@@ -83,7 +91,11 @@ export default function SEO({
 
     // Basic meta tags
     updateMetaTag("description", description);
-    updateMetaTag("keywords", keywords);
+    // Prefer explicit keywords prop, then per-route mapping, then default
+    const routeKey = location.pathname || '';
+    const mapped = seoMap && (seoMap[routeKey] || seoMap[routeKey.replace(/^\//, '')]);
+    const keywordsContent = keywords || mapped || defaultSEO.keywords;
+    updateMetaTag("keywords", keywordsContent);
 
     // Open Graph tags
     updateMetaTag("og:title", fullTitle, "property");

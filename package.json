@@ -13,7 +13,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run build:client && npm run build:server",
-    "build:client": "vite build",
+    "build:client": "npm run generate-seo-keywords && vite build",
     "build:server": "vite build --config vite.config.server.ts",
     "build:production": "npm run build:client && npm run build:server",
     "start": "node dist/server/node-build.mjs",
@@ -21,10 +21,9 @@
     "test": "vitest --run",
     "format.fix": "prettier --write .",
     "typecheck": "tsc",
-    "postinstall": "echo \"postinstall ok\""
-  },
-  "scripts": {
-    "generate-seo-keywords": "node scripts/generate-seo-keywords.cjs"
+    "postinstall": "echo \"postinstall ok\"",
+    "generate-seo-keywords": "node scripts/generate-seo-keywords.cjs",
+    "lighthouse": "npx lighthouse https://www.sypeministry.org --output html --output-path ./reports/lighthouse.html --chrome-flags=\"--headless\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.90.1",

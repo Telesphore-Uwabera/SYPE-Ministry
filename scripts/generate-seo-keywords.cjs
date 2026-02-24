@@ -39,7 +39,27 @@ function main() {
     const key = route === '/' ? '/' : route;
     const words = heuristics(name);
     words.unshift(name.replace(/([A-Z])/g, ' $1').trim());
-    mapping[key] = words.join(', ');
+
+    // Helper to strip tags from matched headings
+    function stripTags(s) {
+      return s.replace(/<[^>]*>/g, '').replace(/\{\s*['"`]?|['"`]\s*\}/g, '').trim();
+    }
+
+    // Enrich keywords using H1/H2 contents or simple title assignments in the page file
+    try {
+      const content = fs.readFileSync(path.join(pagesDir, f), 'utf8');
+      const h1 = content.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+      const h2 = content.match(/<h2[^>]*>([\s\S]*?)<\/h2>/i);
+      if (h1 && h1[1]) words.push(stripTags(h1[1]));
+      if (h2 && h2[1]) words.push(stripTags(h2[1]));
+
+      const titleAssign = content.match(/(?:const|let|var)\s+title\s*=\s*["'`](.*?)["'`]/i);
+      if (titleAssign && titleAssign[1]) words.push(titleAssign[1]);
+    } catch (e) {
+      // ignore
+    }
+
+    mapping[key] = Array.from(new Set(words)).join(', ');
     mapping[key.replace(/^\//, '')] = mapping[key];
   });
 

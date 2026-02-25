@@ -16,6 +16,29 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: "dist/client",
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunks
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          animations: ['framer-motion'],
+          queries: ['@tanstack/react-query'],
+          utils: ['clsx', 'tailwind-merge', 'date-fns'],
+          icons: ['lucide-react'],
+          
+          // Feature chunks - using package names instead of file paths
+          media: ['react-pdf', 'pdfjs-dist']
+        },
+        chunkFileNames: (chunkInfo) => {
+          const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk';
+          return `js/[name]-[hash].js`;
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000, // Increased to 1MB
+    target: 'esnext',
   },
   plugins: [react(), expressPlugin()],
   resolve: {

@@ -9,28 +9,20 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import WelcomeSplash from "@/components/WelcomeSplash";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import Home from "./pages/Home";
-import About from "./pages/About";
-import Membership from "./pages/Membership";
-import Donations from "./pages/Donations";
-import Library from "./pages/Library";
-import News from "./pages/News";
-import NewsArticlePage from "./pages/NewsArticle";
-import Devotions from "./pages/Devotions";
-import DevotionDetailPage from "./pages/DevotionDetail";
-import EventDetailPage from "./pages/EventDetail";
-import Videos from "./pages/Videos";
-import Departments from "./pages/Departments";
-import Projects from "./pages/Projects";
-import Contact from "./pages/Contact";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
-import Cookies from "./pages/Cookies";
-import FAQs from "./pages/FAQs";
-import Admin from "./pages/Admin";
-import NotFound from "./pages/NotFound";
+import { LazyWrapper, LazyHome, LazyAbout, LazyMembership, LazyDonations, LazyLibrary, LazyNews, LazyNewsArticle, LazyDevotions, LazyDevotionDetail, LazyEventDetail, LazyVideos, LazyDepartments, LazyProjects, LazyContact, LazyTerms, LazyPrivacy, LazyCookies, LazyFAQs, LazyAdmin, LazyNotFound } from "@/components/LazyRoutes";
 
-const queryClient = new QueryClient();
+// Optimized QueryClient with memory management
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 10 * 60 * 1000, // 10 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+      suspense: false,
+    },
+  },
+});
 
 function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
@@ -45,15 +37,21 @@ function AppContent() {
       return;
     }
 
+    // Reduced prefetching - only prefetch critical data
     const prefetchEndpoints = [
-      "/api/news?limit=3",
-      "/api/devotions?limit=3",
-      "/api/youtube/latest?limit=3",
-      "/api/events?limit=3",
+      "/api/news?limit=2", // Reduced from 3
+      "/api/devotions?limit=2", // Reduced from 3
     ];
 
-    prefetchEndpoints.forEach((endpoint) => {
-      fetch(endpoint).catch(() => {});
+    // Stagger prefetching to reduce memory spike
+    const prefetchWithDelay = async (endpoint: string, delay: number) => {
+      setTimeout(() => {
+        fetch(endpoint).catch(() => {});
+      }, delay);
+    };
+
+    prefetchEndpoints.forEach((endpoint, index) => {
+      prefetchWithDelay(endpoint, index * 500); // 500ms delay between requests
     });
 
     const timer = window.setTimeout(() => {
@@ -72,27 +70,27 @@ function AppContent() {
         <Toaster />
         <Sonner />
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/membership" element={<Membership />} />
-          <Route path="/donations" element={<Donations />} />
-          <Route path="/library" element={<Library />} />
-          <Route path="/news" element={<News />} />
-          <Route path="/news/:id" element={<NewsArticlePage />} />
-          <Route path="/devotions" element={<Devotions />} />
-          <Route path="/devotions/:id" element={<DevotionDetailPage />} />
-          <Route path="/events/:id" element={<EventDetailPage />} />
-          <Route path="/videos" element={<Videos />} />
-          <Route path="/departments" element={<Departments />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/cookies" element={<Cookies />} />
-          <Route path="/faqs" element={<FAQs />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/" element={<LazyWrapper><LazyHome /></LazyWrapper>} />
+          <Route path="/about" element={<LazyWrapper><LazyAbout /></LazyWrapper>} />
+          <Route path="/membership" element={<LazyWrapper><LazyMembership /></LazyWrapper>} />
+          <Route path="/donations" element={<LazyWrapper><LazyDonations /></LazyWrapper>} />
+          <Route path="/library" element={<LazyWrapper><LazyLibrary /></LazyWrapper>} />
+          <Route path="/news" element={<LazyWrapper><LazyNews /></LazyWrapper>} />
+          <Route path="/news/:id" element={<LazyWrapper><LazyNewsArticle /></LazyWrapper>} />
+          <Route path="/devotions" element={<LazyWrapper><LazyDevotions /></LazyWrapper>} />
+          <Route path="/devotions/:id" element={<LazyWrapper><LazyDevotionDetail /></LazyWrapper>} />
+          <Route path="/events/:id" element={<LazyWrapper><LazyEventDetail /></LazyWrapper>} />
+          <Route path="/videos" element={<LazyWrapper><LazyVideos /></LazyWrapper>} />
+          <Route path="/departments" element={<LazyWrapper><LazyDepartments /></LazyWrapper>} />
+          <Route path="/projects" element={<LazyWrapper><LazyProjects /></LazyWrapper>} />
+          <Route path="/contact" element={<LazyWrapper><LazyContact /></LazyWrapper>} />
+          <Route path="/terms" element={<LazyWrapper><LazyTerms /></LazyWrapper>} />
+          <Route path="/privacy" element={<LazyWrapper><LazyPrivacy /></LazyWrapper>} />
+          <Route path="/cookies" element={<LazyWrapper><LazyCookies /></LazyWrapper>} />
+          <Route path="/faqs" element={<LazyWrapper><LazyFAQs /></LazyWrapper>} />
+          <Route path="/admin" element={<LazyWrapper><LazyAdmin /></LazyWrapper>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<LazyWrapper><LazyNotFound /></LazyWrapper>} />
         </Routes>
         {showSplash ? <WelcomeSplash /> : null}
       </TooltipProvider>

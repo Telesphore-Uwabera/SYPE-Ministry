@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { Loader2 } from 'lucide-react';
 
-// Lazy load heavy components with preloading
+// Lazy load heavy components (except YouTube videos)
 const LazyLatestNewsCards = lazy(() => 
   import('./LatestNewsCards').catch(() => 
     import('./PagePlaceholder').then(module => ({ 
@@ -18,13 +18,8 @@ const LazyLatestDevotionsCards = lazy(() =>
   )
 );
 
-const LazyLatestVideosCards = lazy(() => 
-  import('./LatestVideosCards').catch(() => 
-    import('./PagePlaceholder').then(module => ({ 
-      default: () => module.default({ title: "Latest Videos", description: "Loading video content..." })
-    }))
-  )
-);
+// YouTube videos - NO LAZY LOADING for immediate previews
+import LatestVideosCards from './LatestVideosCards';
 
 const LazyLatestEventsCards = lazy(() => 
   import('./LatestEventsCards').catch(() => 
@@ -52,7 +47,7 @@ const SectionLoading = ({ title }: { title: string }) => (
   </div>
 );
 
-// Wrapper for lazy loaded sections with preloading
+// Wrapper for lazy loaded sections with preloading (YouTube videos load immediately)
 export function LazySection({ 
   component, 
   title, 
@@ -62,7 +57,7 @@ export function LazySection({
   title: string;
   fallback?: React.ReactNode;
 }) {
-  // Preload components immediately
+  // Preload lazy components immediately
   React.useEffect(() => {
     switch (component) {
       case 'LatestNewsCards':
@@ -71,12 +66,10 @@ export function LazySection({
       case 'LatestDevotionsCards':
         import('./LatestDevotionsCards');
         break;
-      case 'LatestVideosCards':
-        import('./LatestVideosCards');
-        break;
       case 'LatestEventsCards':
         import('./LatestEventsCards');
         break;
+      // YouTube videos are not lazy loaded - no preloading needed
     }
   }, [component]);
 
@@ -87,13 +80,19 @@ export function LazySection({
       case 'LatestDevotionsCards':
         return <LazyLatestDevotionsCards />;
       case 'LatestVideosCards':
-        return <LazyLatestVideosCards />;
+        // YouTube videos - render immediately without lazy loading
+        return <LatestVideosCards />;
       case 'LatestEventsCards':
         return <LazyLatestEventsCards />;
       default:
         return <div>Unknown component: {component}</div>;
     }
   };
+
+  // YouTube videos don't need Suspense since they're not lazy loaded
+  if (component === 'LatestVideosCards') {
+    return renderComponent();
+  }
 
   return (
     <Suspense fallback={fallback || <SectionLoading title={title} />}>
@@ -105,6 +104,5 @@ export function LazySection({
 export {
   LazyLatestNewsCards,
   LazyLatestDevotionsCards,
-  LazyLatestVideosCards,
   LazyLatestEventsCards,
 };

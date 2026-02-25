@@ -10,16 +10,16 @@ import WelcomeSplash from "@/components/WelcomeSplash";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { LazyWrapper, LazyHome, LazyAbout, LazyMembership, LazyDonations, LazyLibrary, LazyNews, LazyNewsArticle, LazyDevotions, LazyDevotionDetail, LazyEventDetail, LazyVideos, LazyDepartments, LazyProjects, LazyContact, LazyTerms, LazyPrivacy, LazyCookies, LazyFAQs, LazyAdmin, LazyNotFound } from "@/components/LazyRoutes";
+import Home from "./pages/Home"; // Direct import for Netlify thumbnails
 
 // Optimized QueryClient with memory management
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
-      cacheTime: 10 * 60 * 1000, // 10 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
       retry: 1,
       refetchOnWindowFocus: false,
-      suspense: false,
     },
   },
 });
@@ -27,12 +27,21 @@ const queryClient = new QueryClient({
 function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
   const location = useLocation();
+  
+  // Detect if this is Netlify's thumbnail service
+  const isNetlifyThumbnail = typeof window !== 'undefined' && (
+    navigator.userAgent.includes('Netlify') ||
+    navigator.userAgent.includes('prerender') ||
+    navigator.userAgent.includes('HeadlessChrome') ||
+    window.location.search.includes('netlify') ||
+    !window.sessionStorage // Thumbnail services often don't support sessionStorage
+  );
 
   useEffect(() => {
     const hasShown = sessionStorage.getItem("sypeSplashShown") === "true";
-    const shouldShow = !hasShown && location.pathname === "/";
+    const shouldShow = !hasShown && location.pathname === "/" && !isNetlifyThumbnail;
 
-    if (!shouldShow) {
+    if (!shouldShow || isNetlifyThumbnail) {
       setShowSplash(false);
       return;
     }
@@ -62,7 +71,7 @@ function AppContent() {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [location.pathname]);
+  }, [location.pathname, isNetlifyThumbnail]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -70,7 +79,7 @@ function AppContent() {
         <Toaster />
         <Sonner />
         <Routes>
-          <Route path="/" element={<LazyWrapper><LazyHome /></LazyWrapper>} />
+          <Route path="/" element={isNetlifyThumbnail ? <Home /> : <LazyWrapper><LazyHome /></LazyWrapper>} />
           <Route path="/about" element={<LazyWrapper><LazyAbout /></LazyWrapper>} />
           <Route path="/membership" element={<LazyWrapper><LazyMembership /></LazyWrapper>} />
           <Route path="/donations" element={<LazyWrapper><LazyDonations /></LazyWrapper>} />

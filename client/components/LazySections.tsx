@@ -41,17 +41,32 @@ const SectionLoading = ({ title }: { title: string }) => (
 
 // Wrapper for lazy loaded sections
 export function LazySection({ 
-  children, 
+  component, 
   title, 
   fallback 
 }: { 
-  children: React.ReactNode; 
+  component: string;
   title: string;
   fallback?: React.ReactNode;
 }) {
+  const renderComponent = () => {
+    switch (component) {
+      case 'LatestNewsCards':
+        return <LazyLatestNewsCards />;
+      case 'LatestDevotionsCards':
+        return <LazyLatestDevotionsCards />;
+      case 'LatestVideosCards':
+        return <LazyLatestVideosCards />;
+      case 'LatestEventsCards':
+        return <LazyLatestEventsCards />;
+      default:
+        return <div>Unknown component: {component}</div>;
+    }
+  };
+
   return (
     <Suspense fallback={fallback || <SectionLoading title={title} />}>
-      {children}
+      {renderComponent()}
     </Suspense>
   );
 }

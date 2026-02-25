@@ -21,6 +21,7 @@ import { useEffect, useState } from "react";
 import { NewsArticle, Devotion, Event } from "@/types/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildApiUrl } from "@/lib/apiConfig";
+import { LazySection } from "@/components/LazySections";
 
 // YouTube Video interface
 interface YouTubeVideo {
@@ -883,7 +884,7 @@ export default function Home() {
               </Button>
             </div>
           </ScrollAnimation>
-          <LatestEventsCards />
+          <LazySection component="LatestEventsCards" title="Upcoming Events" />
         </div>
       </section>
 
@@ -913,7 +914,7 @@ export default function Home() {
             </div>
           </ScrollAnimation>
 
-          <LatestNewsCards />
+          <LazySection component="LatestNewsCards" title="Latest News" />
         </div>
       </section>
 
@@ -943,7 +944,7 @@ export default function Home() {
             </div>
           </ScrollAnimation>
 
-          <LatestDevotionsCards />
+          <LazySection component="LatestDevotionsCards" title="Devotions" />
         </div>
       </section>
 
@@ -973,7 +974,7 @@ export default function Home() {
             </div>
           </ScrollAnimation>
 
-          <LatestVideosCards />
+          <LazySection component="LatestVideosCards" title="Videos & Multimedia" />
         </div>
       </section>
 

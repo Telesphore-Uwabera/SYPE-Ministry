@@ -31,23 +31,23 @@ export default function Donations() {
 
   const impacts = [
     {
-      amount: "1000 RWF",
+      amount: "2000 RWF",
       description: "Produces a quality poster for social media sharing",
     },
     {
-      amount: "5000 RWF",
+      amount: "2000 RWF",
       description:
         "Helps produce a short video for YouTube and Facebook distribution",
     },
     {
-      amount: "20000 RWF",
+      amount: "40000 RWF",
       description:
         "Supports a complete evangelistic materials production cycle",
     },
     {
-      amount: "100000+ RWF",
+      amount: "200000+ RWF",
       description:
-        "Funds a major evangelical project reaching thousands with the Gospel",
+        "Funds a major evangelical project reaching thousands with Gospel",
     },
   ];
 

@@ -273,7 +273,7 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
                   }}
                 >
                   <img
-                    src="/sype-logo.webp"
+                    src="/Images/sype-logo.webp"
                     alt="SYPE Ministry Logo"
                     className="h-10 md:h-12 w-auto object-contain transition-all duration-300 group-hover:brightness-110"
                   />
@@ -622,7 +622,7 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
                 className="flex items-center font-heading font-bold text-primary"
               >
                 <img
-                  src="/sype-logo.webp"
+                  src="/Images/sype-logo.webp"
                   alt="SYPE Ministry Logo"
                   className="h-14 md:h-16 lg:h-20 w-auto object-contain"
                 />

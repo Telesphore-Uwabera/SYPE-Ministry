@@ -67,7 +67,7 @@ export default function Footer() {
           <div>
             <div className="flex flex-col items-start gap-2 mb-4">
               <img
-                src="/sype-logo.webp"
+                src="/Images/sype-logo.webp"
                 alt="SYPE Ministry Logo"
                 className="h-32 w-auto object-contain"
               />

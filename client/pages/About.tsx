@@ -53,6 +53,107 @@ export default function About() {
   const auditorsTeam = committeeMembers.filter(m => m.category === "auditor");
   const asaRepresentatives = committeeMembers.filter(m => m.category === "asa_representatives");
   const boardCounsellors = committeeMembers.filter(m => m.category === "board_counsellors");
+  const aboutFaqs = [
+    {
+      category: "General Information",
+      questions: [
+        {
+          q: "What is SYPE Ministry?",
+          a: "SYPE is a ministry that encompasses alumni and students who are part of Seventh-day Adventists' Associations that operate in public Universities in Kigali, grouped in the evangelical district of ASSA Kigali, and welcomes partnership with others who want to participate in evangelism.",
+        },
+        {
+          q: "When was SYPE Ministry established?",
+          a: "SYPE Ministry was officially established on September 14, 2019, with official activities launching in April 2020.",
+        },
+        {
+          q: "What is the mission of SYPE Ministry?",
+          a: "To enable young professionals in the church to engage in missionary work through evangelical projects that involve their professions and talents.",
+        },
+        {
+          q: "Where is SYPE Ministry located?",
+          a: "SYPE Ministry is based in Kigali, Rwanda, and serves young professionals from Adventist Student Associations in public universities in Kigali and beyond.",
+        },
+      ],
+    },
+    {
+      category: "Membership",
+      questions: [
+        {
+          q: "Who can become a member of SYPE Ministry?",
+          a: "Seventh-day Adventist member from Adventist Student and Alumni Associations (ASSA Kigali) Plus any other location.",
+        },
+        {
+          q: "How do I join SYPE Ministry?",
+          a: "Membership is invitation-based. You can be invited by an existing SYPE member, or you can contact us directly through our contact page to express your interest in joining.",
+        },
+        {
+          q: "What are the benefits of membership?",
+          a: "Members receive evangelism training, mentorship opportunities, project participation, leadership development, community support, and access to exclusive evangelism materials and resources.",
+        },
+        {
+          q: "Is there a membership fee?",
+          a: "SYPE Ministry does not charge membership fees. However, members are encouraged to support evangelism projects through voluntary contributions and donations.",
+        },
+      ],
+    },
+    {
+      category: "Activities & Programs",
+      questions: [
+        {
+          q: "What activities does SYPE Ministry organize?",
+          a: "SYPE organizes various activities including daily prayer and devotion programs, evangelism projects, mission camps, media content creation (videos, posters, written content), and digital outreach initiatives.",
+        },
+        {
+          q: "When are the daily devotion programs?",
+          a: "Our daily prayer and devotion program takes place every day from 6:00 AM to 7:00 AM via WhatsApp. The program focuses on Jesus' methods and Ellen G. White's teachings on evangelism.",
+        },
+        {
+          q: "How can I participate in evangelism projects?",
+          a: "Members are invited to participate in various evangelical projects. Those interested can volunteer for projects that match their talents and professions. Contact us or check with project coordinators for current opportunities.",
+        },
+      ],
+    },
+    {
+      category: "Contact & Communication",
+      questions: [
+        {
+          q: "How can I contact SYPE Ministry?",
+          a: "You can contact us via email at sypeministry@gmail.com, phone at +250 780 430 990 or +250 785 073 847, or through our contact page on the website.",
+        },
+        {
+          q: "Do you have a WhatsApp group?",
+          a: (
+            <div>
+              <p>
+                Yes, SYPE has a WhatsApp community group for members. The group is
+                used for communication, coordination, and sharing approved evangelism
+                materials.
+              </p>
+              <div className="mt-3">
+                <motion.a
+                  href="https://chat.whatsapp.com/DIKintfrZjbARzYMQ1SQbN"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center rounded-full bg-green-500 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:bg-green-600 transition-colors"
+                  animate={{
+                    scale: [1, 1.06, 1],
+                    boxShadow: [
+                      "0 0 0 rgba(0,0,0,0)",
+                      "0 0 20px rgba(34,197,94,0.6)",
+                      "0 0 0 rgba(0,0,0,0)",
+                    ],
+                  }}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  Click here to join training WhatsApp group
+                </motion.a>
+              </div>
+            </div>
+          ),
+        },
+      ],
+    },
+  ];
 
   return (
     <Layout>
@@ -1005,82 +1106,21 @@ export default function About() {
           <p className="text-foreground/70 text-lg text-center max-w-2xl mx-auto mb-12">
             Find answers to common questions about SYPE Ministry, membership, activities, and more.
           </p>
+          <div className="flex justify-center mb-12">
+            <motion.a
+              href="https://chat.whatsapp.com/DIKintfrZjbARzYMQ1SQbN"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-full bg-green-500 px-6 py-3 text-sm md:text-base font-semibold text-white shadow-lg hover:bg-green-600 transition-colors"
+              animate={{ scale: [1, 1.06, 1], boxShadow: ["0 0 0 rgba(0,0,0,0)", "0 0 24px rgba(34,197,94,0.6)", "0 0 0 rgba(0,0,0,0)"] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+            >
+              Click here to join training WhatsApp group
+            </motion.a>
+          </div>
 
           <div className="max-w-4xl mx-auto space-y-6">
-            {[
-              {
-                category: "General Information",
-                questions: [
-                  {
-                    q: "What is SYPE Ministry?",
-                    a: "SYPE is a ministry that encompasses alumni and students who are part of Seventh-day Adventists' Associations that operate in public Universities in Kigali, grouped in the evangelical district of ASSA Kigali, and welcomes partnership with others who want to participate in evangelism."
-                  },
-                  {
-                    q: "When was SYPE Ministry established?",
-                    a: "SYPE Ministry was officially established on September 14, 2019, with official activities launching in April 2020."
-                  },
-                  {
-                    q: "What is the mission of SYPE Ministry?",
-                    a: "To enable young professionals in the church to engage in missionary work through evangelical projects that involve their professions and talents."
-                  },
-                  {
-                    q: "Where is SYPE Ministry located?",
-                    a: "SYPE Ministry is based in Kigali, Rwanda, and serves young professionals from Adventist Student Associations in public universities in Kigali and beyond."
-                  }
-                ]
-              },
-              {
-                category: "Membership",
-                questions: [
-                  {
-                    q: "Who can become a member of SYPE Ministry?",
-                    a: "Seventh-day Adventist member from Adventist Student and Alumni Associations (ASSA Kigali) Plus any other location."
-                  },
-                  {
-                    q: "How do I join SYPE Ministry?",
-                    a: "Membership is invitation-based. You can be invited by an existing SYPE member, or you can contact us directly through our contact page to express your interest in joining."
-                  },
-                  {
-                    q: "What are the benefits of membership?",
-                    a: "Members receive evangelism training, mentorship opportunities, project participation, leadership development, community support, and access to exclusive evangelism materials and resources."
-                  },
-                  {
-                    q: "Is there a membership fee?",
-                    a: "SYPE Ministry does not charge membership fees. However, members are encouraged to support evangelism projects through voluntary contributions and donations."
-                  }
-                ]
-              },
-              {
-                category: "Activities & Programs",
-                questions: [
-                  {
-                    q: "What activities does SYPE Ministry organize?",
-                    a: "SYPE organizes various activities including daily prayer and devotion programs, evangelism projects, mission camps, media content creation (videos, posters, written content), and digital outreach initiatives."
-                  },
-                  {
-                    q: "When are the daily devotion programs?",
-                    a: "Our daily prayer and devotion program takes place every day from 6:00 AM to 7:00 AM via WhatsApp. The program focuses on Jesus' methods and Ellen G. White's teachings on evangelism."
-                  },
-                  {
-                    q: "How can I participate in evangelism projects?",
-                    a: "Members are invited to participate in various evangelical projects. Those interested can volunteer for projects that match their talents and professions. Contact us or check with project coordinators for current opportunities."
-                  }
-                ]
-              },
-              {
-                category: "Contact & Communication",
-                questions: [
-                  {
-                    q: "How can I contact SYPE Ministry?",
-                    a: "You can contact us via email at sypeministry@gmail.com, phone at +250 780 430 990 or +250 785 073 847, or through our contact page on the website."
-                  },
-                  {
-                    q: "Do you have a WhatsApp group?",
-                    a: "Yes, SYPE has a WhatsApp community group for members. Join our Training Program group at https://chat.whatsapp.com/DIKintfrZjbARzYMQ1SQbN. The group is used for communication, coordination, and sharing approved evangelism materials."
-                  }
-                ]
-              }
-            ].map((category, categoryIndex) => (
+            {aboutFaqs.map((category, categoryIndex) => (
               <Card key={categoryIndex}>
                 <CardHeader>
                   <CardTitle className="text-xl">{category.category}</CardTitle>

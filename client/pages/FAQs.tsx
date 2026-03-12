@@ -13,6 +13,113 @@ type ApiFAQ = {
   order: number;
 };
 
+type FaqSection = {
+  category: string;
+  questions: { q: string; a: React.ReactNode }[];
+};
+
+const fallbackFaqs: FaqSection[] = [
+  {
+    category: "General Information",
+    questions: [
+      {
+        q: "What is SYPE Ministry?",
+        a: "SYPE is a ministry that encompasses alumni and students who are part of Seventh-day Adventists' Associations that operate in public Universities in Kigali, grouped in the evangelical district of ASSA Kigali, and welcomes partnership with others who want to participate in evangelism.",
+      },
+      {
+        q: "When was SYPE Ministry established?",
+        a: "SYPE Ministry was officially established on September 14, 2019, with official activities launching in April 2020.",
+      },
+      {
+        q: "What is the mission of SYPE Ministry?",
+        a: "To enable young professionals in the church to engage in missionary work through evangelical projects that involve their professions and talents.",
+      },
+      {
+        q: "Where is SYPE Ministry located?",
+        a: "SYPE Ministry is based in Kigali, Rwanda, and serves young professionals from Adventist Student Associations in public universities in Kigali and beyond.",
+      },
+    ],
+  },
+  {
+    category: "Membership",
+    questions: [
+      {
+        q: "Who can become a member of SYPE Ministry?",
+        a: "Seventh-day Adventist member from Adventist Student and Alumni Associations (ASSA Kigali) Plus any other location.",
+      },
+      {
+        q: "How do I join SYPE Ministry?",
+        a: "Membership is invitation-based. You can be invited by an existing SYPE member, or you can contact us directly through our contact page to express your interest in joining.",
+      },
+      {
+        q: "What are the benefits of membership?",
+        a: "Members receive evangelism training, mentorship opportunities, project participation, leadership development, community support, and access to exclusive evangelism materials and resources.",
+      },
+      {
+        q: "Is there a membership fee?",
+        a: "SYPE Ministry does not charge membership fees. However, members are encouraged to support evangelism projects through voluntary contributions and donations.",
+      },
+    ],
+  },
+  {
+    category: "Activities & Programs",
+    questions: [
+      {
+        q: "What activities does SYPE Ministry organize?",
+        a: "SYPE organizes various activities including daily prayer and devotion programs, evangelism projects, mission camps, media content creation (videos, posters, written content), and digital outreach initiatives.",
+      },
+      {
+        q: "When are the daily devotion programs?",
+        a: "Our daily prayer and devotion program takes place every day from 6:00 AM to 7:00 AM via WhatsApp. The program focuses on Jesus' methods and Ellen G. White's teachings on evangelism.",
+      },
+      {
+        q: "How can I participate in evangelism projects?",
+        a: "Members are invited to participate in various evangelical projects. Those interested can volunteer for projects that match their talents and professions. Contact us or check with project coordinators for current opportunities.",
+      },
+    ],
+  },
+  {
+    category: "Contact & Communication",
+    questions: [
+      {
+        q: "How can I contact SYPE Ministry?",
+        a: "You can contact us via email at sypeministry@gmail.com, phone at +250 780 430 990 or +250 785 073 847, or through our contact page on the website.",
+      },
+      {
+        q: "Do you have a WhatsApp group?",
+        a: (
+          <div>
+            <p>
+              Yes, SYPE has a WhatsApp community group for members. The group is
+              used for communication, coordination, and sharing approved evangelism
+              materials.
+            </p>
+            <div className="mt-3">
+              <motion.a
+                href="https://chat.whatsapp.com/DIKintfrZjbARzYMQ1SQbN"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center rounded-full bg-green-500 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:bg-green-600 transition-colors"
+                animate={{
+                  scale: [1, 1.06, 1],
+                  boxShadow: [
+                    "0 0 0 rgba(0,0,0,0)",
+                    "0 0 20px rgba(34,197,94,0.6)",
+                    "0 0 0 rgba(0,0,0,0)",
+                  ],
+                }}
+                transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+              >
+                Click here to join training WhatsApp group
+              </motion.a>
+            </div>
+          </div>
+        ),
+      },
+    ],
+  },
+];
+
 export default function FAQs() {
   const [items, setItems] = useState<ApiFAQ[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +142,7 @@ export default function FAQs() {
     fetchFaqs();
   }, []);
 
-  const grouped = useMemo(() => {
+  const grouped = useMemo<FaqSection[]>(() => {
     const map = new Map<string, ApiFAQ[]>();
     for (const f of items) {
       const key = (f.category || "General").trim() || "General";
@@ -47,10 +154,13 @@ export default function FAQs() {
         category,
         questions: questions
           .slice()
-          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.question.localeCompare(b.question)),
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.question.localeCompare(b.question))
+          .map((q) => ({ q: q.question, a: q.answer })),
       }))
       .sort((a, b) => a.category.localeCompare(b.category));
   }, [items]);
+
+  const sections = grouped.length > 0 ? grouped : fallbackFaqs;
 
   return (
     <Layout>
@@ -69,6 +179,16 @@ export default function FAQs() {
             <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
               Find answers to common questions about SYPE Ministry, membership, activities, and more.
             </p>
+            <motion.a
+              href="https://chat.whatsapp.com/DIKintfrZjbARzYMQ1SQbN"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-6 inline-flex items-center justify-center rounded-full bg-green-500 px-6 py-3 text-sm md:text-base font-semibold text-white shadow-lg hover:bg-green-600 transition-colors"
+              animate={{ scale: [1, 1.06, 1], boxShadow: ["0 0 0 rgba(0,0,0,0)", "0 0 24px rgba(34,197,94,0.6)", "0 0 0 rgba(0,0,0,0)"] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+            >
+              Click here to join training WhatsApp group
+            </motion.a>
           </motion.div>
 
           {/* FAQs Content */}
@@ -80,12 +200,12 @@ export default function FAQs() {
           >
             {loading ? (
               <div className="text-center py-12 text-foreground/70">Loading FAQs...</div>
-            ) : grouped.length === 0 ? (
+            ) : sections.length === 0 ? (
               <div className="text-center py-12 text-foreground/70">
                 No FAQs available yet.
               </div>
             ) : (
-              grouped.map((category, categoryIndex) => (
+              sections.map((category, categoryIndex) => (
               <Card key={categoryIndex}>
                 <CardHeader>
                   <CardTitle className="text-2xl">{category.category}</CardTitle>
@@ -98,10 +218,10 @@ export default function FAQs() {
                         value={`item-${categoryIndex}-${faqIndex}`}
                       >
                         <AccordionTrigger className="text-left font-semibold">
-                          {faq.question}
+                          {faq.q}
                         </AccordionTrigger>
                         <AccordionContent className="text-foreground/80 leading-relaxed">
-                          {faq.answer}
+                          {faq.a}
                         </AccordionContent>
                       </AccordionItem>
                     ))}

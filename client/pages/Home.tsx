@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NewsArticle, Devotion, Event } from "@/types/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildApiUrl } from "@/lib/apiConfig";

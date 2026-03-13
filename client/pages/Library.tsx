@@ -269,11 +269,9 @@ export default function Library() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col flex-1">
-                {book.description && (
-                  <p className="text-sm text-foreground/70 mb-4 flex-1">
-                    {truncateWords(book.description, 40)}
-                  </p>
-                )}
+                <p className="text-sm text-foreground/70 mb-4 flex-1 min-h-[4.5rem]">
+                  {book.description ? truncateWords(book.description, 40) : ""}
+                </p>
                 <div className="flex items-center justify-between gap-2 flex-nowrap">
                   <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full font-medium whitespace-nowrap">
                     {book.category}

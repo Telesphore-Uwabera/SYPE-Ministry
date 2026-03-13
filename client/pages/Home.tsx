@@ -498,19 +498,26 @@ export default function Home() {
     let isMounted = true;
     const fetchImpactStats = async () => {
       try {
-        const [analyticsRes, mediaRes] = await Promise.all([
+        const [analyticsRes, devotionsRes, booksRes, youtubeRes] = await Promise.all([
           fetch(buildApiUrl("/api/admin/analytics")),
-          fetch(buildApiUrl("/api/admin/media")),
+          fetch(buildApiUrl("/api/devotions?limit=500")),
+          fetch(buildApiUrl("/api/books")),
+          fetch(buildApiUrl("/api/youtube/latest?limit=50")),
         ]);
 
         const analyticsData = analyticsRes.ok ? await analyticsRes.json() : null;
-        const mediaData = mediaRes.ok ? await mediaRes.json() : [];
+        const devotionsData = devotionsRes.ok ? await devotionsRes.json() : [];
+        const booksData = booksRes.ok ? await booksRes.json() : [];
+        const youtubeData = youtubeRes.ok ? await youtubeRes.json() : [];
 
         if (!isMounted) return;
 
         const membersCount = analyticsData?.totalMembers ?? 0;
         const projectsCount = analyticsData?.totalProjects ?? 0;
-        const mediaCount = Array.isArray(mediaData) ? mediaData.length : 0;
+        const devotionsCount = Array.isArray(devotionsData) ? devotionsData.length : 0;
+        const booksCount = Array.isArray(booksData) ? booksData.length : 0;
+        const youtubeCount = Array.isArray(youtubeData) ? youtubeData.length : 0;
+        const mediaCount = devotionsCount + booksCount + youtubeCount;
 
         setImpactStats({
           members: membersCount,

@@ -101,6 +101,9 @@ export default function SEO({
     updateMetaTag("og:title", fullTitle, "property");
     updateMetaTag("og:description", description, "property");
     updateMetaTag("og:image", image, "property");
+    updateMetaTag("og:image:type", "image/png", "property");
+    updateMetaTag("og:image:width", "1200", "property");
+    updateMetaTag("og:image:height", "630", "property");
     updateMetaTag("og:url", currentUrl, "property");
     updateMetaTag("og:type", type, "property");
     updateMetaTag("og:site_name", "SYPE Ministry", "property");

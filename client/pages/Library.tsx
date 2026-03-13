@@ -42,6 +42,10 @@ export default function Library() {
   const [pdfPage, setPdfPage] = useState<number>(1);
   const [pdfScale, setPdfScale] = useState<number>(1.1);
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [readerSessionId, setReaderSessionId] = useState<number>(0);
+  const [readerSearchTerm, setReaderSearchTerm] = useState("");
+  const [readerSearchStatus, setReaderSearchStatus] = useState<string | null>(null);
+  const [readerSearching, setReaderSearching] = useState(false);
   const navigate = useNavigate();
   const { id: bookId } = useParams();
 
@@ -131,6 +135,10 @@ export default function Library() {
     setPdfPage(1);
     setPdfScale(1.1);
     setPdfError(null);
+    setReaderSearchTerm("");
+    setReaderSearchStatus(null);
+    setReaderSearching(false);
+    setReaderSessionId(Date.now());
     setReaderOpen(true);
     navigate(`/library/${book.id}`);
   };
@@ -147,8 +155,48 @@ export default function Library() {
 
   const pdfUrl = useMemo(() => {
     if (!readerBook) return "";
-    return buildApiUrl(`/api/books/${readerBook.id}/view`);
-  }, [readerBook]);
+    return buildApiUrl(`/api/books/${readerBook.id}/view?t=${readerSessionId}`);
+  }, [readerBook, readerSessionId]);
+
+  const truncateWords = (text: string, maxWords: number) => {
+    const words = text.trim().split(/\s+/);
+    if (words.length <= maxWords) return text;
+    return `${words.slice(0, maxWords).join(" ")}...`;
+  };
+
+  const handleSearchInPdf = async () => {
+    if (!pdfUrl || !readerSearchTerm.trim()) return;
+    setReaderSearching(true);
+    setReaderSearchStatus(null);
+    try {
+      const doc = await pdfjs.getDocument(pdfUrl).promise;
+      const term = readerSearchTerm.trim().toLowerCase();
+      let foundPage: number | null = null;
+      for (let i = 1; i <= doc.numPages; i += 1) {
+        const page = await doc.getPage(i);
+        const content = await page.getTextContent();
+        const text = content.items
+          .map((item: any) => (item && item.str ? item.str : ""))
+          .join(" ")
+          .toLowerCase();
+        if (text.includes(term)) {
+          foundPage = i;
+          break;
+        }
+      }
+      if (foundPage) {
+        setPdfPage(foundPage);
+        setReaderSearchStatus(`Found on page ${foundPage}.`);
+      } else {
+        setReaderSearchStatus("No matches found.");
+      }
+    } catch (error) {
+      console.error("PDF search error:", error);
+      setReaderSearchStatus("Search failed. Please try again.");
+    } finally {
+      setReaderSearching(false);
+    }
+  };
 
   const renderBooks = () => {
     if (loading) {
@@ -262,8 +310,8 @@ export default function Library() {
               </CardHeader>
               <CardContent className="flex flex-col flex-1">
                 {book.description && (
-                  <p className="text-sm text-foreground/70 line-clamp-3 mb-4 flex-1">
-                    {book.description}
+                  <p className="text-sm text-foreground/70 mb-4 flex-1 min-h-[4.5rem]">
+                    {truncateWords(book.description, 40)}
                   </p>
                 )}
                 <div className="flex items-center justify-between gap-2 flex-nowrap">
@@ -462,10 +510,39 @@ export default function Library() {
             </div>
           </div>
 
+          <div className="px-4 py-3 border-b flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <div className="flex-1 w-full">
+              <Input
+                type="text"
+                placeholder="Search inside this book..."
+                value={readerSearchTerm}
+                onChange={(e) => setReaderSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSearchInPdf();
+                  }
+                }}
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!readerSearchTerm.trim() || readerSearching}
+              onClick={handleSearchInPdf}
+            >
+              {readerSearching ? "Searching..." : "Search"}
+            </Button>
+            {readerSearchStatus && (
+              <span className="text-xs text-foreground/70">{readerSearchStatus}</span>
+            )}
+          </div>
+
           <div className="w-full h-[80vh] bg-muted overflow-auto flex justify-center">
             {readerBook ? (
               <div className="py-6">
                 <Document
+                  key={pdfUrl}
                   file={pdfUrl}
                   onLoadSuccess={({ numPages }) => {
                     setPdfNumPages(numPages);

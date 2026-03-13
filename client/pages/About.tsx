@@ -795,7 +795,7 @@ export default function About() {
                   </h3>
                 </ScrollAnimation>
                 <StaggerContainer
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 max-w-5xl mx-auto gap-8 mb-8"
+                  className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-3 max-w-6xl mx-auto gap-8 mb-8"
                   staggerDelay={0.15}
                   direction="up"
                   detectScrollDirection
@@ -855,7 +855,7 @@ export default function About() {
                   </h3>
                 </ScrollAnimation>
                 <StaggerContainer
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 max-w-5xl mx-auto gap-8"
+                  className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-3 max-w-6xl mx-auto gap-8"
                   staggerDelay={0.15}
                   direction="up"
                   detectScrollDirection
@@ -915,7 +915,7 @@ export default function About() {
                   </h3>
                 </ScrollAnimation>
                 <StaggerContainer
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 max-w-5xl mx-auto gap-8"
+                  className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-3 max-w-6xl mx-auto gap-8"
                   staggerDelay={0.15}
                   direction="up"
                   detectScrollDirection
@@ -975,7 +975,7 @@ export default function About() {
                   </h3>
                 </ScrollAnimation>
                 <StaggerContainer
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 max-w-5xl mx-auto gap-8"
+                  className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-3 max-w-6xl mx-auto gap-8"
                   staggerDelay={0.15}
                   direction="up"
                   detectScrollDirection
@@ -1035,7 +1035,7 @@ export default function About() {
                   </h3>
                 </ScrollAnimation>
                 <StaggerContainer
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 max-w-5xl mx-auto gap-8"
+                  className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-3 max-w-6xl mx-auto gap-8"
                   staggerDelay={0.15}
                   direction="up"
                   detectScrollDirection

@@ -488,6 +488,59 @@ function LatestEventsCards() {
 import SEO from "@/components/SEO";
 
 export default function Home() {
+  const [impactStats, setImpactStats] = useState({
+    members: 0,
+    projects: 0,
+    mediaResources: 0,
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchImpactStats = async () => {
+      try {
+        const [analyticsRes, mediaRes] = await Promise.all([
+          fetch(buildApiUrl("/api/admin/analytics")),
+          fetch(buildApiUrl("/api/admin/media")),
+        ]);
+
+        const analyticsData = analyticsRes.ok ? await analyticsRes.json() : null;
+        const mediaData = mediaRes.ok ? await mediaRes.json() : [];
+
+        if (!isMounted) return;
+
+        const membersCount = analyticsData?.totalMembers ?? 0;
+        const projectsCount = analyticsData?.totalProjects ?? 0;
+        const mediaCount = Array.isArray(mediaData) ? mediaData.length : 0;
+
+        setImpactStats({
+          members: membersCount,
+          projects: projectsCount,
+          mediaResources: mediaCount,
+        });
+      } catch (error) {
+        if (!isMounted) return;
+        setImpactStats((prev) => prev);
+      }
+    };
+
+    fetchImpactStats();
+    const interval = window.setInterval(() => {
+      fetchImpactStats();
+    }, 5 * 60 * 1000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const prayerProgramsCount = useMemo(() => {
+    const baseYear = 2020;
+    const currentYear = new Date().getFullYear();
+    const yearsCount = Math.max(0, currentYear - baseYear + 1);
+    return yearsCount * 5;
+  }, []);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -790,7 +843,7 @@ export default function Home() {
                 </motion.div>
               </div>
               <p className="text-4xl font-heading font-bold text-primary mb-2">
-                150+
+                {impactStats.members}
               </p>
               <p className="text-foreground/70 font-medium">Active Members</p>
             </motion.div>
@@ -810,7 +863,7 @@ export default function Home() {
                 </motion.div>
               </div>
               <p className="text-4xl font-heading font-bold text-secondary mb-2">
-                25+
+                {impactStats.projects}
               </p>
               <p className="text-foreground/70 font-medium">
                 Evangelical Projects
@@ -832,7 +885,7 @@ export default function Home() {
                 </motion.div>
               </div>
               <p className="text-4xl font-heading font-bold text-primary mb-2">
-                100+
+                {impactStats.mediaResources}
               </p>
               <p className="text-foreground/70 font-medium">Media Resources</p>
             </motion.div>
@@ -852,7 +905,7 @@ export default function Home() {
                 </motion.div>
               </div>
               <p className="text-4xl font-heading font-bold text-primary mb-2">
-                52
+                {prayerProgramsCount}
               </p>
               <p className="text-foreground/70 font-medium">
                 Prayer & Outreach Programs

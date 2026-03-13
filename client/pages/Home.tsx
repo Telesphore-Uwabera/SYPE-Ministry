@@ -498,22 +498,28 @@ export default function Home() {
     let isMounted = true;
     const fetchImpactStats = async () => {
       try {
-        const [analyticsRes, devotionsRes, booksRes, youtubeRes] = await Promise.all([
+        const [analyticsRes, devotionsRes, booksRes, youtubeRes, projectsRes, eventsRes] = await Promise.all([
           fetch(buildApiUrl("/api/admin/analytics")),
           fetch(buildApiUrl("/api/devotions?limit=500")),
           fetch(buildApiUrl("/api/books")),
           fetch(buildApiUrl("/api/youtube/latest?limit=50")),
+          fetch(buildApiUrl("/api/projects")),
+          fetch(buildApiUrl("/api/events?limit=500")),
         ]);
 
         const analyticsData = analyticsRes.ok ? await analyticsRes.json() : null;
         const devotionsData = devotionsRes.ok ? await devotionsRes.json() : [];
         const booksData = booksRes.ok ? await booksRes.json() : [];
         const youtubeData = youtubeRes.ok ? await youtubeRes.json() : [];
+        const projectsData = projectsRes.ok ? await projectsRes.json() : [];
+        const eventsData = eventsRes.ok ? await eventsRes.json() : [];
 
         if (!isMounted) return;
 
         const membersCount = analyticsData?.totalMembers ?? 0;
-        const projectsCount = analyticsData?.totalProjects ?? 0;
+        const projectsCount =
+          (Array.isArray(projectsData) ? projectsData.length : 0) +
+          (Array.isArray(eventsData) ? eventsData.length : 0);
         const devotionsCount = Array.isArray(devotionsData) ? devotionsData.length : 0;
         const booksCount = Array.isArray(booksData) ? booksData.length : 0;
         const youtubeCount = Array.isArray(youtubeData) ? youtubeData.length : 0;

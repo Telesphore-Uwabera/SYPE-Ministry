@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import pdfWorkerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import { useNavigate, useParams } from "react-router-dom";
 
 // Ensure the worker is bundled by Vite and served as a real JS asset (not SPA fallback HTML)
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
@@ -40,6 +42,8 @@ export default function Library() {
   const [pdfPage, setPdfPage] = useState<number>(1);
   const [pdfScale, setPdfScale] = useState<number>(1.1);
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { id: bookId } = useParams();
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -128,7 +132,18 @@ export default function Library() {
     setPdfScale(1.1);
     setPdfError(null);
     setReaderOpen(true);
+    navigate(`/library/${book.id}`);
   };
+
+  useEffect(() => {
+    if (!bookId || loading) return;
+    const match = books.find((book) => book.id === bookId);
+    if (match) {
+      openReader(match);
+      return;
+    }
+    navigate("/library", { replace: true });
+  }, [bookId, books, loading, navigate]);
 
   const pdfUrl = useMemo(() => {
     if (!readerBook) return "";
@@ -198,13 +213,18 @@ export default function Library() {
                     <Button
                       size="sm"
                       className="flex items-center gap-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openReader(book);
-                      }}
+                      asChild
                     >
-                      <BookOpen className="w-4 h-4" />
-                      Read
+                      <Link
+                        to={`/library/${book.id}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openReader(book);
+                        }}
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        Read
+                      </Link>
                     </Button>
                   </div>
                 )}
@@ -256,13 +276,18 @@ export default function Library() {
                         size="sm"
                         variant="outline"
                         className="flex items-center gap-2 whitespace-nowrap"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openReader(book);
-                        }}
+                        asChild
                       >
-                        <BookOpen className="w-3 h-3" />
-                        Read
+                        <Link
+                          to={`/library/${book.id}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openReader(book);
+                          }}
+                        >
+                          <BookOpen className="w-3 h-3" />
+                          Read
+                        </Link>
                       </Button>
                       <Button asChild size="sm" variant="outline" className="flex items-center gap-2 whitespace-nowrap">
                         <a
@@ -374,7 +399,10 @@ export default function Library() {
         open={readerOpen}
         onOpenChange={(open) => {
           setReaderOpen(open);
-          if (!open) setReaderBook(null);
+          if (!open) {
+            setReaderBook(null);
+            navigate("/library", { replace: true });
+          }
         }}
       >
         <DialogContent className="max-w-5xl p-0 overflow-hidden">

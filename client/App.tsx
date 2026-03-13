@@ -84,6 +84,7 @@ function AppContent() {
           <Route path="/membership" element={<LazyWrapper><LazyMembership /></LazyWrapper>} />
           <Route path="/donations" element={<LazyWrapper><LazyDonations /></LazyWrapper>} />
           <Route path="/library" element={<LazyWrapper><LazyLibrary /></LazyWrapper>} />
+          <Route path="/library/:id" element={<LazyWrapper><LazyLibrary /></LazyWrapper>} />
           <Route path="/news" element={<LazyWrapper><LazyNews /></LazyWrapper>} />
           <Route path="/news/:id" element={<LazyWrapper><LazyNewsArticle /></LazyWrapper>} />
           <Route path="/devotions" element={<LazyWrapper><LazyDevotions /></LazyWrapper>} />

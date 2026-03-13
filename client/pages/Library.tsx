@@ -161,7 +161,7 @@ export default function Library() {
   const renderBooks = () => {
     if (loading) {
       return (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 auto-rows-fr">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <div key={i} className="h-96 bg-muted animate-pulse rounded-lg" />
           ))}
@@ -196,7 +196,7 @@ export default function Library() {
     return (
       <StaggerContainer
         detectScrollDirection
-        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 auto-rows-fr"
         staggerDelay={0.15}
         direction="up"
       >

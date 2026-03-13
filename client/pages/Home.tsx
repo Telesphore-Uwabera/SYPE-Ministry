@@ -546,7 +546,7 @@ export default function Home() {
         }}
       />
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-primary via-secondary to-primary py-20 md:py-32 text-primary-foreground">
+      <section id="home-hero" className="relative overflow-hidden bg-gradient-to-r from-primary via-secondary to-primary py-20 md:py-32 text-primary-foreground">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 right-10 w-72 h-72 bg-accent rounded-full blur-3xl"></div>
           <div className="absolute bottom-10 left-10 w-96 h-96 bg-secondary rounded-full blur-3xl"></div>
@@ -597,6 +597,7 @@ export default function Home() {
 
       {/* About Snapshot Section */}
       <motion.section
+        id="home-about"
         className="py-16 md:py-24 bg-white"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
@@ -651,6 +652,7 @@ export default function Home() {
 
       {/* Mission & Purpose Cards Section */}
       <motion.section
+        id="home-mission"
         className="py-16 md:py-24 bg-muted/30"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
@@ -748,6 +750,7 @@ export default function Home() {
 
       {/* Evangelical Impact Section */}
       <motion.section
+        id="home-impact"
         className="py-16 md:py-24 bg-white"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
@@ -860,7 +863,7 @@ export default function Home() {
       </motion.section>
 
       {/* Upcoming Events Section */}
-      <section className="py-16 md:py-24 bg-muted/30">
+      <section id="home-events" className="py-16 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           <ScrollAnimation direction="fade" delay={0.4}>
             <div className="flex items-center justify-between mb-8">
@@ -889,7 +892,7 @@ export default function Home() {
       </section>
 
       {/* Featured Content Section - Latest News */}
-      <section className="py-16 md:py-24 bg-muted/30">
+      <section id="home-news" className="py-16 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           <ScrollAnimation direction="fade" delay={0.4}>
             <div className="flex items-center justify-between mb-8">
@@ -919,7 +922,7 @@ export default function Home() {
       </section>
 
       {/* Featured Content Section - Devotions */}
-      <section className="py-16 md:py-24 bg-white">
+      <section id="home-devotions" className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-4">
           <ScrollAnimation direction="fade" delay={0.4}>
             <div className="flex items-center justify-between mb-8">
@@ -949,7 +952,7 @@ export default function Home() {
       </section>
 
       {/* Featured Content Section - Videos & Multimedia */}
-      <section className="py-16 md:py-24 bg-muted/30">
+      <section id="home-videos" className="py-16 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           <ScrollAnimation direction="fade" delay={0.4}>
             <div className="flex items-center justify-between mb-8">
@@ -979,7 +982,7 @@ export default function Home() {
       </section>
 
       {/* Devotions Section */}
-      <section className="py-16 md:py-24 bg-white">
+      <section id="home-daily-devotions" className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-4">
           <ScrollAnimation direction="up" delay={0.4}>
             <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary mb-6">
@@ -1078,7 +1081,7 @@ export default function Home() {
 
 
       {/* CTA Section */}
-      <section className="py-16 md:py-24 bg-primary text-primary-foreground relative overflow-hidden">
+      <section id="home-cta" className="py-16 md:py-24 bg-primary text-primary-foreground relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <motion.div
             className="absolute top-10 right-10 w-72 h-72 bg-accent rounded-full blur-3xl"
@@ -1131,7 +1134,7 @@ export default function Home() {
       </section>
 
       {/* WhatsApp Training Group Section */}
-      <section className="py-16 md:py-24 bg-muted/30">
+      <section id="home-whatsapp" className="py-16 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
             <ScrollAnimation direction="fade" delay={0.2}>

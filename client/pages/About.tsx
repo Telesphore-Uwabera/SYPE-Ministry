@@ -158,7 +158,7 @@ export default function About() {
   return (
     <Layout>
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-primary via-secondary to-primary py-16 md:py-20 text-primary-foreground">
+      <section id="about-hero" className="relative overflow-hidden bg-gradient-to-r from-primary via-secondary to-primary py-16 md:py-20 text-primary-foreground">
         <motion.div
           className="absolute inset-0 opacity-10"
           animate={{
@@ -203,7 +203,7 @@ export default function About() {
       </section>
 
       {/* About SYPE Section */}
-      <section className="py-16 md:py-24 bg-white relative">
+      <section id="about-overview" className="py-16 md:py-24 bg-white relative">
         <div className="container mx-auto px-4">
           <ScrollAnimation direction="fade" delay={0.2}>
             <div className="max-w-5xl mx-auto">
@@ -279,7 +279,7 @@ export default function About() {
       </section>
 
       {/* History Section */}
-      <section className="py-16 md:py-24 bg-white relative">
+      <section id="about-story" className="py-16 md:py-24 bg-white relative">
         <div className="container mx-auto px-4">
           <ScrollAnimation direction="up" delay={0.2}>
             <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary mb-12">
@@ -480,7 +480,7 @@ export default function About() {
       </section>
 
       {/* Leadership Message Section */}
-      <section className="py-16 md:py-24 bg-muted/30 relative overflow-hidden">
+      <section id="about-leadership-message" className="py-16 md:py-24 bg-muted/30 relative overflow-hidden">
         <motion.div
           className="absolute inset-0 opacity-5"
           animate={{
@@ -547,7 +547,7 @@ export default function About() {
       </section>
 
       {/* Core Values Section */}
-      <section className="py-16 md:py-24 bg-white">
+      <section id="about-values" className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-4">
           <ScrollAnimation direction="scale" delay={0.2}>
             <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary text-center mb-12">
@@ -657,7 +657,7 @@ export default function About() {
       </section>
 
       {/* Committee Structure Section */}
-      <section className="py-16 md:py-24 bg-muted/30">
+      <section id="about-committee" className="py-16 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           <ScrollAnimation direction="up" delay={0.2}>
             <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary mb-12">
@@ -1098,7 +1098,7 @@ export default function About() {
       )}
 
       {/* FAQs Section */}
-      <section id="faqs" className="py-16 md:py-24 bg-white scroll-mt-20">
+      <section id="about-faqs" className="py-16 md:py-24 bg-white scroll-mt-20">
         <div className="container mx-auto px-4">
           <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary text-center mb-12">
             Frequently Asked Questions

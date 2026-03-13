@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, Search, Heart, ChevronDown, Users, Mail, HelpCircle, FileText, BookOpen, DollarSign, Building2, FolderOpen, Newspaper, Calendar, Video, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import ContactInfoBar from "./ContactInfoBar";
 import MTNPayment from "./MTNPayment";
+import { buildApiUrl } from "@/lib/apiConfig";
 
 interface SearchResult {
   title: string;
@@ -56,10 +57,14 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
     { label: "FAQs", href: "/faqs", icon: HelpCircle },
   ];
 
-  // Searchable content
-  const searchableContent: SearchResult[] = [
+  // Static searchable content
+  const staticSearchContent: SearchResult[] = [
     { title: "Home", href: "/", description: "Welcome to SYPE Ministry", category: "Pages", icon: FileText },
     { title: "About Us", href: "/about", description: "Learn about our history, mission, and vision", category: "Pages", icon: FileText },
+    { title: "About: Our Story", href: "/about#about-story", description: "History and milestones of SYPE Ministry", category: "Sections", icon: FileText },
+    { title: "About: Core Values", href: "/about#about-values", description: "Our guiding principles and values", category: "Sections", icon: FileText },
+    { title: "About: Committee", href: "/about#about-committee", description: "Leadership and departments", category: "Sections", icon: Users },
+    { title: "About: FAQs", href: "/about#about-faqs", description: "Common questions about the ministry", category: "Sections", icon: HelpCircle },
     { title: "Membership", href: "/membership", description: "Join SYPE Ministry and become a member", category: "Pages", icon: Users },
     { title: "Donations", href: "/donations", description: "Support our evangelism efforts", category: "Pages", icon: DollarSign },
     { title: "Library", href: "/library", description: "Access ministry resources and materials", category: "Pages", icon: BookOpen },
@@ -73,7 +78,110 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
     { title: "Terms and Conditions", href: "/terms", description: "Terms of service", category: "Legal", icon: FileText },
     { title: "Privacy Policy", href: "/privacy", description: "Privacy policy and data protection", category: "Legal", icon: FileText },
     { title: "Cookies Policy", href: "/cookies", description: "Cookie usage policy", category: "Legal", icon: FileText },
+    { title: "Home: Mission & Purpose", href: "/#home-mission", description: "Mission, purpose, and vision", category: "Sections", icon: FileText },
+    { title: "Home: Evangelical Impact", href: "/#home-impact", description: "Impact metrics and statistics", category: "Sections", icon: FileText },
+    { title: "Home: Latest Events", href: "/#home-events", description: "Upcoming and recent events", category: "Sections", icon: Calendar },
+    { title: "Home: Latest News", href: "/#home-news", description: "Featured news updates", category: "Sections", icon: Newspaper },
+    { title: "Home: Devotions", href: "/#home-devotions", description: "Latest devotion content", category: "Sections", icon: BookOpen },
+    { title: "Home: Videos", href: "/#home-videos", description: "Latest multimedia videos", category: "Sections", icon: Video },
+    { title: "Home: Daily Devotion Program", href: "/#home-daily-devotions", description: "Daily devotion program details", category: "Sections", icon: BookOpen },
+    { title: "Home: Join Training Program", href: "/#home-whatsapp", description: "WhatsApp training group", category: "Sections", icon: Mail },
   ];
+
+  const [dynamicSearchContent, setDynamicSearchContent] = useState<SearchResult[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchDynamicSearchContent = async () => {
+      try {
+        const [newsRes, devotionsRes, eventsRes, booksRes] = await Promise.all([
+          fetch(buildApiUrl("/api/news?limit=20")),
+          fetch(buildApiUrl("/api/devotions?limit=20")),
+          fetch(buildApiUrl("/api/events?limit=20")),
+          fetch(buildApiUrl("/api/books")),
+        ]);
+
+        const [newsData, devotionsData, eventsData, booksData] = await Promise.all([
+          newsRes.ok ? newsRes.json() : [],
+          devotionsRes.ok ? devotionsRes.json() : [],
+          eventsRes.ok ? eventsRes.json() : [],
+          booksRes.ok ? booksRes.json() : [],
+        ]);
+
+        if (!isMounted) return;
+
+        const dynamic: SearchResult[] = [];
+
+        if (Array.isArray(newsData)) {
+          newsData.forEach((item: any) => {
+            if (!item?.id || !item?.title) return;
+            dynamic.push({
+              title: item.title,
+              href: `/news/${item.id}`,
+              description: item.excerpt || "News article",
+              category: "News",
+              icon: Newspaper,
+            });
+          });
+        }
+
+        if (Array.isArray(devotionsData)) {
+          devotionsData.forEach((item: any) => {
+            if (!item?.id || !item?.title) return;
+            dynamic.push({
+              title: item.title,
+              href: `/devotions/${item.id}`,
+              description: item.excerpt || "Devotion",
+              category: "Devotions",
+              icon: BookOpen,
+            });
+          });
+        }
+
+        if (Array.isArray(eventsData)) {
+          eventsData.forEach((item: any) => {
+            if (!item?.id || !item?.title) return;
+            dynamic.push({
+              title: item.title,
+              href: `/events/${item.id}`,
+              description: item.description || "Event",
+              category: "Events",
+              icon: Calendar,
+            });
+          });
+        }
+
+        if (Array.isArray(booksData)) {
+          booksData.forEach((item: any) => {
+            if (!item?.id || !item?.title) return;
+            dynamic.push({
+              title: item.title,
+              href: `/library/${item.id}`,
+              description: item.description || "Library book",
+              category: "Library",
+              icon: BookOpen,
+            });
+          });
+        }
+
+        setDynamicSearchContent(dynamic);
+      } catch (error) {
+        if (isMounted) {
+          setDynamicSearchContent([]);
+        }
+      }
+    };
+
+    fetchDynamicSearchContent();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const searchableContent = useMemo(
+    () => [...staticSearchContent, ...dynamicSearchContent],
+    [dynamicSearchContent]
+  );
 
   // Advanced scroll effects with direction detection and progress
   useEffect(() => {
@@ -142,6 +250,17 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
     setSearchResults(results);
     setSelectedResultIndex(0);
   }, [searchQuery]);
+
+  // Smooth scroll to hash targets
+  useEffect(() => {
+    if (!location.hash) return;
+    const id = decodeURIComponent(location.hash.replace("#", ""));
+    const target = document.getElementById(id);
+    if (!target) return;
+    setTimeout(() => {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
+  }, [location.pathname, location.hash]);
 
   // Keyboard shortcuts for search
   useEffect(() => {

@@ -48,7 +48,7 @@ const defaultSEO = {
       "Sitemap, robots.txt, structured data, JSON-LD, Open Graph, Twitter Card, hreflang, PWA, webmanifest, Core Web Vitals",
     ].join(', ')
   ),
-  image: `${SITE_ORIGIN}/sype-social.png`,
+  image: `https://sypeministry.netlify.app/sype-social.png`,
   url: SITE_ORIGIN,
   type: "website",
 };
@@ -101,6 +101,7 @@ export default function SEO({
     updateMetaTag("og:title", fullTitle, "property");
     updateMetaTag("og:description", description, "property");
     updateMetaTag("og:image", image, "property");
+    updateMetaTag("og:image:secure_url", image, "property");
     updateMetaTag("og:image:type", "image/png", "property");
     updateMetaTag("og:image:width", "1200", "property");
     updateMetaTag("og:image:height", "630", "property");

@@ -296,15 +296,15 @@ export default function Library() {
                           Read
                         </Link>
                       </Button>
-                      <Button asChild size="sm" variant="outline" className="flex items-center gap-2 whitespace-nowrap">
+                      <Button asChild size="sm" variant="outline" className="w-8 px-0" title="Download">
                         <a
                           href={buildApiUrl(`/api/books/${book.id}/download`)}
                           onClick={(e) => {
                             e.stopPropagation();
                           }}
                         >
-                          <Download className="w-3 h-3" />
-                          Download
+                          <Download className="w-4 h-4" />
+                          <span className="sr-only">Download</span>
                         </a>
                       </Button>
                     </div>

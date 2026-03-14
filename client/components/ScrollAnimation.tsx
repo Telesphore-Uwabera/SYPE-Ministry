@@ -161,6 +161,7 @@ export default function ScrollAnimation({
 interface StaggerContainerProps {
   children: ReactNode;
   className?: string;
+  itemClassName?: string;
   staggerDelay?: number;
   direction?: "up" | "down" | "left" | "right" | "fade" | "scale" | "slide-up" | "slide-down" | "rotate" | "bounce";
   once?: boolean;
@@ -170,6 +171,7 @@ interface StaggerContainerProps {
 export function StaggerContainer({
   children,
   className = "",
+  itemClassName = "",
   staggerDelay = 0.1,
   direction = "up",
   once = true,
@@ -255,7 +257,7 @@ export function StaggerContainer({
     >
       {Array.isArray(children)
         ? children.map((child, index) => (
-            <motion.div key={index} variants={itemVariants}>
+            <motion.div key={index} variants={itemVariants} className={itemClassName}>
               {child}
             </motion.div>
           ))

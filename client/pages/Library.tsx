@@ -197,13 +197,14 @@ export default function Library() {
       <StaggerContainer
         detectScrollDirection
         className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 auto-rows-fr"
+        itemClassName="h-full"
         staggerDelay={0.15}
         direction="up"
       >
         {filteredBooks.map((book) => (
-          <HoverAnimation key={book.id} scale={1.02} y={-8}>
-            <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group flex flex-col">
-              <div className="relative h-64 overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20 group/image">
+          <HoverAnimation key={book.id} scale={1.02} y={-8} className="h-full">
+            <Card className="h-full min-h-[520px] overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group flex flex-col">
+              <div className="relative h-56 overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20 group/image">
                 {book.coverImage ? (
                   <img
                     src={book.coverImage}

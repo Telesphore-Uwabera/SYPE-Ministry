@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,12 +39,13 @@ export default function Library() {
   const [readerOpen, setReaderOpen] = useState(false);
   const [readerBook, setReaderBook] = useState<Book | null>(null);
   const [pdfNumPages, setPdfNumPages] = useState<number>(0);
-  const [pdfPage, setPdfPage] = useState<number>(1);
   const [pdfScale, setPdfScale] = useState<number>(1.1);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfRequestKey, setPdfRequestKey] = useState(0);
+  const [pdfContainerWidth, setPdfContainerWidth] = useState<number>(0);
   const navigate = useNavigate();
   const { id: bookId } = useParams();
+  const pdfContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -129,7 +130,6 @@ export default function Library() {
     if (!book.fileUrl) return;
     setReaderBook(book);
     setPdfNumPages(0);
-    setPdfPage(1);
     setPdfScale(1.1);
     setPdfError(null);
     setPdfRequestKey((prev) => prev + 1);
@@ -157,6 +157,18 @@ export default function Library() {
     if (words.length <= maxWords) return text;
     return `${words.slice(0, maxWords).join(" ")}...`;
   };
+
+  useEffect(() => {
+    if (!readerOpen) return;
+    const updateWidth = () => {
+      if (pdfContainerRef.current) {
+        setPdfContainerWidth(pdfContainerRef.current.clientWidth);
+      }
+    };
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, [readerOpen]);
 
   const renderBooks = () => {
     if (loading) {
@@ -422,30 +434,9 @@ export default function Library() {
           </div>
 
           <div className="px-4 py-3 border-b flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!pdfNumPages || pdfPage <= 1}
-                onClick={() => setPdfPage((p) => Math.max(1, p - 1))}
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <div className="text-sm text-foreground/70 min-w-[110px] text-center">
-                Page {pdfNumPages ? pdfPage : "-"} / {pdfNumPages || "-"}
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!pdfNumPages || pdfPage >= pdfNumPages}
-                onClick={() => setPdfPage((p) => Math.min(pdfNumPages, p + 1))}
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
+            <div className="text-sm text-foreground/70 min-w-[110px]">
+              {pdfNumPages ? `${pdfNumPages} pages` : "Loading pages..."}
             </div>
-
             <div className="flex items-center gap-2">
               <Button
                 type="button"
@@ -469,15 +460,17 @@ export default function Library() {
             </div>
           </div>
 
-          <div className="w-full h-[80vh] bg-muted overflow-auto flex justify-center">
+          <div
+            ref={pdfContainerRef}
+            className="w-full h-[80vh] bg-muted overflow-auto"
+          >
             {readerBook ? (
-              <div className="py-6">
+              <div className="py-6 flex flex-col items-center gap-4">
                 <Document
                   key={`${readerBook?.id || "book"}-${pdfRequestKey}`}
                   file={pdfUrl}
                   onLoadSuccess={({ numPages }) => {
                     setPdfNumPages(numPages);
-                    setPdfPage(1);
                     setPdfError(null);
                   }}
                   onLoadError={(err: any) => {
@@ -500,12 +493,16 @@ export default function Library() {
                       {pdfError}
                     </div>
                   ) : (
-                    <Page
-                      pageNumber={pdfPage}
-                      scale={pdfScale}
-                      renderAnnotationLayer={false}
-                      renderTextLayer={false}
-                    />
+                    Array.from({ length: pdfNumPages || 0 }, (_, index) => (
+                      <Page
+                        key={`page_${index + 1}`}
+                        pageNumber={index + 1}
+                        scale={pdfScale}
+                        width={pdfContainerWidth ? Math.min(pdfContainerWidth - 32, 900) : undefined}
+                        renderAnnotationLayer={false}
+                        renderTextLayer={false}
+                      />
+                    ))
                   )}
                 </Document>
               </div>

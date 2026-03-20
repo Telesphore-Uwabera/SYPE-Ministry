@@ -39,10 +39,12 @@ export default function Library() {
   const [readerOpen, setReaderOpen] = useState(false);
   const [readerBook, setReaderBook] = useState<Book | null>(null);
   const [pdfNumPages, setPdfNumPages] = useState<number>(0);
-  const [pdfScale, setPdfScale] = useState<number>(1.1);
+  const [pdfScale, setPdfScale] = useState<number>(1.0);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfRequestKey, setPdfRequestKey] = useState(0);
   const [pdfContainerWidth, setPdfContainerWidth] = useState<number>(0);
+  const [pagesToRender, setPagesToRender] = useState<number>(3);
+  const lastIsMobileRef = useRef<boolean | null>(null);
   const navigate = useNavigate();
   const { id: bookId } = useParams();
   const pdfContainerRef = useRef<HTMLDivElement | null>(null);
@@ -130,9 +132,12 @@ export default function Library() {
     if (!book.fileUrl) return;
     setReaderBook(book);
     setPdfNumPages(0);
-    setPdfScale(1.1);
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+    lastIsMobileRef.current = isMobile;
+    setPdfScale(isMobile ? 0.7 : 1.0);
     setPdfError(null);
     setPdfRequestKey((prev) => prev + 1);
+    setPagesToRender(3);
     setReaderOpen(true);
     navigate(`/library/${book.id}`);
   };
@@ -164,11 +169,33 @@ export default function Library() {
       if (pdfContainerRef.current) {
         setPdfContainerWidth(pdfContainerRef.current.clientWidth);
       }
+      const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+      if (lastIsMobileRef.current === null || lastIsMobileRef.current !== isMobile) {
+        setPdfScale(isMobile ? 0.7 : 1.0);
+        lastIsMobileRef.current = isMobile;
+      }
     };
     updateWidth();
     window.addEventListener("resize", updateWidth);
     return () => window.removeEventListener("resize", updateWidth);
   }, [readerOpen]);
+
+  useEffect(() => {
+    const container = pdfContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      if (!pdfNumPages) return;
+      const nearBottom =
+        container.scrollTop + container.clientHeight >= container.scrollHeight - 200;
+      if (nearBottom) {
+        setPagesToRender((prev) => Math.min(pdfNumPages, prev + 3));
+      }
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [pdfNumPages]);
 
   const renderBooks = () => {
     if (loading) {
@@ -472,6 +499,7 @@ export default function Library() {
                   onLoadSuccess={({ numPages }) => {
                     setPdfNumPages(numPages);
                     setPdfError(null);
+                    setPagesToRender((prev) => Math.min(numPages, Math.max(prev, 3)));
                   }}
                   onLoadError={(err: any) => {
                     console.error("PDF load error:", err);
@@ -493,7 +521,7 @@ export default function Library() {
                       {pdfError}
                     </div>
                   ) : (
-                    Array.from({ length: pdfNumPages || 0 }, (_, index) => (
+                    Array.from({ length: Math.min(pdfNumPages, pagesToRender) }, (_, index) => (
                       <Page
                         key={`page_${index + 1}`}
                         pageNumber={index + 1}
@@ -505,6 +533,11 @@ export default function Library() {
                     ))
                   )}
                 </Document>
+                {pdfNumPages > pagesToRender && (
+                  <div className="text-xs text-foreground/60 pb-6">
+                    Loading more pages...
+                  </div>
+                )}
               </div>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground">

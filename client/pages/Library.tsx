@@ -452,7 +452,7 @@ export default function Library() {
         }}
       >
         <DialogContent className="max-w-5xl p-0 overflow-hidden">
-          <div className="p-4 border-b">
+          <div className="p-4 border-b sticky top-0 bg-background z-10 pt-10 md:pt-4">
             <DialogHeader>
               <DialogTitle className="text-base">
                 {readerBook?.title || "Book Reader"}
@@ -460,7 +460,7 @@ export default function Library() {
             </DialogHeader>
           </div>
 
-          <div className="px-4 py-3 border-b flex flex-wrap items-center justify-between gap-3">
+          <div className="px-4 py-3 border-b flex flex-wrap items-center justify-between gap-3 sticky top-[72px] md:top-[56px] bg-background z-10">
             <div className="text-sm text-foreground/70 min-w-[110px]">
               {pdfNumPages ? `${pdfNumPages} pages` : "Loading pages..."}
             </div>

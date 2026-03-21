@@ -682,7 +682,7 @@ export default function About() {
               detectScrollDirection
             >
               <HoverAnimation scale={1.02} y={-5}>
-                <div className="bg-white rounded-lg p-6 border border-border hover:border-primary/50 hover:shadow-lg transition-all">
+                <div className="bg-white rounded-lg p-6 border border-border hover:border-primary/50 hover:shadow-lg transition-all flex flex-col min-h-[150px]">
                   <h3 className="font-heading font-bold text-primary mb-2">
                     Communication Department
                   </h3>
@@ -693,7 +693,7 @@ export default function About() {
               </HoverAnimation>
 
               <HoverAnimation scale={1.02} y={-5}>
-                <div className="bg-white rounded-lg p-6 border border-border hover:border-primary/50 hover:shadow-lg transition-all">
+                <div className="bg-white rounded-lg p-6 border border-border hover:border-primary/50 hover:shadow-lg transition-all flex flex-col min-h-[150px]">
                   <h3 className="font-heading font-bold text-primary mb-2">
                     Public Evangelism Department
                   </h3>
@@ -704,7 +704,7 @@ export default function About() {
               </HoverAnimation>
 
               <HoverAnimation scale={1.02} y={-5}>
-                <div className="bg-white rounded-lg p-6 border border-border hover:border-primary/50 hover:shadow-lg transition-all">
+                <div className="bg-white rounded-lg p-6 border border-border hover:border-primary/50 hover:shadow-lg transition-all flex flex-col min-h-[150px]">
                   <h3 className="font-heading font-bold text-primary mb-2">
                     Fellowship Department
                   </h3>
@@ -715,7 +715,7 @@ export default function About() {
               </HoverAnimation>
 
               <HoverAnimation scale={1.02} y={-5}>
-                <div className="bg-white rounded-lg p-6 border border-border hover:border-primary/50 hover:shadow-lg transition-all">
+                <div className="bg-white rounded-lg p-6 border border-border hover:border-primary/50 hover:shadow-lg transition-all flex flex-col min-h-[150px]">
                   <h3 className="font-heading font-bold text-primary mb-2">
                     Prayers Department
                   </h3>
@@ -726,7 +726,7 @@ export default function About() {
               </HoverAnimation>
 
               <HoverAnimation scale={1.02} y={-5}>
-                <div className="bg-white rounded-lg p-6 border border-border hover:border-primary/50 hover:shadow-lg transition-all">
+                <div className="bg-white rounded-lg p-6 border border-border hover:border-primary/50 hover:shadow-lg transition-all flex flex-col min-h-[150px]">
                   <h3 className="font-heading font-bold text-primary mb-2">
                     Video Preparation
                   </h3>
@@ -737,7 +737,7 @@ export default function About() {
               </HoverAnimation>
 
               <HoverAnimation scale={1.02} y={-5}>
-                <div className="bg-white rounded-lg p-6 border border-border hover:border-primary/50 hover:shadow-lg transition-all">
+                <div className="bg-white rounded-lg p-6 border border-border hover:border-primary/50 hover:shadow-lg transition-all flex flex-col min-h-[150px]">
                   <h3 className="font-heading font-bold text-primary mb-2">
                     Poster Preparation
                   </h3>
@@ -748,7 +748,7 @@ export default function About() {
               </HoverAnimation>
 
               <HoverAnimation scale={1.02} y={-5}>
-                <div className="bg-white rounded-lg p-6 border border-border hover:border-primary/50 hover:shadow-lg transition-all">
+                <div className="bg-white rounded-lg p-6 border border-border hover:border-primary/50 hover:shadow-lg transition-all flex flex-col min-h-[150px]">
                   <h3 className="font-heading font-bold text-primary mb-2">
                     Publishing Preparation
                   </h3>
@@ -759,7 +759,7 @@ export default function About() {
               </HoverAnimation>
 
               <HoverAnimation scale={1.02} y={-5}>
-                <div className="bg-white rounded-lg p-6 border border-border hover:border-primary/50 hover:shadow-lg transition-all">
+                <div className="bg-white rounded-lg p-6 border border-border hover:border-primary/50 hover:shadow-lg transition-all flex flex-col min-h-[150px]">
                   <h3 className="font-heading font-bold text-primary mb-2">
                     Health Department
                   </h3>

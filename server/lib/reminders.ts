@@ -1,7 +1,6 @@
 import { DonationModel, MemberModel, EmailSubscriberModel, MetadataModel } from "../models/core";
 import { sendMail } from "./mailer";
 import { connectMongo } from "./mongoose";
-import { syncYouTubeAndNotify } from "./youtubeSync";
 
 export async function sendMonthlyContributionReminder() {
   try {
@@ -97,9 +96,6 @@ function escapeHtml(value: string) {
 export async function runReminders() {
   try {
     await connectMongo();
-
-    // Sync YouTube videos and notify
-    await syncYouTubeAndNotify().catch(err => console.error("[Reminders] YouTube sync failed:", err));
 
     const today = new Date();
 

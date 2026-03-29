@@ -1,15 +1,25 @@
 
 import { YouTubeSyncModel, EmailSubscriberModel, MemberModel } from "../models/core";
 import { sendMail } from "./mailer";
+import { connectMongo } from "./mongoose";
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || "";
 const CHANNEL_HANDLE = "sypeministry5276";
+
+/** Hours after YouTube publish time before sending email (default 72 = 3 days). Override with YOUTUBE_NOTIFY_AFTER_HOURS. */
+const notifyAfterHoursRaw = Number.parseInt(process.env.YOUTUBE_NOTIFY_AFTER_HOURS || "72", 10);
+const notifyAfterHours =
+  Number.isFinite(notifyAfterHoursRaw) && notifyAfterHoursRaw > 0 ? notifyAfterHoursRaw : 72;
+const NOTIFY_AFTER_MS = notifyAfterHours * 60 * 60 * 1000;
 
 interface YouTubeVideo {
     videoId: string;
     title: string;
     thumbnail: string;
+    publishedAt: Date;
 }
+
+const PLAYLIST_MAX_PAGES = 10;
 
 async function fetchLatestVideos(): Promise<YouTubeVideo[]> {
     if (!YOUTUBE_API_KEY) return [];
@@ -25,18 +35,38 @@ async function fetchLatestVideos(): Promise<YouTubeVideo[]> {
         const uploadsPlaylistId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
         if (!uploadsPlaylistId) return [];
 
-        // 2. Fetch videos from the uploads playlist
-        const playlistResponse = await fetch(
-            `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=5&key=${YOUTUBE_API_KEY}`
-        );
-        if (!playlistResponse.ok) return [];
+        // 2. Fetch videos from the uploads playlist (paginated so older uploads stay discoverable until notified)
+        const videos: YouTubeVideo[] = [];
+        let pageToken: string | undefined;
 
-        const playlistData = await playlistResponse.json();
-        return (playlistData.items || []).map((item: any) => ({
-            videoId: item.snippet.resourceId.videoId,
-            title: item.snippet.title,
-            thumbnail: item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.default?.url,
-        }));
+        for (let page = 0; page < PLAYLIST_MAX_PAGES; page++) {
+            const params = new URLSearchParams({
+                part: "snippet",
+                playlistId: uploadsPlaylistId,
+                maxResults: "50",
+                key: YOUTUBE_API_KEY,
+            });
+            if (pageToken) params.set("pageToken", pageToken);
+
+            const playlistResponse = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?${params}`);
+            if (!playlistResponse.ok) break;
+
+            const playlistData = await playlistResponse.json();
+            for (const item of playlistData.items || []) {
+                const publishedRaw = item?.snippet?.publishedAt;
+                const publishedAt = publishedRaw ? new Date(publishedRaw) : new Date(NaN);
+                videos.push({
+                    videoId: item.snippet.resourceId.videoId,
+                    title: item.snippet.title,
+                    thumbnail: item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.default?.url,
+                    publishedAt,
+                });
+            }
+            pageToken = playlistData.nextPageToken;
+            if (!pageToken) break;
+        }
+
+        return videos;
     } catch (error) {
         console.error("Error fetching YouTube videos in sync job:", error);
         return [];
@@ -57,7 +87,21 @@ export async function syncYouTubeAndNotify() {
         const existing = await YouTubeSyncModel.findOne({ videoId: video.videoId });
         if (existing) continue;
 
-        console.log(`[YouTubeSync] New video detected: ${video.title} (${video.videoId})`);
+        if (Number.isNaN(video.publishedAt.getTime())) {
+            console.warn(`[YouTubeSync] Skipping video ${video.videoId}: missing publishedAt`);
+            continue;
+        }
+
+        const notifyEligibleAfter = video.publishedAt.getTime() + NOTIFY_AFTER_MS;
+        if (Date.now() < notifyEligibleAfter) {
+            const hoursLeft = Math.ceil((notifyEligibleAfter - Date.now()) / (60 * 60 * 1000));
+            console.log(
+                `[YouTubeSync] Video not yet due for email (${notifyAfterHours}h after publish): ${video.title} (${video.videoId}) — ~${hoursLeft}h remaining`
+            );
+            continue;
+        }
+
+        console.log(`[YouTubeSync] Video eligible for notification: ${video.title} (${video.videoId})`);
 
         // Fetch all active subscribers and members
         const subscribers = await EmailSubscriberModel.find({ status: "active" }).select("email name").exec();
@@ -68,16 +112,16 @@ export async function syncYouTubeAndNotify() {
         members.forEach(m => recipients.add(m.email));
 
         const videoUrl = `https://www.youtube.com/watch?v=${video.videoId}`;
-        const subject = `New Video Upload: ${video.title} - ${siteName}`;
+        const subject = `Video from our channel: ${video.title} - ${siteName}`;
 
         const html = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
         <div style="background-color: #186d84; color: white; padding: 24px; text-align: center;">
-          <h2 style="margin: 0;">New Video Uploaded!</h2>
+          <h2 style="margin: 0;">Video on our YouTube channel</h2>
         </div>
         <div style="padding: 32px; background-color: white;">
           <p>Hello,</p>
-          <p>We are excited to share a new video from <strong>${siteName}</strong> on our YouTube channel.</p>
+          <p>We are sharing a video from <strong>${siteName}</strong> on our YouTube channel.</p>
           
           <div style="margin: 24px 0; text-align: center;">
             <a href="${videoUrl}" style="text-decoration: none; color: #111827;">
@@ -108,7 +152,7 @@ export async function syncYouTubeAndNotify() {
                 to: email,
                 subject,
                 html,
-                text: `New Video Uploaded: ${video.title}. Watch it here: ${videoUrl}`,
+                text: `Video from ${siteName}: ${video.title}. Watch it here: ${videoUrl}`,
             }).catch(err => console.error(`Failed to send YouTube notification to ${email}:`, err));
         }
 
@@ -116,8 +160,19 @@ export async function syncYouTubeAndNotify() {
         await YouTubeSyncModel.create({
             videoId: video.videoId,
             title: video.title,
+            publishedAt: video.publishedAt,
         });
 
         console.log(`[YouTubeSync] Successfully notified for video: ${video.videoId}`);
     }
+}
+
+/** Runs Mongo connect + YouTube delayed-notification sync (safe to call on a timer). */
+export async function runYouTubeNotifyJob() {
+  try {
+    await connectMongo();
+    await syncYouTubeAndNotify();
+  } catch (err) {
+    console.error("[YouTubeSync] Scheduled job failed:", err);
+  }
 }

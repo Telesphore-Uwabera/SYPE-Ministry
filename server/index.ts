@@ -6,6 +6,7 @@ import path from "path";
 import { handleDemo } from "./routes/demo";
 import * as adminRoutes from "./routes/admin";
 import { runReminders } from "./lib/reminders";
+import { runYouTubeNotifyJob } from "./lib/youtubeSync";
 import * as uploadRoutes from "./routes/upload";
 import * as mediaUploadRoutes from "./routes/mediaUpload";
 import * as youtubeRoutes from "./routes/youtube";
@@ -337,6 +338,10 @@ export function createServer() {
     setTimeout(() => runReminders().catch(console.error), 10000);
     // Then run every hour
     setInterval(() => runReminders().catch(console.error), 3600000);
+
+    // YouTube: delayed email notifications (runs independently so it stays active on a steady schedule)
+    setTimeout(() => runYouTubeNotifyJob(), 12_000);
+    setInterval(() => runYouTubeNotifyJob(), 15 * 60 * 1000);
   }
 
   return app;

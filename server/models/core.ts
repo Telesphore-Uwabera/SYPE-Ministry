@@ -277,6 +277,7 @@ export const YouTubeSyncModel: any =
         videoId: { type: String, required: true, unique: true },
         notifiedAt: { type: Date, default: () => new Date() },
         title: { type: String },
+        publishedAt: { type: Date },
       },
       { timestamps: true, collection: "youtube_sync" }
     )

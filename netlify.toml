@@ -2,6 +2,20 @@
   command = "npm run build:client"
   functions = "netlify/functions"
   publish = "dist/client"
+  [build.processing]
+    skip_processing = false
+  [build.processing.css]
+    bundle = true
+    minify = true
+  [build.processing.js]
+    bundle = true
+    minify = true
+  [build.processing.html]
+    pretty_print = true
+  [build.processing.images]
+    compress = true
+  [build.services]
+    pre_render = true
 
 [functions]
   external_node_modules = ["express"]

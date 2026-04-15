@@ -200,7 +200,7 @@ export default function Library() {
   const renderBooks = () => {
     if (loading) {
       return (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 auto-rows-fr">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 auto-rows-fr">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <div key={i} className="h-96 bg-muted animate-pulse rounded-lg" />
           ))}
@@ -233,16 +233,17 @@ export default function Library() {
     }
 
     return (
-      <StaggerContainer
-        detectScrollDirection
-        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 auto-rows-fr"
-        itemClassName="h-full"
-        staggerDelay={0.15}
-        direction="up"
-      >
-        {filteredBooks.map((book) => (
-          <HoverAnimation key={book.id} scale={1.02} y={-8} className="h-full">
-            <Card className="h-full min-h-[520px] overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group flex flex-col">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 auto-rows-fr">
+        {filteredBooks.map((book, index) => (
+          <motion.div
+            key={book.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+            className="h-full"
+          >
+            <HoverAnimation scale={1.02} y={-8} className="h-full">
+              <Card className="h-full min-h-[480px] sm:min-h-[520px] overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group flex flex-col">
               <div className="relative h-56 overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20 group/image">
                 {book.coverImage ? (
                   <img
@@ -352,8 +353,9 @@ export default function Library() {
               </CardContent>
             </Card>
           </HoverAnimation>
+        </motion.div>
         ))}
-      </StaggerContainer>
+      </div>
     );
   };
 

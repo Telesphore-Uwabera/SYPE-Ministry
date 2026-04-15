@@ -208,7 +208,7 @@ export default function Departments() {
       <section className="py-16 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           <StaggerContainer
-            className="grid grid-cols-1 md:grid-cols-2 gap-8"
+            className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 md:gap-8"
             staggerDelay={0.3}
             direction="scale"
             detectScrollDirection
@@ -218,7 +218,7 @@ export default function Departments() {
               return (
                 <HoverAnimation key={idx} scale={1.02} y={-5}>
                   <motion.div
-                    className="bg-white rounded-lg p-8 border border-border hover:shadow-2xl transition-all bg-gradient-to-br from-white to-primary/5 relative overflow-hidden group"
+                    className="bg-white rounded-lg p-6 md:p-8 border border-border hover:shadow-2xl transition-all bg-gradient-to-br from-white to-primary/5 relative overflow-hidden group"
                     whileHover={{
                       borderColor: "rgba(59, 130, 246, 0.5)",
                       rotateY: 2,

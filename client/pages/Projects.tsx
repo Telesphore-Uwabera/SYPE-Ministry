@@ -278,13 +278,13 @@ export default function Projects() {
         </section>
       )}
 
-      {/* Upcoming Events Section */}
+      {/* Our Recent Events Section */}
       <section className="py-16 md:py-20 bg-muted/30 border-b border-border">
         <div className="container mx-auto px-4">
           <ScrollAnimation direction="up" delay={0.2}>
             <div className="mb-8">
               <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary mb-2">
-                Upcoming Events
+                Our Recent Events
               </h2>
               <p className="text-foreground/70">
                 Join us in upcoming programs and ministry activities

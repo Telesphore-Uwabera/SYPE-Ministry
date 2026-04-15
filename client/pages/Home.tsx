@@ -928,7 +928,7 @@ export default function Home() {
         </div>
       </motion.section>
 
-      {/* Upcoming Events Section */}
+      {/* Our Recent Events Section */}
       <section id="home-events" className="py-16 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           <ScrollAnimation direction="fade" delay={0.4}>
@@ -953,7 +953,7 @@ export default function Home() {
               </Button>
             </div>
           </ScrollAnimation>
-          <LazySection component="LatestEventsCards" title="Upcoming Events" />
+          <LazySection component="LatestEventsCards" title="Our Recent Events" />
         </div>
       </section>
 

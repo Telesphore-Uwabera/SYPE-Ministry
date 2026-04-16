@@ -65,10 +65,6 @@ function LatestNewsCards() {
     };
 
     fetchNews();
-    const timer = window.setTimeout(() => {
-      setShowSplash(false);
-      sessionStorage.setItem("sypeSplashShown", "true");
-    }, 2000);
     const interval = window.setInterval(() => {
       fetchNews(true);
     }, 5 * 60 * 1000);

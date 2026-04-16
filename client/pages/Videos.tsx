@@ -6,6 +6,7 @@ import { Play, Calendar, ExternalLink, Youtube } from "lucide-react";
 import { motion } from "framer-motion";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 import { buildApiUrl } from "@/lib/apiConfig";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 interface YouTubeVideo {
   id: string;
@@ -39,13 +40,7 @@ export default function Videos() {
   // Helper component to render YouTube videos
   const renderYouTubeVideos = (videos: YouTubeVideo[], loading: boolean, error?: string) => {
     if (loading) {
-      return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-80 bg-muted animate-pulse rounded-lg" />
-          ))}
-        </div>
-      );
+      return <LoadingState message="Loading videos..." />;
     }
 
     if (error || videos.length === 0) {

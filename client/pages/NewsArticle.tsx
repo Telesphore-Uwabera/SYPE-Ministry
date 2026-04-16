@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, ArrowLeft } from "lucide-react";
 import SEO from "@/components/SEO";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 export default function NewsArticlePage() {
   const { id } = useParams<{ id: string }>();
@@ -43,7 +44,7 @@ export default function NewsArticlePage() {
           </Button>
 
           {loading ? (
-            <div className="text-foreground/70">Loading...</div>
+            <LoadingState message="Loading article..." />
           ) : !article ? (
             <div className="text-foreground/70">Article not found.</div>
           ) : (

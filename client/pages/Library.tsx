@@ -16,6 +16,7 @@ import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import pdfWorkerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { useNavigate, useParams } from "react-router-dom";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 // Ensure the worker is bundled by Vite and served as a real JS asset (not SPA fallback HTML)
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
@@ -199,13 +200,7 @@ export default function Library() {
 
   const renderBooks = () => {
     if (loading) {
-      return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 auto-rows-fr">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <div key={i} className="h-96 bg-muted animate-pulse rounded-lg" />
-          ))}
-        </div>
-      );
+      return <LoadingState message="Loading books..." />;
     }
 
     if (filteredBooks.length === 0) {

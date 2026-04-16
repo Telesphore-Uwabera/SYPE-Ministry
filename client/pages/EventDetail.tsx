@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, ArrowLeft, Clock, MapPin, Tag } from "lucide-react";
 import SEO from "@/components/SEO";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -43,7 +44,7 @@ export default function EventDetailPage() {
           </Button>
 
           {loading ? (
-            <div className="text-foreground/70">Loading...</div>
+            <LoadingState message="Loading event details..." />
           ) : !event ? (
             <div className="text-foreground/70">Event not found.</div>
           ) : (

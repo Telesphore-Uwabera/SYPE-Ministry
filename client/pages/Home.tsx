@@ -22,6 +22,7 @@ import { NewsArticle, Devotion, Event } from "@/types/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildApiUrl } from "@/lib/apiConfig";
 import { LazySection } from "@/components/LazySections";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 // YouTube Video interface
 interface YouTubeVideo {
@@ -79,13 +80,7 @@ function LatestNewsCards() {
   }, []);
 
   if (loading) {
-    return (
-      <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
-        ))}
-      </StaggerContainer>
-    );
+    return <LoadingState message="Loading news..." />;
   }
 
   if (news.length === 0) {
@@ -194,13 +189,7 @@ function LatestDevotionsCards() {
   }, []);
 
   if (loading) {
-    return (
-      <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
-        ))}
-      </StaggerContainer>
-    );
+    return <LoadingState message="Loading devotions..." />;
   }
 
   if (devotions.length === 0) {
@@ -321,13 +310,7 @@ function LatestVideosCards() {
   }, []);
 
   if (loading) {
-    return (
-      <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
-        ))}
-      </StaggerContainer>
-    );
+    return <LoadingState message="Loading videos..." />;
   }
 
   if (videos.length === 0) {
@@ -428,13 +411,7 @@ function LatestEventsCards() {
   }, []);
 
   if (loading) {
-    return (
-      <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />
-        ))}
-      </StaggerContainer>
-    );
+    return <LoadingState message="Loading events..." />;
   }
 
   if (events.length === 0) {

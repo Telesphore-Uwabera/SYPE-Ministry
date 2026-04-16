@@ -8,6 +8,7 @@ import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/
 import { NewsArticle } from "@/types/admin";
 import { Input } from "@/components/ui/input";
 import { buildApiUrl } from "@/lib/apiConfig";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 export default function News() {
   const [news, setNews] = useState<NewsArticle[]>([]);
@@ -106,11 +107,7 @@ export default function News() {
           </ScrollAnimation>
 
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-96 bg-muted animate-pulse rounded-lg" />
-              ))}
-            </div>
+            <LoadingState message="Loading news..." />
           ) : filteredNews.length === 0 ? (
             <div className="text-center py-16">
               <Newspaper className="w-24 h-24 text-muted-foreground mx-auto mb-6 opacity-40" />

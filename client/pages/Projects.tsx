@@ -10,6 +10,7 @@ import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/
 import { useEffect, useState } from "react";
 import { Event, Project } from "@/types/admin";
 import { buildApiUrl } from "@/lib/apiConfig";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 export default function Projects() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -266,17 +267,7 @@ export default function Projects() {
         </section>
       )}
 
-      {loading && (
-        <section className="py-12 bg-white border-b border-border">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {loading && <LoadingState message="Loading projects..." />}
 
       {/* Our Recent Events Section */}
       <section className="py-16 md:py-20 bg-muted/30 border-b border-border">
@@ -293,11 +284,7 @@ export default function Projects() {
           </ScrollAnimation>
 
           {eventsLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-40 bg-muted animate-pulse rounded-lg" />
-              ))}
-            </div>
+            <LoadingState message="Loading events..." />
           ) : events.length === 0 ? (
             <div className="text-center py-10 text-foreground/70">
               No upcoming events yet.
@@ -409,13 +396,7 @@ export default function Projects() {
         </section>
       )}
 
-      {loading && (
-        <section className="py-16 md:py-24 bg-white">
-          <div className="container mx-auto px-4 text-center">
-            <p className="text-foreground/70">Loading projects...</p>
-          </div>
-        </section>
-      )}
+      {loading && <LoadingState message="Loading all projects..." />}
 
       {!loading && projects.length === 0 && (
         <section className="py-16 md:py-24 bg-white">

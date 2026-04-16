@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 import { Devotion } from "@/types/admin";
 import { buildApiUrl } from "@/lib/apiConfig";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 export default function Devotions() {
   const [devotions, setDevotions] = useState<Devotion[]>([]);
@@ -211,11 +212,7 @@ export default function Devotions() {
           </ScrollAnimation>
 
           {devotionsLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-96 bg-muted animate-pulse rounded-lg" />
-              ))}
-            </div>
+            <LoadingState message="Loading devotions..." />
           ) : devotions.length === 0 ? (
             <div className="text-center py-12">
               <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-40" />

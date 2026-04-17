@@ -24,18 +24,25 @@ const queryClient = new QueryClient({
   },
 });
 
-function AppContent() {
-  const [showSplash, setShowSplash] = useState(true);
-  const location = useLocation();
-  
-  // Detect if this is Netlify's thumbnail service
-  const isNetlifyThumbnail = typeof window !== 'undefined' && (
-    navigator.userAgent.includes('Netlify') ||
-    navigator.userAgent.includes('prerender') ||
-    navigator.userAgent.includes('HeadlessChrome') ||
-    window.location.search.includes('netlify') ||
-    !window.sessionStorage // Thumbnail services often don't support sessionStorage
+// Helper to check for Netlify thumbnail or prerender bots
+const checkIsBot = () => {
+  if (typeof window === "undefined") return false;
+  return (
+    /Netlify|HeadlessChrome|Chrome-Lighthouse|prerender/i.test(navigator.userAgent) ||
+    window.location.search.includes("netlify") ||
+    !window.sessionStorage
   );
+};
+
+function AppContent() {
+  const isNetlifyThumbnail = checkIsBot();
+  const [showSplash, setShowSplash] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const hasShown = sessionStorage.getItem("sypeSplashShown") === "true";
+    const isHomePage = window.location.pathname === "/";
+    return !hasShown && isHomePage && !isNetlifyThumbnail;
+  });
+  const location = useLocation();
 
   useEffect(() => {
     const hasShown = sessionStorage.getItem("sypeSplashShown") === "true";

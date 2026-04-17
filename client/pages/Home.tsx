@@ -76,7 +76,7 @@ function LatestNewsCards() {
   }, []);
 
   if (loading) {
-    return <LoadingState message="Loading news..." />;
+    return <LoadingState message="Loading news..." icon={Newspaper} />;
   }
 
   if (news.length === 0) {
@@ -185,7 +185,7 @@ function LatestDevotionsCards() {
   }, []);
 
   if (loading) {
-    return <LoadingState message="Loading devotions..." />;
+    return <LoadingState message="Loading devotions..." icon={BookOpen} />;
   }
 
   if (devotions.length === 0) {
@@ -306,7 +306,7 @@ function LatestVideosCards() {
   }, []);
 
   if (loading) {
-    return <LoadingState message="Loading videos..." />;
+    return <LoadingState message="Loading videos..." icon={Play} />;
   }
 
   if (videos.length === 0) {
@@ -407,7 +407,7 @@ function LatestEventsCards() {
   }, []);
 
   if (loading) {
-    return <LoadingState message="Loading events..." />;
+    return <LoadingState message="Loading events..." icon={Calendar} />;
   }
 
   if (events.length === 0) {

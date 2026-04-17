@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { NewsArticle } from "@/types/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildApiUrl } from "@/lib/apiConfig";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 // Latest News Cards Component
 export default function LatestNewsCards() {
@@ -50,13 +51,7 @@ export default function LatestNewsCards() {
   }, []);
 
   if (loading) {
-    return (
-      <StaggerContainer detectScrollDirection className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.2} direction="up">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
-        ))}
-      </StaggerContainer>
-    );
+    return <LoadingState message="Loading latest news..." />;
   }
 
   if (news.length === 0) {

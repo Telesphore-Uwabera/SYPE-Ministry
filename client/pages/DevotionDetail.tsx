@@ -5,7 +5,7 @@ import { buildApiUrl } from "@/lib/apiConfig";
 import { Devotion } from "@/types/admin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, ArrowLeft } from "lucide-react";
+import { Calendar, ArrowLeft, BookOpen } from "lucide-react";
 import SEO from "@/components/SEO";
 import { LoadingState } from "@/components/ui/LoadingState";
 
@@ -44,7 +44,7 @@ export default function DevotionDetailPage() {
           </Button>
 
           {loading ? (
-            <LoadingState message="Loading devotion..." />
+            <LoadingState message="Loading devotion..." icon={BookOpen} />
           ) : !devotion ? (
             <div className="text-foreground/70">Devotion not found.</div>
           ) : (

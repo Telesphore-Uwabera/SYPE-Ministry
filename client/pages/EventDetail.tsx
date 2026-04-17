@@ -44,7 +44,7 @@ export default function EventDetailPage() {
           </Button>
 
           {loading ? (
-            <LoadingState message="Loading event details..." />
+            <LoadingState message="Loading event details..." icon={Calendar} />
           ) : !event ? (
             <div className="text-foreground/70">Event not found.</div>
           ) : (

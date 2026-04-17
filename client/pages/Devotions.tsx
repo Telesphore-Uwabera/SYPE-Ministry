@@ -212,7 +212,7 @@ export default function Devotions() {
           </ScrollAnimation>
 
           {devotionsLoading ? (
-            <LoadingState message="Loading devotions..." />
+            <LoadingState message="Loading devotions..." icon={BookOpen} />
           ) : devotions.length === 0 ? (
             <div className="text-center py-12">
               <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-40" />

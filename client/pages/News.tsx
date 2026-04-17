@@ -107,7 +107,7 @@ export default function News() {
           </ScrollAnimation>
 
           {loading ? (
-            <LoadingState message="Loading news..." />
+            <LoadingState message="Loading news..." icon={Newspaper} />
           ) : filteredNews.length === 0 ? (
             <div className="text-center py-16">
               <Newspaper className="w-24 h-24 text-muted-foreground mx-auto mb-6 opacity-40" />

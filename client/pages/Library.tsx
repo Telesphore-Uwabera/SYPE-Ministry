@@ -200,7 +200,7 @@ export default function Library() {
 
   const renderBooks = () => {
     if (loading) {
-      return <LoadingState message="Loading books..." />;
+      return <LoadingState message="Loading books..." icon={BookOpen} />;
     }
 
     if (filteredBooks.length === 0) {

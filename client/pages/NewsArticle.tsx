@@ -5,7 +5,7 @@ import { buildApiUrl } from "@/lib/apiConfig";
 import { NewsArticle } from "@/types/admin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, ArrowLeft } from "lucide-react";
+import { Calendar, ArrowLeft, Newspaper } from "lucide-react";
 import SEO from "@/components/SEO";
 import { LoadingState } from "@/components/ui/LoadingState";
 
@@ -44,7 +44,7 @@ export default function NewsArticlePage() {
           </Button>
 
           {loading ? (
-            <LoadingState message="Loading article..." />
+            <LoadingState message="Loading article..." icon={Newspaper} />
           ) : !article ? (
             <div className="text-foreground/70">Article not found.</div>
           ) : (

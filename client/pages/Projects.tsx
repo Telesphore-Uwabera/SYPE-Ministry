@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Play, FileText, Image as ImageIcon, Video, CheckCircle2, Clock, TrendingUp, Award, Filter } from "lucide-react";
+import { Play, FileText, Image as ImageIcon, Video, CheckCircle2, Clock, TrendingUp, Award, Filter, Target, Calendar } from "lucide-react";
 import { motion } from "framer-motion";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 import { useEffect, useState } from "react";
@@ -267,7 +267,7 @@ export default function Projects() {
         </section>
       )}
 
-      {loading && <LoadingState message="Loading projects..." />}
+      {loading && <LoadingState message="Loading projects..." icon={Target} />}
 
       {/* Our Recent Events Section */}
       <section className="py-16 md:py-20 bg-muted/30 border-b border-border">
@@ -284,7 +284,7 @@ export default function Projects() {
           </ScrollAnimation>
 
           {eventsLoading ? (
-            <LoadingState message="Loading events..." />
+            <LoadingState message="Loading events..." icon={Calendar} />
           ) : events.length === 0 ? (
             <div className="text-center py-10 text-foreground/70">
               No upcoming events yet.
@@ -396,7 +396,7 @@ export default function Projects() {
         </section>
       )}
 
-      {loading && <LoadingState message="Loading all projects..." />}
+      {loading && <LoadingState message="Loading all projects..." icon={Target} />}
 
       {!loading && projects.length === 0 && (
         <section className="py-16 md:py-24 bg-white">

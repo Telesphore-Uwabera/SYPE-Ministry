@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import ScrollAnimation, { StaggerContainer, HoverAnimation } from "@/components/ScrollAnimation";
 import { CommitteeMember } from "@/types/admin";
 import { buildApiUrl } from "@/lib/apiConfig";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 export default function About() {
   const [committeeMembers, setCommitteeMembers] = useState<CommitteeMember[]>([]);
@@ -774,30 +775,35 @@ export default function About() {
       </section>
 
       {/* Committee Members Section */}
-      {!loading && committeeMembers.length > 0 && (
-        <section className="py-16 md:py-24 bg-white">
-          <div className="container mx-auto px-4">
-            <ScrollAnimation direction="up" delay={0.2}>
-              <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary text-center mb-4">
-                Committee Members
-              </h2>
-              <p className="text-foreground/70 text-center max-w-2xl mx-auto mb-12">
-                Meet our dedicated leadership team serving SYPE Ministry
-              </p>
-            </ScrollAnimation>
+      <section className="py-16 md:py-24 bg-white">
+        <div className="container mx-auto px-4">
+          <ScrollAnimation direction="up" delay={0.2}>
+            <h2 className="font-heading font-bold text-3xl md:text-4xl text-primary text-center mb-4">
+              Committee Members
+            </h2>
+            <p className="text-foreground/70 text-center max-w-2xl mx-auto mb-12">
+              Meet our dedicated leadership team serving SYPE Ministry
+            </p>
+          </ScrollAnimation>
 
-            {/* Leadership Team */}
-            {leadershipTeam.length > 0 && (
-              <div className="mb-12">
-                <ScrollAnimation direction="fade" delay={0.4}>
-                  <h3 className="font-heading font-semibold text-2xl text-primary mb-6 text-center">
-                    Leadership Team
-                  </h3>
-                </ScrollAnimation>
-                <StaggerContainer
-                  className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-3 max-w-6xl mx-auto gap-8 mb-8"
-                  staggerDelay={0.15}
-                  direction="up"
+          {loading ? (
+            <LoadingState message="Loading committee members..." icon={Users} />
+          ) : committeeMembers.length === 0 ? (
+            <p className="text-center text-muted-foreground py-12">No committee members found.</p>
+          ) : (
+            <>
+              {/* Leadership Team */}
+              {leadershipTeam.length > 0 && (
+                <div className="mb-12">
+                  <ScrollAnimation direction="fade" delay={0.4}>
+                    <h3 className="font-heading font-semibold text-2xl text-primary mb-6 text-center">
+                      Leadership Team
+                    </h3>
+                  </ScrollAnimation>
+                  <StaggerContainer
+                    className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-3 max-w-6xl mx-auto gap-8 mb-8"
+                    staggerDelay={0.15}
+                    direction="up"
                   detectScrollDirection
                 >
                   {leadershipTeam.map((member) => (
@@ -1085,17 +1091,10 @@ export default function About() {
                 </StaggerContainer>
               </div>
             )}
-          </div>
-        </section>
-      )}
-
-      {loading && (
-        <section className="py-16 md:py-24 bg-white">
-          <div className="container mx-auto px-4 text-center">
-            <p className="text-foreground/70">Loading committee members...</p>
-          </div>
-        </section>
-      )}
+            </>
+          )}
+        </div>
+      </section>
 
       {/* FAQs Section */}
       <section id="about-faqs" className="py-16 md:py-24 bg-white scroll-mt-20">

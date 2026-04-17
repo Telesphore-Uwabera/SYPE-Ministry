@@ -40,7 +40,7 @@ export default function Videos() {
   // Helper component to render YouTube videos
   const renderYouTubeVideos = (videos: YouTubeVideo[], loading: boolean, error?: string) => {
     if (loading) {
-      return <LoadingState message="Loading videos..." />;
+      return <LoadingState message="Loading videos..." icon={Play} />;
     }
 
     if (error || videos.length === 0) {

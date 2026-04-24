@@ -123,19 +123,27 @@ export async function syncYouTubeAndNotify() {
         const videoUrl = `https://www.youtube.com/watch?v=${video.videoId}`;
         const subject = `Video nshya kuri YouTube: ${video.title} - ${siteName}`;
 
-        const html = `
+        // Send emails in batches or one by one
+        // For now, one by one to keep it simple and respect potential rate limits
+        for (const [email, name] of recipients) {
+            const displayName = name || "Muvandimwe";
+            
+            const html = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
         <div style="background-color: #186d84; color: white; padding: 24px; text-align: center;">
           <h2 style="margin: 0;">Video Nshya Yashyizweho</h2>
         </div>
         <div style="padding: 32px; background-color: white;">
-          <p>Nshuti Muvandimwe,</p>
+          <p>Amahoro y'Imana abane namwe <strong>${displayName}</strong>,</p>
           <p>Tunejejwe no kubagezaho amashusho mashya yashyizweho na <strong>${siteName}</strong>.</p>
+          
+          <div style="margin: 24px 0; padding: 16px; background-color: #f3f4f6; border-left: 4px solid #186d84; border-radius: 4px;">
+            <p style="margin: 0; font-size: 16px; font-weight: bold; color: #186d84;">${video.title}</p>
+          </div>
           
           <div style="margin: 24px 0; text-align: center;">
             <a href="${videoUrl}" style="text-decoration: none; color: #111827;">
               <img src="${video.thumbnail}" alt="${video.title}" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" />
-              <h3 style="margin-top: 16px;">${video.title}</h3>
             </a>
           </div>
 
@@ -154,14 +162,11 @@ export async function syncYouTubeAndNotify() {
       </div>
     `;
 
-        // Send emails in batches or one by one
-        // For now, one by one to keep it simple and respect potential rate limits
-        for (const [email] of recipients) {
             await sendMail({
                 to: email,
                 subject,
                 html,
-                text: `Amashusho mashya yashyizweho na ${siteName}: ${video.title}. Yirebe ubu: ${videoUrl}`,
+                text: `Amahoro y'Imana abane namwe ${displayName},\n\nAmashusho mashya yashyizweho na ${siteName}: ${video.title}\n\nYirebe ubu: ${videoUrl}`,
             }).catch(err => console.error(`Failed to send YouTube notification to ${email}:`, err));
         }
 

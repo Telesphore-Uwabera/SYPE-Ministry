@@ -1,5 +1,5 @@
 
-import { YouTubeSyncModel, MemberModel } from "../models/core";
+import { YouTubeSyncModel, MemberModel, EmailSubscriberModel } from "../models/core";
 import { sendMail } from "./mailer";
 import { connectMongo } from "./mongoose";
 
@@ -83,12 +83,20 @@ export async function syncYouTubeAndNotify() {
     const siteUrl = (process.env.SITE_URL || "https://www.sypeministry.org").trim().replace(/\/+$/, "");
 
     const members = await MemberModel.find({ status: "Active" }).select("email name").exec();
+    const subscribers = await EmailSubscriberModel.find({ status: "active" }).select("email name").exec();
     const recipients = new Map<string, string>();
+    
     for (const member of members) {
         const email = String(member?.email || "").trim().toLowerCase();
         if (!email || !email.includes("@")) continue;
         if (!recipients.has(email)) recipients.set(email, String(member?.name || "").trim());
     }
+    for (const sub of subscribers) {
+        const email = String(sub?.email || "").trim().toLowerCase();
+        if (!email || !email.includes("@")) continue;
+        if (!recipients.has(email)) recipients.set(email, String(sub?.name || "").trim());
+    }
+    
     if (recipients.size === 0) return;
 
     for (const video of latestVideos) {
@@ -113,16 +121,16 @@ export async function syncYouTubeAndNotify() {
         console.log(`[YouTubeSync] Video eligible for notification: ${video.title} (${video.videoId})`);
 
         const videoUrl = `https://www.youtube.com/watch?v=${video.videoId}`;
-        const subject = `New YouTube Upload: ${video.title} - ${siteName}`;
+        const subject = `Video nshya kuri YouTube: ${video.title} - ${siteName}`;
 
         const html = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
         <div style="background-color: #186d84; color: white; padding: 24px; text-align: center;">
-          <h2 style="margin: 0;">New YouTube Video Uploaded</h2>
+          <h2 style="margin: 0;">Video Nshya Yashyizweho</h2>
         </div>
         <div style="padding: 32px; background-color: white;">
-          <p>Dear Member,</p>
-          <p>We are pleased to share the latest upload from <strong>${siteName}</strong>.</p>
+          <p>Nshuti Muvandimwe,</p>
+          <p>Tunejejwe no kubagezaho amashusho mashya yashyizweho na <strong>${siteName}</strong>.</p>
           
           <div style="margin: 24px 0; text-align: center;">
             <a href="${videoUrl}" style="text-decoration: none; color: #111827;">
@@ -132,14 +140,14 @@ export async function syncYouTubeAndNotify() {
           </div>
 
           <div style="text-align: center; margin-top: 32px;">
-            <a href="${videoUrl}" style="background-color: #186d84; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Watch Video Now</a>
+            <a href="${videoUrl}" style="background-color: #186d84; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Reba Video Ubu</a>
           </div>
 
-          <p style="margin-top: 32px;">Thank you for your continued commitment to the ministry.</p>
+          <p style="margin-top: 32px;">Tubashimiye ubwitange n'urukundo mukomeza kugaragaza muri uyu murimo.</p>
           
           <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #718096; text-align: center;">
-            Stay blessed,<br>
-            <strong>${siteName} Team</strong><br>
+            Imana ibahe umugisha,<br>
+            <strong>Itsinda rya ${siteName}</strong><br>
             <a href="${siteUrl}">${siteUrl}</a>
           </div>
         </div>
@@ -153,7 +161,7 @@ export async function syncYouTubeAndNotify() {
                 to: email,
                 subject,
                 html,
-                text: `New YouTube upload from ${siteName}: ${video.title}. Watch now: ${videoUrl}`,
+                text: `Amashusho mashya yashyizweho na ${siteName}: ${video.title}. Yirebe ubu: ${videoUrl}`,
             }).catch(err => console.error(`Failed to send YouTube notification to ${email}:`, err));
         }
 

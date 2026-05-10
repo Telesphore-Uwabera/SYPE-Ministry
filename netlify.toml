@@ -14,8 +14,6 @@
     pretty_print = true
   [build.processing.images]
     compress = true
-  [build.services]
-    pre_render = true
 
 [functions]
   external_node_modules = ["express"]

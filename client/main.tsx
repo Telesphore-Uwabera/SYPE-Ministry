@@ -13,3 +13,12 @@ ReactDOM.createRoot(container).render(
     <App />
   </React.StrictMode>,
 );
+
+// Signal to bots/crawlers that the page is fully rendered and ready for capture
+if (typeof window !== "undefined") {
+  // Give a small delay to ensure all animations/initial state settles
+  setTimeout(() => {
+    (window as any).prerenderReady = true;
+  }, 1000);
+}
+

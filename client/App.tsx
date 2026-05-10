@@ -27,31 +27,36 @@ const queryClient = new QueryClient({
 });
 
 function AppContent() {
-  const isNetlifyThumbnail = checkIsBot();
+  const isBot = checkIsBot();
   const [showSplash, setShowSplash] = useState(() => {
     if (typeof window === "undefined") return false;
     const hasShown = sessionStorage.getItem("sypeSplashShown") === "true";
     const isHomePage = window.location.pathname === "/";
-    return !hasShown && isHomePage && !isNetlifyThumbnail;
+    // Never show splash to bots or if already shown
+    return !hasShown && isHomePage && !isBot;
   });
   const location = useLocation();
 
   useEffect(() => {
-    const hasShown = sessionStorage.getItem("sypeSplashShown") === "true";
-    const shouldShow = !hasShown && location.pathname === "/" && !isNetlifyThumbnail;
+    if (isBot) {
+      setShowSplash(false);
+      return;
+    }
 
-    if (!shouldShow || isNetlifyThumbnail) {
+    const hasShown = sessionStorage.getItem("sypeSplashShown") === "true";
+    const shouldShow = !hasShown && location.pathname === "/" && !isBot;
+
+    if (!shouldShow) {
       setShowSplash(false);
       return;
     }
 
     // Reduced prefetching - only prefetch critical data
     const prefetchEndpoints = [
-      "/api/news?limit=2", // Reduced from 3
-      "/api/devotions?limit=2", // Reduced from 3
+      "/api/news?limit=2",
+      "/api/devotions?limit=2",
     ];
 
-    // Stagger prefetching to reduce memory spike
     const prefetchWithDelay = async (endpoint: string, delay: number) => {
       setTimeout(() => {
         fetch(endpoint).catch(() => {});
@@ -59,18 +64,18 @@ function AppContent() {
     };
 
     prefetchEndpoints.forEach((endpoint, index) => {
-      prefetchWithDelay(endpoint, index * 500); // 500ms delay between requests
+      prefetchWithDelay(endpoint, index * 500);
     });
 
     const timer = window.setTimeout(() => {
       setShowSplash(false);
       sessionStorage.setItem("sypeSplashShown", "true");
-    }, 7000);
+    }, 2500);
 
     return () => {
       window.clearTimeout(timer);
     };
-  }, [location.pathname, isNetlifyThumbnail]);
+  }, [location.pathname, isBot]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -78,7 +83,8 @@ function AppContent() {
         <Toaster />
         <Sonner />
         <Routes>
-          <Route path="/" element={isNetlifyThumbnail ? <Home /> : <LazyWrapper><LazyHome /></LazyWrapper>} />
+          {/* Use direct Home component for bots to ensure immediate rendering for screenshots */}
+          <Route path="/" element={isBot ? <Home /> : <LazyWrapper><LazyHome /></LazyWrapper>} />
           <Route path="/about" element={<LazyWrapper><LazyAbout /></LazyWrapper>} />
           <Route path="/membership" element={<LazyWrapper><LazyMembership /></LazyWrapper>} />
           <Route path="/donations" element={<LazyWrapper><LazyDonations /></LazyWrapper>} />
@@ -98,7 +104,6 @@ function AppContent() {
           <Route path="/cookies" element={<LazyWrapper><LazyCookies /></LazyWrapper>} />
           <Route path="/faqs" element={<LazyWrapper><LazyFAQs /></LazyWrapper>} />
           <Route path="/admin" element={<LazyWrapper><LazyAdmin /></LazyWrapper>} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<LazyWrapper><LazyNotFound /></LazyWrapper>} />
         </Routes>
         {showSplash ? <WelcomeSplash /> : null}
@@ -106,6 +111,7 @@ function AppContent() {
     </QueryClientProvider>
   );
 }
+
 
 export default function App() {
   return (

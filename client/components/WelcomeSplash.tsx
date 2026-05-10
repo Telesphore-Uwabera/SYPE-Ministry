@@ -8,10 +8,12 @@ export default function WelcomeSplash() {
               <picture className="h-16 w-16 flex items-center justify-center">
                 <source srcSet="/Images/sype-logo.webp" type="image/webp" />
                 <img
-                  src="/Images/Sype logo.png"
+                  src="/Images/sype-logo.webp"
                   alt="SYPE Ministry logo"
                   className="h-16 w-16 object-contain"
+                  loading="eager"
                 />
+
               </picture>
             </div>
           </div>

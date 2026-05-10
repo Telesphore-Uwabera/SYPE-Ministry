@@ -400,11 +400,17 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
                     ease: "easeInOut",
                   }}
                 >
-                  <img
-                    src="/Images/sype-logo.webp"
-                    alt="SYPE Ministry Logo"
-                    className="h-10 md:h-12 w-auto object-contain transition-all duration-300 group-hover:brightness-110"
-                  />
+                  <picture>
+                    <source srcSet="/Images/sype-logo.webp" type="image/webp" />
+                    <img
+                      src="/Images/sype-logo.webp"
+                      alt="SYPE Ministry Logo"
+                      className="h-10 md:h-12 w-auto object-contain transition-all duration-300 group-hover:brightness-110"
+                      loading="eager"
+                      fetchpriority="high"
+                    />
+                  </picture>
+
                 </motion.div>
                 <motion.span
                   className="hidden sm:inline-block"

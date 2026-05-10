@@ -8,6 +8,7 @@ import { NewsArticle } from "@/types/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildApiUrl } from "@/lib/apiConfig";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { checkIsBot } from "@/lib/utils/botDetection";
 
 // Latest News Cards Component
 export default function LatestNewsCards() {

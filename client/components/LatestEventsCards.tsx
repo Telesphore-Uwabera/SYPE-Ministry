@@ -8,6 +8,7 @@ import { Event } from "@/types/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildApiUrl } from "@/lib/apiConfig";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { checkIsBot } from "@/lib/utils/botDetection";
 
 // Latest Events Cards Component
 export default function LatestEventsCards() {
@@ -46,7 +47,7 @@ export default function LatestEventsCards() {
     };
   }, []);
 
-  if (loading) {
+  if (loading && !checkIsBot()) {
     return <LoadingState message="Loading latest events..." />;
   }
 

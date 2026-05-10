@@ -1,5 +1,12 @@
 import React, { Suspense, lazy } from 'react';
 import { Loader2 } from 'lucide-react';
+import { checkIsBot } from '@/lib/utils/botDetection';
+
+// Import components directly for bot rendering to bypass lazy loading
+import LatestNewsCardsSync from './LatestNewsCards';
+import LatestDevotionsCardsSync from './LatestDevotionsCards';
+import LatestEventsCardsSync from './LatestEventsCards';
+import LatestVideosCardsSync from './LatestVideosCards';
 
 // Lazy load heavy components (except YouTube videos)
 const LazyLatestNewsCards = lazy(() => 
@@ -73,7 +80,24 @@ export function LazySection({
     }
   }, [component]);
 
+  const isBot = checkIsBot();
+
   const renderComponent = () => {
+    if (isBot) {
+      switch (component) {
+        case 'LatestNewsCards':
+          return <LatestNewsCardsSync />;
+        case 'LatestDevotionsCards':
+          return <LatestDevotionsCardsSync />;
+        case 'LatestVideosCards':
+          return <LatestVideosCardsSync />;
+        case 'LatestEventsCards':
+          return <LatestEventsCardsSync />;
+        default:
+          return <div>Unknown component: {component}</div>;
+      }
+    }
+
     switch (component) {
       case 'LatestNewsCards':
         return <LazyLatestNewsCards />;
@@ -81,7 +105,7 @@ export function LazySection({
         return <LazyLatestDevotionsCards />;
       case 'LatestVideosCards':
         // YouTube videos - render immediately without lazy loading
-        return <LatestVideosCards />;
+        return <LatestVideosCardsSync />;
       case 'LatestEventsCards':
         return <LazyLatestEventsCards />;
       default:
@@ -90,7 +114,7 @@ export function LazySection({
   };
 
   // YouTube videos don't need Suspense since they're not lazy loaded
-  if (component === 'LatestVideosCards') {
+  if (component === 'LatestVideosCards' || isBot) {
     return renderComponent();
   }
 

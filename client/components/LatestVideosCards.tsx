@@ -8,6 +8,7 @@ import { Event } from "@/types/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildApiUrl } from "@/lib/apiConfig";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { checkIsBot } from "@/lib/utils/botDetection";
 
 // YouTube Video interface
 interface YouTubeVideo {
@@ -59,7 +60,7 @@ export default function LatestVideosCards() {
     };
   }, []);
 
-  if (loading) {
+  if (loading && !checkIsBot()) {
     return <LoadingState message="Loading latest videos..." />;
   }
 

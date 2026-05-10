@@ -8,6 +8,7 @@ import { Devotion } from "@/types/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildApiUrl } from "@/lib/apiConfig";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { checkIsBot } from "@/lib/utils/botDetection";
 
 // Latest Devotions Cards Component
 export default function LatestDevotionsCards() {
@@ -57,7 +58,7 @@ export default function LatestDevotionsCards() {
     };
   }, []);
 
-  if (loading) {
+  if (loading && !checkIsBot()) {
     return <LoadingState message="Loading latest devotions..." />;
   }
 

@@ -50,7 +50,7 @@ export default function LatestNewsCards() {
     };
   }, []);
 
-  if (loading) {
+  if (loading && !checkIsBot()) {
     return <LoadingState message="Loading latest news..." />;
   }
 

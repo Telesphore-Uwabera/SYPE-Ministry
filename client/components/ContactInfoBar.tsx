@@ -61,14 +61,12 @@ export default function ContactInfoBar({ isVisible = true, onClose }: ContactInf
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -100, opacity: 0 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className={`
-            // On small screens, keep contact bar BELOW the yellow MTN bar (which is 40px tall)
             fixed top-10 md:top-0 left-0 right-0 z-[60] 
-            bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 
-            text-white border-b border-primary/20
+            bg-white
+            text-slate-900 border-b border-gray-200
             ${isScrolled ? "shadow-lg" : "shadow-sm"}
             transition-all duration-300
-          `}
+          `
         >
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between h-10 md:h-12">
@@ -82,7 +80,7 @@ export default function ContactInfoBar({ isVisible = true, onClose }: ContactInf
                         size={14}
                         className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0"
                       />
-                      <span className="text-xs md:text-sm text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
+                      <span className="text-xs md:text-sm text-slate-600 group-hover:text-primary transition-colors whitespace-nowrap">
                         {info.text}
                       </span>
                     </div>
@@ -107,7 +105,7 @@ export default function ContactInfoBar({ isVisible = true, onClose }: ContactInf
                               size={14}
                               className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0"
                             />
-                            <span className="text-xs md:text-sm text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
+                            <span className="text-xs md:text-sm text-slate-600 group-hover:text-primary transition-colors whitespace-nowrap">
                               {info.text}
                             </span>
                           </Link>
@@ -121,7 +119,7 @@ export default function ContactInfoBar({ isVisible = true, onClose }: ContactInf
                               size={14}
                               className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0"
                             />
-                            <span className="text-xs md:text-sm text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
+                            <span className="text-xs md:text-sm text-slate-600 group-hover:text-primary transition-colors whitespace-nowrap">
                               {info.text}
                             </span>
                           </a>
@@ -138,8 +136,8 @@ export default function ContactInfoBar({ isVisible = true, onClose }: ContactInf
                       transition={{ delay: index * 0.1 }}
                       className="flex items-center gap-2"
                     >
-                      <IconComponent size={14} className="text-primary flex-shrink-0" />
-                      <span className="text-xs md:text-sm text-white/90 whitespace-nowrap">
+                       <IconComponent size={14} className="text-primary flex-shrink-0" />
+                      <span className="text-xs md:text-sm text-slate-600 whitespace-nowrap">
                         {info.text}
                       </span>
                     </motion.div>
@@ -158,10 +156,10 @@ export default function ContactInfoBar({ isVisible = true, onClose }: ContactInf
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 }}
                 >
-                  <Phone size={12} className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0" />
-                  <span className="text-[10px] text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
-                    +250 780 430 990
-                  </span>
+                   <Phone size={12} className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0" />
+                   <span className="text-[10px] text-slate-600 group-hover:text-primary transition-colors whitespace-nowrap">
+                     +250 780 430 990
+                   </span>
                 </motion.a>
                 <motion.a
                   href="tel:+250785073847"
@@ -172,10 +170,10 @@ export default function ContactInfoBar({ isVisible = true, onClose }: ContactInf
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
                 >
-                  <Phone size={12} className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0" />
-                  <span className="text-[10px] text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
-                    +250 785 073 847
-                  </span>
+                   <Phone size={12} className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0" />
+                   <span className="text-[10px] text-slate-600 group-hover:text-primary transition-colors whitespace-nowrap">
+                     +250 785 073 847
+                   </span>
                 </motion.a>
                 <motion.a
                   href="mailto:sypeministry@gmail.com"
@@ -186,10 +184,10 @@ export default function ContactInfoBar({ isVisible = true, onClose }: ContactInf
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 }}
                 >
-                  <Mail size={12} className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0" />
-                  <span className="text-[10px] text-white/90 group-hover:text-white transition-colors truncate max-w-[120px]">
-                    sypeministry@gmail.com
-                  </span>
+                   <Mail size={12} className="text-primary group-hover:text-primary/80 transition-colors flex-shrink-0" />
+                   <span className="text-[10px] text-slate-600 group-hover:text-primary transition-colors truncate max-w-[120px]">
+                     sypeministry@gmail.com
+                   </span>
                 </motion.a>
                 <motion.div
                   className="flex items-center gap-1.5"
@@ -197,10 +195,10 @@ export default function ContactInfoBar({ isVisible = true, onClose }: ContactInf
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.4 }}
                 >
-                  <MapPin size={12} className="text-primary flex-shrink-0" />
-                  <span className="text-[10px] text-white/90 whitespace-nowrap">
-                    Kigali
-                  </span>
+                   <MapPin size={12} className="text-primary flex-shrink-0" />
+                   <span className="text-[10px] text-slate-600 whitespace-nowrap">
+                     Kigali
+                   </span>
                 </motion.div>
               </div>
 
@@ -215,10 +213,10 @@ export default function ContactInfoBar({ isVisible = true, onClose }: ContactInf
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 }}
                 >
-                  <Phone size={11} className="text-primary group-hover:text-primary/80 transition-colors" />
-                  <span className="text-[9px] text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
-                    0780 430 990
-                  </span>
+                   <Phone size={11} className="text-primary group-hover:text-primary/80 transition-colors" />
+                   <span className="text-[9px] text-slate-600 group-hover:text-primary transition-colors whitespace-nowrap">
+                     0780 430 990
+                   </span>
                 </motion.a>
                 <motion.a
                   href="tel:+250785073847"
@@ -229,10 +227,10 @@ export default function ContactInfoBar({ isVisible = true, onClose }: ContactInf
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
                 >
-                  <Phone size={11} className="text-primary group-hover:text-primary/80 transition-colors" />
-                  <span className="text-[9px] text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
-                    0785 073 847
-                  </span>
+                   <Phone size={11} className="text-primary group-hover:text-primary/80 transition-colors" />
+                   <span className="text-[9px] text-slate-600 group-hover:text-primary transition-colors whitespace-nowrap">
+                     0785 073 847
+                   </span>
                 </motion.a>
                 <motion.a
                   href="mailto:sypeministry@gmail.com"
@@ -243,10 +241,10 @@ export default function ContactInfoBar({ isVisible = true, onClose }: ContactInf
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 }}
                 >
-                  <Mail size={11} className="text-primary group-hover:text-primary/80 transition-colors" />
-                  <span className="text-[9px] text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
-                    sypeministry@gmail.com
-                  </span>
+                   <Mail size={11} className="text-primary group-hover:text-primary/80 transition-colors" />
+                   <span className="text-[9px] text-slate-600 group-hover:text-primary transition-colors whitespace-nowrap">
+                     sypeministry@gmail.com
+                   </span>
                 </motion.a>
                 <motion.div
                   className="flex items-center gap-1 group flex-shrink-0"
@@ -259,19 +257,19 @@ export default function ContactInfoBar({ isVisible = true, onClose }: ContactInf
                     className="flex items-center gap-1 group"
                     aria-label="Location"
                   >
-                    <MapPin size={11} className="text-primary group-hover:text-primary/80 transition-colors" />
-                    <span className="text-[9px] text-white/90 group-hover:text-white transition-colors whitespace-nowrap">
-                      Kigali, Rwanda
-                    </span>
+                     <MapPin size={11} className="text-primary group-hover:text-primary/80 transition-colors" />
+                     <span className="text-[9px] text-slate-600 group-hover:text-primary transition-colors whitespace-nowrap">
+                       Kigali, Rwanda
+                     </span>
                   </Link>
                 </motion.div>
               </div>
 
               {/* Close Button */}
               <motion.button
-                onClick={onClose}
-                className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-white/70 hover:text-white ml-4"
-                aria-label="Close contact bar"
+                 onClick={onClose}
+                 className="p-1.5 rounded-md hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600 ml-4"
+                 aria-label="Close contact bar"
                 whileHover={{ scale: 1.1, rotate: 90 }}
                 whileTap={{ scale: 0.9 }}
               >

@@ -23,6 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { buildApiUrl } from "@/lib/apiConfig";
 import { LazySection } from "@/components/LazySections";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { checkIsBot } from "@/lib/utils/botDetection";
 
 // YouTube Video interface
 interface YouTubeVideo {
@@ -562,6 +563,8 @@ export default function Home() {
     },
   };
 
+  const isBot = checkIsBot();
+
   return (
     <Layout>
       <SEO
@@ -594,7 +597,7 @@ export default function Home() {
         <motion.div
           className="container mx-auto px-4 relative z-10 text-center"
           variants={containerVariants}
-          initial="hidden"
+          initial={isBot ? "visible" : "hidden"}
           animate="visible"
         >
           <motion.h1
@@ -638,7 +641,7 @@ export default function Home() {
       <motion.section
         id="home-about"
         className="py-16 md:py-24 bg-white"
-        initial={{ opacity: 0 }}
+        initial={isBot ? { opacity: 1 } : { opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         viewport={{ once: true }}
@@ -693,7 +696,7 @@ export default function Home() {
       <motion.section
         id="home-mission"
         className="py-16 md:py-24 bg-muted/30"
-        initial={{ opacity: 0 }}
+        initial={isBot ? { opacity: 1 } : { opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         viewport={{ once: true }}
@@ -702,7 +705,7 @@ export default function Home() {
           <motion.h2
             className="font-heading font-bold text-3xl md:text-4xl text-primary text-center mb-12"
             variants={itemVariants}
-            initial="hidden"
+            initial={isBot ? "visible" : "hidden"}
             whileInView="visible"
             viewport={{ once: true }}
           >
@@ -712,7 +715,7 @@ export default function Home() {
           <motion.div
             className="grid grid-cols-1 md:grid-cols-3 gap-8"
             variants={containerVariants}
-            initial="hidden"
+            initial={isBot ? "visible" : "hidden"}
             whileInView="visible"
             viewport={{ once: true }}
           >
@@ -791,7 +794,7 @@ export default function Home() {
       <motion.section
         id="home-impact"
         className="py-16 md:py-24 bg-white"
-        initial={{ opacity: 0 }}
+        initial={isBot ? { opacity: 1 } : { opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         viewport={{ once: true }}

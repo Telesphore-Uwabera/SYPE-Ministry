@@ -118,7 +118,7 @@ export default function Contact() {
 
   return (
     <Layout>
-      <div id="contact" className="min-h-screen bg-gradient-to-br from-muted/50 to-background py-12 md:py-20 scroll-mt-20">
+      <div id="contact" className="min-h-screen bg-white py-12 md:py-20 scroll-mt-20">
         <div className="container mx-auto px-4">
           {/* Header */}
           <ScrollAnimation direction="up" delay={0.2}>

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import ContactInfoBar from "./ContactInfoBar";
 import MTNPayment from "./MTNPayment";
 import { buildApiUrl } from "@/lib/apiConfig";
+import { checkIsBot } from "@/lib/utils/botDetection";
 
 interface SearchResult {
   title: string;
@@ -213,6 +214,14 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
+
+  const isBot = checkIsBot();
+  useEffect(() => {
+    if (isBot) {
+      setIsVisible(true);
+      setScrollDirection("up");
+    }
+  }, [isBot]);
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -635,7 +644,19 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
               }}
               className="lg:hidden overflow-hidden border-t border-border/50 bg-white/95 backdrop-blur-xl"
             >
-              <div className="container mx-auto px-4 py-4 space-y-1">
+               <div className="container mx-auto px-4 py-6 space-y-1">
+                {/* Mobile Menu Logo & Title */}
+                <div className="flex items-center gap-3 mb-6 px-4">
+                  <img
+                    src="/Images/sype-logo.webp"
+                    alt="SYPE Ministry Logo"
+                    className="h-10 w-auto object-contain"
+                  />
+                  <span className="font-heading font-bold text-xl text-primary">
+                    SYPE Ministry
+                  </span>
+                </div>
+                
                 {navLinks.map((link, index) => {
                   const active = isActive(link.href);
                   return (
@@ -738,13 +759,16 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
             >
               <Link
                 to="/"
-                className="flex items-center font-heading font-bold text-primary"
+                className="flex items-center gap-3 font-heading font-bold text-primary hover:text-primary/90 transition-colors group"
               >
                 <img
                   src="/Images/sype-logo.webp"
                   alt="SYPE Ministry Logo"
-                  className="h-14 md:h-16 lg:h-20 w-auto object-contain"
+                  className="h-14 md:h-16 lg:h-20 w-auto object-contain transition-all duration-300 group-hover:brightness-110"
                 />
+                <span className="hidden sm:inline-block text-xl md:text-2xl">
+                  SYPE Ministry
+                </span>
               </Link>
             </motion.div>
 

@@ -12,6 +12,8 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { LazyWrapper, LazyHome, LazyAbout, LazyMembership, LazyDonations, LazyLibrary, LazyNews, LazyNewsArticle, LazyDevotions, LazyDevotionDetail, LazyEventDetail, LazyVideos, LazyDepartments, LazyProjects, LazyContact, LazyTerms, LazyPrivacy, LazyCookies, LazyFAQs, LazyAdmin, LazyNotFound } from "@/components/LazyRoutes";
 import Home from "./pages/Home"; // Direct import for Netlify thumbnails
 
+import { checkIsBot } from "@/lib/utils/botDetection";
+
 // Optimized QueryClient with memory management
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,16 +25,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-// Helper to check for Netlify thumbnail or prerender bots
-const checkIsBot = () => {
-  if (typeof window === "undefined") return false;
-  return (
-    /Netlify|HeadlessChrome|Chrome-Lighthouse|prerender/i.test(navigator.userAgent) ||
-    window.location.search.includes("netlify") ||
-    !window.sessionStorage
-  );
-};
 
 function AppContent() {
   const isNetlifyThumbnail = checkIsBot();

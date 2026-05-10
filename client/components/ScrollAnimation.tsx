@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { motion, useInView, Variants } from "framer-motion";
+import { checkIsBot } from "@/lib/utils/botDetection";
 
 interface ScrollAnimationProps {
   children: ReactNode;
@@ -144,8 +145,8 @@ export default function ScrollAnimation({
       ref={ref}
       className={className}
       variants={variants}
-      initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
+      initial={checkIsBot() ? "visible" : "hidden"}
+      animate={checkIsBot() || isInView ? "visible" : "hidden"}
       transition={{
         duration,
         delay,
@@ -252,8 +253,8 @@ export function StaggerContainer({
       ref={ref}
       className={className}
       variants={containerVariants}
-      initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
+      initial={checkIsBot() ? "visible" : "hidden"}
+      animate={checkIsBot() || isInView ? "visible" : "hidden"}
     >
       {Array.isArray(children)
         ? children.map((child, index) => (

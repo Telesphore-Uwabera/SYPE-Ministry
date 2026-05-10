@@ -61,12 +61,12 @@ export default function ContactInfoBar({ isVisible = true, onClose }: ContactInf
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -100, opacity: 0 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-            fixed top-10 md:top-0 left-0 right-0 z-[60] 
+          className={`fixed top-10 md:top-0 left-0 right-0 z-[60] 
             bg-white
             text-slate-900 border-b border-gray-200
             ${isScrolled ? "shadow-lg" : "shadow-sm"}
             transition-all duration-300
-          `
+          `}
         >
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between h-10 md:h-12">

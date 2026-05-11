@@ -435,7 +435,7 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
                   >
                     <Link
                       to={link.href}
-                      className="relative px-3 py-2 text-xs font-medium rounded-md overflow-hidden group"
+                      className="relative px-3 py-2 text-xs font-medium rounded-md overflow-hidden group whitespace-nowrap"
                     >
                       <motion.span
                         className={cn(
@@ -786,7 +786,7 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
                   <Link
                     key={link.href}
                     to={link.href}
-                    className="relative px-4 py-2 text-sm font-medium rounded-md overflow-hidden group"
+                    className="relative px-4 py-2 text-sm font-medium rounded-md overflow-hidden group whitespace-nowrap"
                   >
                     <motion.span
                       className={cn(

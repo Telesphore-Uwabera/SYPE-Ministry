@@ -407,18 +407,20 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
                       alt="SYPE Ministry Logo"
                       className="h-10 md:h-12 w-auto object-contain transition-all duration-300 group-hover:brightness-110"
                       loading="eager"
-                      fetchpriority="high"
+                      fetchPriority="high"
                     />
                   </picture>
 
                 </motion.div>
-                <motion.span
-                  className="hidden sm:inline-block"
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ type: "spring", stiffness: 400 }}
-                >
-                  SYPE Ministry
-                </motion.span>
+                {!isScrolled && (
+                  <motion.span
+                    className="hidden sm:inline-block"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 400 }}
+                  >
+                    SYPE Ministry
+                  </motion.span>
+                )}
               </Link>
             </motion.div>
 
@@ -765,16 +767,14 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
             >
               <Link
                 to="/"
-                className="flex items-center gap-3 font-heading font-bold text-primary hover:text-primary/90 transition-colors group"
+                className="flex items-center font-heading font-bold text-primary hover:text-primary/90 transition-colors group"
               >
                 <img
                   src="/Images/sype-logo.webp"
                   alt="SYPE Ministry Logo"
                   className="h-14 md:h-16 lg:h-20 w-auto object-contain transition-all duration-300 group-hover:brightness-110"
                 />
-                <span className="hidden sm:inline-block text-xl md:text-2xl">
-                  SYPE Ministry
-                </span>
+
               </Link>
             </motion.div>
 

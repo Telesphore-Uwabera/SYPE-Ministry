@@ -527,7 +527,7 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setShowQuickMenu(!showQuickMenu)}
-                    className="px-3 py-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium text-foreground/80 hover:text-primary flex items-center gap-1"
+                    className="px-3 py-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium text-foreground/80 hover:text-primary flex items-center gap-1 whitespace-nowrap"
                     aria-label="Quick access menu"
                   >
                     <span>Quick</span>
@@ -583,7 +583,7 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
                 >
                   <Link
                     to="/donations"
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-primary/90 text-white rounded-lg font-semibold text-sm shadow-lg hover:shadow-xl transition-all hover:from-primary/90 hover:to-primary/80"
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-primary/90 text-white rounded-lg font-semibold text-sm shadow-lg hover:shadow-xl transition-all hover:from-primary/90 hover:to-primary/80 whitespace-nowrap"
                   >
                     <Heart size={16} className="fill-current" />
                     <span>Donate</span>
@@ -724,7 +724,7 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
                   <Link
                     to="/donations"
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-primary to-primary/90 text-white rounded-lg font-semibold text-sm shadow-lg hover:shadow-xl transition-all"
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-primary to-primary/90 text-white rounded-lg font-semibold text-sm shadow-lg hover:shadow-xl transition-all whitespace-nowrap"
                   >
                     <Heart size={16} className="fill-current" />
                     <span>Support Evangelism</span>
@@ -831,7 +831,7 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
                 >
                   <Link
                     to="/donations"
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-primary/90 text-white rounded-lg font-semibold text-sm shadow-lg hover:shadow-xl transition-all"
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-primary/90 text-white rounded-lg font-semibold text-sm shadow-lg hover:shadow-xl transition-all whitespace-nowrap"
                   >
                     <Heart size={16} className="fill-current" />
                     <span>Donate</span>
@@ -959,7 +959,7 @@ export default function Navigation({ isContactBarVisible, setIsContactBarVisible
                   <Link
                     to="/donations"
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-primary to-primary/90 text-white rounded-lg font-semibold text-sm shadow-lg hover:shadow-xl transition-all"
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-primary to-primary/90 text-white rounded-lg font-semibold text-sm shadow-lg hover:shadow-xl transition-all whitespace-nowrap"
                   >
                     <Heart size={16} className="fill-current" />
                     <span>Support Evangelism</span>

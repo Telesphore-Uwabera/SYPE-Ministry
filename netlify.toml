@@ -29,20 +29,15 @@
   to = "/index.html"
   status = 200
 
-# Caching for static assets
+# Caching for static assets (Vite puts these in /assets/)
 [[headers]]
-  for = "/*"
+  for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Ensure HTML files are always revalidated
+# Ensure all other routes (like /, /admin, etc.) and HTML files are revalidated
 [[headers]]
-  for = "/*.html"
-  [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
-
-[[headers]]
-  for = "/index.html"
+  for = "/*"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 

@@ -8,6 +8,7 @@ import * as adminRoutes from "./routes/admin";
 import { runReminders } from "./lib/reminders";
 import { runYouTubeNotifyJob } from "./lib/youtubeSync";
 import { runContentNotificationJob } from "./lib/contentNotifications";
+import { getMailerDiagnostics } from "./lib/mailer";
 import * as uploadRoutes from "./routes/upload";
 import * as mediaUploadRoutes from "./routes/mediaUpload";
 import * as youtubeRoutes from "./routes/youtube";
@@ -315,6 +316,11 @@ export function createServer() {
         },
       });
     }
+  });
+
+  // Mailer config diagnostics (no secrets exposed — safe to call publicly)
+  app.get("/api/mailer-status", (_req, res) => {
+    res.json(getMailerDiagnostics());
   });
 
   // Error handling middleware

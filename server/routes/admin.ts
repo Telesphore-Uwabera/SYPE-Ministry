@@ -2351,6 +2351,9 @@ export const sendEmailCampaign: RequestHandler = asyncHandler(async (req, res) =
   if (String(campaign.status || "draft") === "sent") {
     throw new ApiError(400, "Campaign already sent");
   }
+  if (String(campaign.status || "draft") === "sending") {
+    throw new ApiError(400, "Campaign is already being sent. Please wait.");
+  }
 
   // Determine recipients
   let recipients: string[] = Array.isArray(campaign.recipients) ? campaign.recipients.map(String) : [];
@@ -2368,76 +2371,77 @@ export const sendEmailCampaign: RequestHandler = asyncHandler(async (req, res) =
   recipients = Array.from(new Set(recipients)).filter((e) => e.includes("@"));
   if (recipients.length === 0) throw new ApiError(400, "No recipients found. Make sure there are active members or active email subscribers.");
 
+  // Mark as "sending" immediately so the UI knows it's in progress
+  campaign.status = "sending";
+  campaign.recipients = recipients;
+  await campaign.save();
+
   const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
   const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
   const subject = String(campaign.subject || "").trim() || `Newsletter - ${siteName}`;
   const body = String(campaign.body || "");
 
-  // If admin pasted plain text, wrap it as HTML.
   const isHtml = /<\/?[a-z][\s\S]*>/i.test(body);
   const html = isHtml
     ? body
     : `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827; white-space: pre-wrap;">${escapeHtml(body)}</div>`;
   const text = isHtml ? stripHtmlToText(body) : String(body || "");
 
-  // Send (rate-friendly batching) + collect failure reasons
-  let sent = 0;
-  let failed = 0;
-  const errors: Array<{ to: string; error: string }> = [];
-
-  const batchSize = 5;
-  for (let i = 0; i < recipients.length; i += batchSize) {
-    const batch = recipients.slice(i, i + batchSize);
-    const results = await Promise.allSettled(
-      batch.map((to) =>
-        sendMail({
-          to,
-          subject,
-          html,
-          text,
-          replyTo: contactEmail || undefined,
-        })
-      )
-    );
-
-    results.forEach((r, idx) => {
-      if (r.status === "fulfilled") {
-        sent += 1;
-        return;
-      }
-      failed += 1;
-      const reason: any = r.reason;
-      const msg = String(reason?.message || reason?.error || reason || "Failed to send");
-      if (errors.length < 5) {
-        errors.push({ to: batch[idx], error: msg });
-      }
-    });
-  }
-
-  // Only mark as sent if all recipients succeeded.
-  if (failed === 0) {
-    campaign.status = "sent";
-    campaign.sentDate = new Date();
-    campaign.recipients = recipients;
-    await campaign.save();
-    return res.json({ ok: true, recipients: recipients.length, sent, failed, errors: [] });
-  }
-
-  // If everything failed, throw error so next() handles it via ApiError if we want,
-  // but here the original code returned 500 with custom payload. 
-  // We'll return 200 with partial success info instead of throwing if some succeeded.
-  if (sent === 0) {
-    throw new ApiError(500, errors[0]?.error || "Campaign failed to send");
-  }
-
-  // Partial success: keep as draft so admin can retry if needed.
-  return res.json({
-    ok: false,
-    error: errors[0]?.error || "Some emails failed to send",
+  // ── Respond immediately — don't make the browser wait ──────────────────────
+  res.json({
+    ok: true,
+    queued: true,
     recipients: recipients.length,
-    sent,
-    failed,
-    errors,
+    message: `Sending to ${recipients.length} recipient(s) in the background. The campaign status will update to "sent" when complete.`,
+  });
+
+  // ── Send in background after response is flushed ───────────────────────────
+  setImmediate(async () => {
+    let sent = 0;
+    let failed = 0;
+    const errors: Array<{ to: string; error: string }> = [];
+    const campaignId = String(campaign._id);
+
+    try {
+      const batchSize = 5;
+      for (let i = 0; i < recipients.length; i += batchSize) {
+        const batch = recipients.slice(i, i + batchSize);
+        const results = await Promise.allSettled(
+          batch.map((to) =>
+            sendMail({ to, subject, html, text, replyTo: contactEmail || undefined })
+          )
+        );
+        results.forEach((r, idx) => {
+          if (r.status === "fulfilled") { sent++; return; }
+          failed++;
+          const reason: any = r.reason;
+          const msg = String(reason?.message || reason?.error || reason || "Failed to send");
+          if (errors.length < 10) errors.push({ to: batch[idx], error: msg });
+        });
+      }
+
+      // Update campaign status when done
+      await connectMongo();
+      if (sent > 0) {
+        await EmailCampaignModel.findByIdAndUpdate(campaignId, {
+          status: "sent",
+          sentDate: new Date(),
+          recipients,
+        });
+        console.log(`[Campaign ${campaignId}] Done — sent: ${sent}, failed: ${failed}`);
+      } else {
+        // All failed — revert to draft so admin can retry
+        await EmailCampaignModel.findByIdAndUpdate(campaignId, { status: "draft" });
+        console.error(`[Campaign ${campaignId}] All ${failed} emails failed. First error: ${errors[0]?.error}`);
+      }
+    } catch (err: any) {
+      console.error(`[Campaign ${campaignId}] Background send crashed:`, err?.message || err);
+      // Revert to draft on crash
+      try {
+        await connectMongo();
+        await EmailCampaignModel.findByIdAndUpdate(campaignId, { status: "draft" });
+      } catch (_) { /* ignore */ }
+    }
   });
 });
 

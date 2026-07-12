@@ -351,18 +351,25 @@ export default function Communication() {
       setSendingCampaignId(c.id);
       const response = await fetch(`/api/admin/campaigns/${c.id}/send`, { method: "POST" });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data?.error || "Failed to send campaign");
-      const firstError = Array.isArray(data?.errors) ? data.errors?.[0]?.error : undefined;
-      if (data?.ok === false || (data?.failed ?? 0) > 0) {
+      if (!response.ok) throw new Error(data?.error || data?.message || "Failed to send campaign");
+
+      if (data?.queued) {
+        // Background send — response came back immediately
+        toast({
+          title: "Campaign queued",
+          description: `Sending to ${data?.recipients ?? "?"} recipient(s) in the background. Status will update to "sent" when complete.`,
+        });
+      } else if (data?.ok === false || (data?.failed ?? 0) > 0) {
+        const firstError = Array.isArray(data?.errors) ? data.errors?.[0]?.error : undefined;
         toast({
           title: "Campaign completed with errors",
-          description: `${firstError ? `Reason: ${firstError} • ` : ""}Sent: ${data?.sent ?? "?"} • Failed: ${data?.failed ?? "?"} • Recipients: ${data?.recipients ?? "?"}`,
+          description: `${firstError ? `Reason: ${firstError} • ` : ""}Sent: ${data?.sent ?? "?"} • Failed: ${data?.failed ?? "?"}`,
           variant: "destructive",
         });
       } else {
         toast({
           title: "Campaign sent",
-          description: `Sent: ${data?.sent ?? "?"} • Failed: ${data?.failed ?? "?"} • Recipients: ${data?.recipients ?? "?"}`,
+          description: `Successfully sent to ${data?.sent ?? data?.recipients ?? "?"} recipient(s).`,
         });
       }
       loadCampaigns();
@@ -970,7 +977,9 @@ export default function Communication() {
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.subject}</TableCell>
                     <TableCell>
-                      <Badge variant={c.status === "sent" ? "default" : "secondary"}>{c.status}</Badge>
+                      <Badge variant={c.status === "sent" ? "default" : c.status === "sending" ? "outline" : "secondary"}>
+                        {c.status === "sending" ? "⏳ sending..." : c.status}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       {c.status === "sent"
@@ -989,10 +998,10 @@ export default function Communication() {
                         <Button
                           size="sm"
                           onClick={() => handleCampaignSend(c)}
-                          disabled={sendingCampaignId === c.id || c.status === "sent"}
+                          disabled={sendingCampaignId === c.id || c.status === "sent" || c.status === "sending"}
                         >
                           <Mail className="w-4 h-4 mr-2" />
-                          {sendingCampaignId === c.id ? "Sending..." : c.status === "sent" ? "Sent" : "Send"}
+                          {sendingCampaignId === c.id ? "Queuing..." : c.status === "sent" ? "Sent" : c.status === "sending" ? "Sending..." : "Send"}
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>

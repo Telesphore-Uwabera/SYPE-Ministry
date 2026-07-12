@@ -251,6 +251,45 @@ type MailOptions = {
   headers?: Record<string, string>;
 };
 
+/** Returns safe (no secrets) diagnostics about which transport will be used. */
+export function getMailerDiagnostics(): Record<string, string> {
+  const apiKey = getBrevoApiKey();
+  const smtpKey = getBrevoSmtpKey();
+  const cfg = getMailerConfig();
+  const fromRaw = (process.env.SMTP_FROM || "").trim();
+  const smtpUser = (process.env.BREVO_SMTP_USER || process.env.SMTP_USER || "").trim();
+
+  if (apiKey) {
+    return {
+      transport: "Brevo REST API",
+      from: fromRaw,
+      keyPrefix: apiKey.slice(0, 12) + "...",
+      status: "configured",
+    };
+  }
+  if (smtpKey) {
+    return {
+      transport: "Brevo SMTP relay (smtp-relay.brevo.com:587)",
+      from: fromRaw,
+      user: smtpUser,
+      keyPrefix: smtpKey.slice(0, 12) + "...",
+      status: smtpUser ? "configured" : "missing BREVO_SMTP_USER",
+    };
+  }
+  if (cfg) {
+    return {
+      transport: `Custom SMTP (${cfg.host}:${cfg.port})`,
+      from: fromRaw,
+      user: cfg.user,
+      status: "configured",
+    };
+  }
+  return {
+    transport: "none",
+    status: "NOT CONFIGURED — set BREVO_API_KEY or BREVO_SMTP_USER+BREVO_API_KEY",
+  };
+}
+
 export async function sendMail(options: MailOptions): Promise<{ messageId: string }> {
   // Priority 1: Brevo REST API (xkeysib- key) — works on Render Free, no SMTP port issues
   if (getBrevoApiKey()) {

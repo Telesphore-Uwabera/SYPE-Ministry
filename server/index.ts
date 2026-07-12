@@ -232,6 +232,7 @@ export function createServer() {
   app.delete("/api/admin/subscribers/:id", adminRoutes.deleteSubscriber);
 
   // Admin API Routes - Email Campaigns
+  app.get("/api/admin/campaigns/recipients/count", adminRoutes.getCampaignRecipientsCount);
   app.get("/api/admin/campaigns", adminRoutes.getEmailCampaigns);
   app.get("/api/admin/campaigns/:id", adminRoutes.getEmailCampaign);
   app.post("/api/admin/campaigns", adminRoutes.createEmailCampaign);

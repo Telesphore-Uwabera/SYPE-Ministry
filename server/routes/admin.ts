@@ -2218,6 +2218,23 @@ function stripHtmlToText(html: string): string {
     .trim();
 }
 
+// Returns the count of unique emails that would receive a campaign
+export const getCampaignRecipientsCount: RequestHandler = asyncHandler(async (_req, res) => {
+  await connectMongo();
+  const [subs, members] = await Promise.all([
+    EmailSubscriberModel.find({ status: "active" }).select({ email: 1 }).exec(),
+    MemberModel.find({ status: "Active" }).select({ email: 1 }).exec(),
+  ]);
+  const subEmails = subs.map((s: any) => String(s.email || "").trim().toLowerCase()).filter(Boolean);
+  const memberEmails = members.map((m: any) => String(m.email || "").trim().toLowerCase()).filter(Boolean);
+  const unique = new Set([...subEmails, ...memberEmails].filter((e) => e.includes("@")));
+  res.json({
+    total: unique.size,
+    subscribers: subEmails.filter((e) => e.includes("@")).length,
+    members: memberEmails.filter((e) => e.includes("@")).length,
+  });
+});
+
 export const getEmailCampaigns: RequestHandler = asyncHandler(async (_req, res) => {
   await connectMongo();
   const result = await EmailCampaignModel.find().sort({ createdAt: -1 }).exec();
@@ -2349,7 +2366,7 @@ export const sendEmailCampaign: RequestHandler = asyncHandler(async (req, res) =
   }
   // de-dup
   recipients = Array.from(new Set(recipients)).filter((e) => e.includes("@"));
-  if (recipients.length === 0) throw new ApiError(400, "No recipients found (need active subscribers)");
+  if (recipients.length === 0) throw new ApiError(400, "No recipients found. Make sure there are active members or active email subscribers.");
 
   const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
   const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();

@@ -52,6 +52,7 @@ export default function Communication() {
   const [subscribers, setSubscribers] = useState<EmailSubscriber[]>([]);
   const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
   const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
+  const [recipientCount, setRecipientCount] = useState<{ total: number; subscribers: number; members: number } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -75,6 +76,7 @@ export default function Communication() {
     loadSubscribers();
     loadContactSubmissions();
     loadCampaigns();
+    loadRecipientCount();
   }, []);
 
   const loadContactSubmissions = async () => {
@@ -155,6 +157,16 @@ export default function Communication() {
       if (Array.isArray(data)) setCampaigns(data);
     } catch (error) {
       console.error("Error loading campaigns:", error);
+    }
+  };
+
+  const loadRecipientCount = async () => {
+    try {
+      const response = await fetch("/api/admin/campaigns/recipients/count");
+      const data = await response.json().catch(() => null);
+      if (data && typeof data.total === "number") setRecipientCount(data);
+    } catch (error) {
+      console.error("Error loading recipient count:", error);
     }
   };
 
@@ -354,6 +366,7 @@ export default function Communication() {
         });
       }
       loadCampaigns();
+      loadRecipientCount();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -880,7 +893,13 @@ export default function Communication() {
         <CardContent>
           <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between mb-4">
             <div className="text-sm text-foreground/70">
-              Sends to <strong>active subscribers</strong> only.
+              Sends to <strong>active members</strong> and <strong>active subscribers</strong>.
+              {recipientCount !== null && (
+                <span className="ml-2 text-foreground/90">
+                  — <strong>{recipientCount.total}</strong> recipient{recipientCount.total !== 1 ? "s" : ""} currently
+                  <span className="text-foreground/50"> ({recipientCount.members} member{recipientCount.members !== 1 ? "s" : ""}, {recipientCount.subscribers} subscriber{recipientCount.subscribers !== 1 ? "s" : ""})</span>
+                </span>
+              )}
             </div>
             <Dialog open={campaignDialogOpen} onOpenChange={(open) => {
               setCampaignDialogOpen(open);
@@ -953,7 +972,14 @@ export default function Communication() {
                     <TableCell>
                       <Badge variant={c.status === "sent" ? "default" : "secondary"}>{c.status}</Badge>
                     </TableCell>
-                    <TableCell>{(c.recipients || []).length}</TableCell>
+                    <TableCell>
+                      {c.status === "sent"
+                        ? (c.recipients || []).length
+                        : recipientCount !== null
+                          ? <span title={`${recipientCount.members} active member(s) + ${recipientCount.subscribers} active subscriber(s)`}>{recipientCount.total}</span>
+                          : <span className="text-foreground/40">—</span>
+                      }
+                    </TableCell>
                     <TableCell>{c.sentDate ? new Date(c.sentDate).toLocaleString() : "-"}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

@@ -345,7 +345,8 @@ export function createServer() {
     setTimeout(() => runYouTubeNotifyJob(), 12_000);
     setInterval(() => runYouTubeNotifyJob(), 15 * 60 * 1000);
 
-    // News + Events notifications for active members
+    // Content notifications: News, Events, Books, Projects, Devotions
+    // Runs every 15 min; emails content that is at least CONTENT_NOTIFY_AFTER_HOURS old (default 1h)
     setTimeout(() => runContentNotificationJob(), 14_000);
     setInterval(() => runContentNotificationJob(), 15 * 60 * 1000);
   }

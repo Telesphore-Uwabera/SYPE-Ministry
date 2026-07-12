@@ -27,4 +27,40 @@ services:
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
-
+      # Site
+      - key: SITE_URL
+        sync: false
+      - key: SITE_NAME
+        sync: false
+      # Email — Brevo SMTP relay
+      - key: SMTP_FROM
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SMTP_USER
+        sync: false
+      # Email — fallback SMTP (kept for reference, not used when Brevo is configured)
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_SECURE
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      # Notification email addresses
+      - key: CONTACT_EMAIL
+        sync: false
+      - key: ADMIN_NOTIFY_EMAIL
+        sync: false
+      - key: CONTACT_PHONE
+        sync: false
+      # Scheduler settings
+      - key: YOUTUBE_NOTIFY_AFTER_HOURS
+        sync: false
+      - key: CONTENT_NOTIFY_AFTER_HOURS
+        sync: false
+      - key: ENABLE_REMINDERS
+        sync: false

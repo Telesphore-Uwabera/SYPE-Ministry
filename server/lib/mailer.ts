@@ -176,12 +176,18 @@ async function sendViaBrevoApi(options: MailOptions): Promise<{ messageId: strin
       subject: options.subject,
       htmlContent: options.html,
       textContent: options.text,
-      headers: {
-        ...(options.headers || {}),
-        ...(options.importance === "high"
-          ? { "X-Priority": "1", "X-MSMail-Priority": "High", Importance: "high" }
+      ...(options.importance === "high"
+        ? {
+            headers: {
+              ...(options.headers || {}),
+              "X-Priority": "1",
+              "X-MSMail-Priority": "High",
+              Importance: "high",
+            },
+          }
+        : options.headers && Object.keys(options.headers).length > 0
+          ? { headers: options.headers }
           : {}),
-      },
     }),
   });
 

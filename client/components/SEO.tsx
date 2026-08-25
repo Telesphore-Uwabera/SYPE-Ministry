@@ -48,7 +48,7 @@ const defaultSEO = {
       "Sitemap, robots.txt, structured data, JSON-LD, Open Graph, Twitter Card, hreflang, PWA, webmanifest, Core Web Vitals",
     ].join(', ')
   ),
-  image: `https://www.sypeministry.org/sype-social.png`,
+  image: `/sype-social.png`,
   url: SITE_ORIGIN,
   type: "website",
 };

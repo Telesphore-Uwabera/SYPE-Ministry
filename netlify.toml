@@ -37,6 +37,22 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
+# Caching for images and media files
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.webp"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/Images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
 # Ensure all other routes (like /, /admin, etc.) and HTML files are revalidated
 [[headers]]
   for = "/*"

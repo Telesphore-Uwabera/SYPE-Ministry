@@ -127,7 +127,7 @@ export interface EmailCampaign {
   body: string;
   recipients: string[];
   sentDate?: string;
-  status: "draft" | "scheduled" | "sent";
+  status: "draft" | "scheduled" | "sent" | "sending";
   scheduledDate?: string;
   openRate?: number;
   clickRate?: number;

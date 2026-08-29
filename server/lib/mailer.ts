@@ -176,6 +176,14 @@ async function sendViaBrevoApi(options: MailOptions): Promise<{ messageId: strin
       subject: options.subject,
       htmlContent: options.html,
       textContent: options.text,
+      ...(options.attachments && options.attachments.length > 0
+        ? {
+            attachment: options.attachments.map((a) => ({
+              name: a.filename,
+              content: a.content.toString("base64"),
+            })),
+          }
+        : {}),
       ...(options.importance === "high"
         ? {
             headers: {
@@ -230,6 +238,9 @@ async function sendViaBrevoSmtp(options: MailOptions): Promise<{ messageId: stri
           ? { "X-Priority": "1", "X-MSMail-Priority": "High", Importance: "high" }
           : {}),
       },
+      ...(options.attachments && options.attachments.length > 0
+        ? { attachments: options.attachments.map((a) => ({ filename: a.filename, content: a.content, contentType: a.contentType })) }
+        : {}),
     });
     return { messageId: String(info.messageId || "") };
   } catch (err: any) {
@@ -247,6 +258,12 @@ async function sendViaBrevoSmtp(options: MailOptions): Promise<{ messageId: stri
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
+export type MailAttachment = {
+  filename: string;
+  content: Buffer;
+  contentType: string;
+};
+
 type MailOptions = {
   to: string;
   subject: string;
@@ -255,6 +272,7 @@ type MailOptions = {
   replyTo?: string;
   importance?: "high" | "normal" | "low";
   headers?: Record<string, string>;
+  attachments?: MailAttachment[];
 };
 
 /** Returns safe (no secrets) diagnostics about which transport will be used. */
@@ -333,6 +351,9 @@ export async function sendMail(options: MailOptions): Promise<{ messageId: strin
           ? { "X-Priority": "1", "X-MSMail-Priority": "High", Importance: "high" }
           : {}),
       },
+      ...(options.attachments && options.attachments.length > 0
+        ? { attachments: options.attachments.map((a) => ({ filename: a.filename, content: a.content, contentType: a.contentType })) }
+        : {}),
     });
     return { messageId: String(info.messageId || "") };
   } catch (err: any) {

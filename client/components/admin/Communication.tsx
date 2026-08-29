@@ -28,11 +28,12 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Mail, Plus, Search, Edit, Trash2, Download, Users, UserCheck, UserX, MessageSquare, Send } from "lucide-react";
+import { Mail, Plus, Search, Edit, Trash2, Download, Users, UserCheck, UserX, MessageSquare, Send, Reply } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { EmailCampaign, EmailSubscriber } from "@/types/admin";
 import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor, { RichTextAttachment } from "./RichTextEditor";
 
 interface ContactSubmission {
   id: string;
@@ -62,6 +63,11 @@ export default function Communication() {
   const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<EmailCampaign | null>(null);
   const [sendingCampaignId, setSendingCampaignId] = useState<string | null>(null);
+  const [campaignAttachments, setCampaignAttachments] = useState<RichTextAttachment[]>([]);
+  // Contact reply state
+  const [replyBody, setReplyBody] = useState("");
+  const [replyAttachments, setReplyAttachments] = useState<RichTextAttachment[]>([]);
+  const [sendingReply, setSendingReply] = useState(false);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState<Omit<EmailSubscriber, "id" | "subscribedAt">>({
@@ -297,6 +303,7 @@ export default function Communication() {
   const resetCampaignForm = () => {
     setEditingCampaign(null);
     setCampaignForm({ subject: "", body: "" });
+    setCampaignAttachments([]);
   };
 
   const handleCampaignEdit = (c: EmailCampaign) => {
@@ -308,14 +315,25 @@ export default function Communication() {
   const handleCampaignSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const payload = { subject: campaignForm.subject, body: campaignForm.body, status: "draft" };
       const url = editingCampaign ? `/api/admin/campaigns/${editingCampaign.id}` : "/api/admin/campaigns";
       const method = editingCampaign ? "PUT" : "POST";
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+
+      let response: Response;
+      if (campaignAttachments.length > 0) {
+        const fd = new FormData();
+        fd.append("subject", campaignForm.subject);
+        fd.append("body", campaignForm.body);
+        fd.append("status", "draft");
+        campaignAttachments.forEach((a) => fd.append("attachments", a.file));
+        response = await fetch(url, { method, body: fd });
+      } else {
+        response = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subject: campaignForm.subject, body: campaignForm.body, status: "draft" }),
+        });
+      }
+
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data?.error || "Failed to save campaign");
       toast({
@@ -331,6 +349,44 @@ export default function Communication() {
         description: error?.message || "Failed to save campaign.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleReply = async () => {
+    if (!selectedSubmission || !replyBody.trim()) return;
+    setSendingReply(true);
+    try {
+      let response: Response;
+      if (replyAttachments.length > 0) {
+        const fd = new FormData();
+        fd.append("to", selectedSubmission.email);
+        fd.append("subject", `Re: ${selectedSubmission.subject}`);
+        fd.append("body", replyBody);
+        replyAttachments.forEach((a) => fd.append("attachments", a.file));
+        response = await fetch(`/api/admin/contact/${selectedSubmission.id}/reply`, { method: "POST", body: fd });
+      } else {
+        response = await fetch(`/api/admin/contact/${selectedSubmission.id}/reply`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subject: `Re: ${selectedSubmission.subject}`,
+            body: replyBody,
+          }),
+        });
+      }
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.error || "Failed to send reply");
+
+      // Mark submission as replied
+      await handleUpdateSubmission(selectedSubmission.id, { status: "replied", notes: submissionNotes });
+      toast({ title: "Reply sent", description: `Email reply sent to ${selectedSubmission.email}.` });
+      setReplyBody("");
+      setReplyAttachments([]);
+      setSelectedSubmission(null);
+    } catch (error: any) {
+      toast({ title: "Error", description: error?.message || "Failed to send reply.", variant: "destructive" });
+    } finally {
+      setSendingReply(false);
     }
   };
 
@@ -761,6 +817,8 @@ export default function Communication() {
                             onClick={() => {
                               setSelectedSubmission(submission);
                               setSubmissionNotes(submission.notes || "");
+                              setReplyBody("");
+                              setReplyAttachments([]);
                               if (submission.status === "new") {
                                 handleUpdateSubmission(submission.id, { status: "read" });
                               }
@@ -862,30 +920,64 @@ export default function Communication() {
                 </div>
               </div>
               <div>
-                <Label>Notes</Label>
+                <Label>Internal Notes</Label>
                 <Textarea
                   value={submissionNotes}
                   onChange={(e) => setSubmissionNotes(e.target.value)}
                   placeholder="Add internal notes about this submission..."
-                  rows={3}
+                  rows={2}
+                />
+              </div>
+
+              {/* Reply section */}
+              <div className="border-t pt-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Reply className="w-4 h-4 text-primary" />
+                  <Label className="text-base font-semibold">Reply to {selectedSubmission?.name}</Label>
+                  <span className="text-xs text-muted-foreground">→ {selectedSubmission?.email}</span>
+                </div>
+                <RichTextEditor
+                  value={replyBody}
+                  onChange={setReplyBody}
+                  attachments={replyAttachments}
+                  onAttachmentsChange={setReplyAttachments}
+                  placeholder="Write your reply here..."
+                  minHeight={200}
                 />
               </div>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
-              onClick={() => setSelectedSubmission(null)}
+              onClick={() => {
+                setSelectedSubmission(null);
+                setReplyBody("");
+                setReplyAttachments([]);
+              }}
             >
               Close
             </Button>
             <Button
+              variant="secondary"
               onClick={() => {
                 handleUpdateSubmission(selectedSubmission!.id, { notes: submissionNotes });
-                setSelectedSubmission(null);
               }}
             >
               Save Notes
+            </Button>
+            <Button
+              onClick={handleReply}
+              disabled={sendingReply || !replyBody.replace(/<[^>]*>/g, "").trim()}
+            >
+              {sendingReply ? (
+                "Sending..."
+              ) : (
+                <>
+                  <Reply className="w-4 h-4 mr-2" />
+                  Send Reply
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -918,7 +1010,7 @@ export default function Communication() {
                   New Campaign
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[720px]">
+              <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{editingCampaign ? "Edit Campaign" : "Create Campaign"}</DialogTitle>
                   <DialogDescription>Write your message. This will be sent to all active subscribers when you click “Send”.</DialogDescription>
@@ -934,14 +1026,14 @@ export default function Communication() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="campaignBody">Body *</Label>
-                    <Textarea
-                      id="campaignBody"
+                    <Label>Body *</Label>
+                    <RichTextEditor
                       value={campaignForm.body}
-                      onChange={(e) => setCampaignForm((p) => ({ ...p, body: e.target.value }))}
-                      placeholder="You can paste plain text or HTML here."
-                      rows={10}
-                      required
+                      onChange={(html) => setCampaignForm((p) => ({ ...p, body: html }))}
+                      attachments={campaignAttachments}
+                      onAttachmentsChange={setCampaignAttachments}
+                      placeholder="Write your campaign message here..."
+                      minHeight={300}
                     />
                   </div>
                   <DialogFooter>

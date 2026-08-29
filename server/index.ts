@@ -281,6 +281,7 @@ export function createServer() {
   app.get("/api/admin/contact/:id", adminRoutes.getContactSubmission);
   app.put("/api/admin/contact/:id", adminRoutes.updateContactSubmission);
   app.delete("/api/admin/contact/:id", adminRoutes.deleteContactSubmission);
+  app.post("/api/admin/contact/:id/reply", adminRoutes.replyToContactSubmission);
 
   // YouTube API Routes
   app.get("/api/youtube/latest", youtubeRoutes.getLatestVideos);

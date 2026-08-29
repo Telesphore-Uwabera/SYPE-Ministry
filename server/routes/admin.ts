@@ -1,5 +1,6 @@
 import { RequestHandler, Request, Response } from "express";
 import { Readable } from "stream";
+import multer from "multer";
 import { Member, NewsArticle, Project, Event, Donation, FAQ, MediaFile, EmailCampaign, Book, EmailSubscriber, CommitteeMember, Devotion } from "../../client/types/admin";
 import { connectMongo, isValidObjectId } from "../lib/mongoose";
 import { ApiError, asyncHandler } from "../lib/errorHandling";
@@ -19,7 +20,7 @@ import {
   ProjectModel,
   MetadataModel,
 } from "../models/core";
-import { sendMail } from "../lib/mailer";
+import { sendMail, MailAttachment } from "../lib/mailer";
 import { sendMonthlyContributionReminder } from "../lib/reminders";
 
 // All data is persisted in MongoDB via Mongoose models.
@@ -2989,7 +2990,61 @@ export const deleteContactSubmission: RequestHandler = asyncHandler(async (req, 
   res.status(204).send();
 });
 
-// Administrative Actions
+// Reply to a contact submission via email
+const replyMulter = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB per attachment
+}).array("attachments", 10);
+
+export const replyToContactSubmission: RequestHandler = (req, res, next) => {
+  replyMulter(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message || "File upload error" });
+    }
+    try {
+      const { id } = req.params;
+      if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+
+      const body = req.body?.body || req.body?.replyBody || "";
+      if (!body.trim()) throw new ApiError(400, "Reply body is required");
+
+      await connectMongo();
+      const submission = await ContactSubmissionModel.findById(id).exec();
+      if (!submission) throw new ApiError(404, "Contact submission not found");
+
+      const siteName = (process.env.SITE_NAME || "SYPE Ministry").trim();
+      const contactEmail = (process.env.CONTACT_EMAIL || "sypeministry@gmail.com").trim();
+      const replySubject = req.body?.subject || `Re: ${submission.subject}`;
+
+      // Convert multer files to MailAttachment[]
+      const files = (req.files as Express.Multer.File[]) || [];
+      const attachments: MailAttachment[] = files.map((f) => ({
+        filename: f.originalname,
+        content: f.buffer,
+        contentType: f.mimetype,
+      }));
+
+      await sendMail({
+        to: submission.email,
+        subject: replySubject,
+        html: body,
+        text: body.replace(/<[^>]*>/g, ""),
+        replyTo: contactEmail,
+        attachments: attachments.length > 0 ? attachments : undefined,
+      });
+
+      // Mark as replied
+      await ContactSubmissionModel.findByIdAndUpdate(id, {
+        status: "replied",
+        repliedAt: new Date(),
+      }).exec();
+
+      res.json({ ok: true, message: `Reply sent to ${submission.email}` });
+    } catch (e: any) {
+      next(e);
+    }
+  });
+};
 export const triggerMonthlyReminders: RequestHandler = asyncHandler(async (req, res) => {
   await connectMongo();
 

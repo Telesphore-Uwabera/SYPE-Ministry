@@ -211,14 +211,14 @@ export default function RichTextEditor({
 
   const toolbarBtn = (
     active: boolean,
-    onClick: () => void,
+    onMouseDown: (e: React.MouseEvent) => void,
     icon: React.ReactNode,
     title: string
   ) => (
     <button
       type="button"
       title={title}
-      onClick={onClick}
+      onMouseDown={onMouseDown}
       className={`p-1.5 rounded transition-colors ${
         active
           ? "bg-primary text-primary-foreground"
@@ -235,8 +235,8 @@ export default function RichTextEditor({
       <div className="flex flex-wrap items-center gap-0.5 p-2 border-b bg-muted/40 select-none">
 
         {/* Undo / Redo */}
-        {toolbarBtn(false, () => editor.chain().focus().undo().run(), <Undo className="w-3.5 h-3.5" />, "Undo")}
-        {toolbarBtn(false, () => editor.chain().focus().redo().run(), <Redo className="w-3.5 h-3.5" />, "Redo")}
+        {toolbarBtn(false, (e) => { e.preventDefault(); editor.chain().focus().undo().run(); }, <Undo className="w-3.5 h-3.5" />, "Undo")}
+        {toolbarBtn(false, (e) => { e.preventDefault(); editor.chain().focus().redo().run(); }, <Redo className="w-3.5 h-3.5" />, "Redo")}
 
         <div className="w-px h-5 bg-border mx-1" />
 
@@ -317,37 +317,37 @@ export default function RichTextEditor({
         <div className="w-px h-5 bg-border mx-1" />
 
         {/* Bold / Italic / Underline / Strikethrough */}
-        {toolbarBtn(editor.isActive("bold"), () => editor.chain().focus().toggleBold().run(), <Bold className="w-3.5 h-3.5" />, "Bold (Ctrl+B)")}
-        {toolbarBtn(editor.isActive("italic"), () => editor.chain().focus().toggleItalic().run(), <Italic className="w-3.5 h-3.5" />, "Italic (Ctrl+I)")}
-        {toolbarBtn(editor.isActive("underline"), () => editor.chain().focus().toggleUnderline().run(), <UnderlineIcon className="w-3.5 h-3.5" />, "Underline (Ctrl+U)")}
-        {toolbarBtn(editor.isActive("strike"), () => editor.chain().focus().toggleStrike().run(), <Strikethrough className="w-3.5 h-3.5" />, "Strikethrough")}
+        {toolbarBtn(editor.isActive("bold"), (e) => { e.preventDefault(); editor.chain().focus().toggleBold().run(); }, <Bold className="w-3.5 h-3.5" />, "Bold (Ctrl+B)")}
+        {toolbarBtn(editor.isActive("italic"), (e) => { e.preventDefault(); editor.chain().focus().toggleItalic().run(); }, <Italic className="w-3.5 h-3.5" />, "Italic (Ctrl+I)")}
+        {toolbarBtn(editor.isActive("underline"), (e) => { e.preventDefault(); editor.chain().focus().toggleUnderline().run(); }, <UnderlineIcon className="w-3.5 h-3.5" />, "Underline (Ctrl+U)")}
+        {toolbarBtn(editor.isActive("strike"), (e) => { e.preventDefault(); editor.chain().focus().toggleStrike().run(); }, <Strikethrough className="w-3.5 h-3.5" />, "Strikethrough")}
 
         <div className="w-px h-5 bg-border mx-1" />
 
         {/* Alignment */}
-        {toolbarBtn(editor.isActive({ textAlign: "left" }), () => editor.chain().focus().setTextAlign("left").run(), <AlignLeft className="w-3.5 h-3.5" />, "Align left")}
-        {toolbarBtn(editor.isActive({ textAlign: "center" }), () => editor.chain().focus().setTextAlign("center").run(), <AlignCenter className="w-3.5 h-3.5" />, "Align center")}
-        {toolbarBtn(editor.isActive({ textAlign: "right" }), () => editor.chain().focus().setTextAlign("right").run(), <AlignRight className="w-3.5 h-3.5" />, "Align right")}
-        {toolbarBtn(editor.isActive({ textAlign: "justify" }), () => editor.chain().focus().setTextAlign("justify").run(), <AlignJustify className="w-3.5 h-3.5" />, "Justify")}
+        {toolbarBtn(editor.isActive({ textAlign: "left" }), (e) => { e.preventDefault(); editor.chain().focus().setTextAlign("left").run(); }, <AlignLeft className="w-3.5 h-3.5" />, "Align left")}
+        {toolbarBtn(editor.isActive({ textAlign: "center" }), (e) => { e.preventDefault(); editor.chain().focus().setTextAlign("center").run(); }, <AlignCenter className="w-3.5 h-3.5" />, "Align center")}
+        {toolbarBtn(editor.isActive({ textAlign: "right" }), (e) => { e.preventDefault(); editor.chain().focus().setTextAlign("right").run(); }, <AlignRight className="w-3.5 h-3.5" />, "Align right")}
+        {toolbarBtn(editor.isActive({ textAlign: "justify" }), (e) => { e.preventDefault(); editor.chain().focus().setTextAlign("justify").run(); }, <AlignJustify className="w-3.5 h-3.5" />, "Justify")}
 
         <div className="w-px h-5 bg-border mx-1" />
 
         {/* Lists */}
-        {toolbarBtn(editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run(), <List className="w-3.5 h-3.5" />, "Bullet list")}
-        {toolbarBtn(editor.isActive("orderedList"), () => editor.chain().focus().toggleOrderedList().run(), <ListOrdered className="w-3.5 h-3.5" />, "Numbered list")}
-        {toolbarBtn(editor.isActive("blockquote"), () => editor.chain().focus().toggleBlockquote().run(), <Quote className="w-3.5 h-3.5" />, "Blockquote")}
-        {toolbarBtn(editor.isActive("code"), () => editor.chain().focus().toggleCode().run(), <Code className="w-3.5 h-3.5" />, "Inline code")}
+        {toolbarBtn(editor.isActive("bulletList"), (e) => { e.preventDefault(); editor.chain().focus().toggleBulletList().run(); }, <List className="w-3.5 h-3.5" />, "Bullet list")}
+        {toolbarBtn(editor.isActive("orderedList"), (e) => { e.preventDefault(); editor.chain().focus().toggleOrderedList().run(); }, <ListOrdered className="w-3.5 h-3.5" />, "Numbered list")}
+        {toolbarBtn(editor.isActive("blockquote"), (e) => { e.preventDefault(); editor.chain().focus().toggleBlockquote().run(); }, <Quote className="w-3.5 h-3.5" />, "Blockquote")}
+        {toolbarBtn(editor.isActive("code"), (e) => { e.preventDefault(); editor.chain().focus().toggleCode().run(); }, <Code className="w-3.5 h-3.5" />, "Inline code")}
 
         <div className="w-px h-5 bg-border mx-1" />
 
         {/* Link */}
-        {toolbarBtn(editor.isActive("link"), insertLink, <LinkIcon className="w-3.5 h-3.5" />, "Insert link")}
+        {toolbarBtn(editor.isActive("link"), (e) => { e.preventDefault(); insertLink(); }, <LinkIcon className="w-3.5 h-3.5" />, "Insert link")}
 
         {/* Inline image */}
         <button
           type="button"
           title="Insert inline image"
-          onClick={() => imageInlineRef.current?.click()}
+          onMouseDown={(e) => { e.preventDefault(); imageInlineRef.current?.click(); }}
           className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
         >
           <ImageIcon className="w-3.5 h-3.5" />
@@ -362,7 +362,7 @@ export default function RichTextEditor({
             <button
               type="button"
               title="Attach file"
-              onClick={() => fileInputRef.current?.click()}
+              onMouseDown={(e) => { e.preventDefault(); fileInputRef.current?.click(); }}
               className="p-1.5 rounded hover:bg-muted text-foreground transition-colors"
             >
               <Paperclip className="w-3.5 h-3.5" />
@@ -379,7 +379,7 @@ export default function RichTextEditor({
             <button
               type="button"
               title="Attach multimedia"
-              onClick={() => mediaInputRef.current?.click()}
+              onMouseDown={(e) => { e.preventDefault(); mediaInputRef.current?.click(); }}
               className="p-1.5 rounded hover:bg-muted text-foreground transition-colors flex items-center gap-1 text-xs font-medium"
             >
               <span className="text-[10px]">🎬</span>

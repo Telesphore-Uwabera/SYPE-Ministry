@@ -46,9 +46,14 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./client"),
       "@shared": path.resolve(__dirname, "./shared"),
     },
+    // Deduplicate React to prevent Tiptap v3 from bundling its own copy,
+    // which causes "invalid hook call" errors in Radix UI components.
+    dedupe: ["react", "react-dom"],
   },
   optimizeDeps: {
     exclude: ["./server"],
+    // Force pre-bundling of these so Vite sees only one copy
+    include: ["react", "react-dom"],
   },
   ssr: {
     external: [],

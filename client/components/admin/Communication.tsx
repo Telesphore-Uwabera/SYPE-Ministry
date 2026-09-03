@@ -314,6 +314,23 @@ export default function Communication() {
 
   const handleCampaignSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!campaignForm.subject.trim()) {
+      toast({
+        title: "Validation error",
+        description: "Please enter a subject for the campaign.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const cleanBody = campaignForm.body.replace(/<[^>]*>/g, "").trim();
+    if (!cleanBody && !campaignForm.body.includes("<img")) {
+      toast({
+        title: "Validation error",
+        description: "Please enter a body message for the campaign.",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       const url = editingCampaign ? `/api/admin/campaigns/${editingCampaign.id}` : "/api/admin/campaigns";
       const method = editingCampaign ? "PUT" : "POST";

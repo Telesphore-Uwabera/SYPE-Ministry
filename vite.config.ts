@@ -45,15 +45,36 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./client"),
       "@shared": path.resolve(__dirname, "./shared"),
+      // Hard-alias react and react-dom to the same physical path so pnpm's
+      // virtual store duplicates (e.g. from @tiptap/react peer deps) all
+      // resolve to one copy. Fixes "invalid hook call / Cannot read useContext".
+      "react": path.resolve(__dirname, "node_modules/react"),
+      "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
     },
-    // Deduplicate React to prevent Tiptap v3 from bundling its own copy,
-    // which causes "invalid hook call" errors in Radix UI components.
-    dedupe: ["react", "react-dom"],
+    // Also deduplicate at the module graph level
+    dedupe: [
+      "react",
+      "react-dom",
+    ],
   },
   optimizeDeps: {
     exclude: ["./server"],
-    // Force pre-bundling of these so Vite sees only one copy
-    include: ["react", "react-dom"],
+    // Force pre-bundling of these so Vite sees only one copy of React
+    include: [
+      "react",
+      "react-dom",
+      "@tiptap/react",
+      "@tiptap/pm",
+      "@tiptap/starter-kit",
+      "@tiptap/extension-color",
+      "@tiptap/extension-font-family",
+      "@tiptap/extension-heading",
+      "@tiptap/extension-image",
+      "@tiptap/extension-link",
+      "@tiptap/extension-text-align",
+      "@tiptap/extension-text-style",
+      "@tiptap/extension-underline",
+    ],
   },
   ssr: {
     external: [],

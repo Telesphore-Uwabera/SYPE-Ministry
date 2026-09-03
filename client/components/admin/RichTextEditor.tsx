@@ -1,13 +1,11 @@
 import { useEditor, EditorContent, Extension } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import FontFamily from "@tiptap/extension-font-family";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import Heading from "@tiptap/extension-heading";
 import Image from "@tiptap/extension-image";
-import Link from "@tiptap/extension-link";
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +33,7 @@ import {
   Strikethrough,
   Quote,
   Code,
+  RemoveFormatting,
 } from "lucide-react";
 
 // Font size extension via marks on TextStyle
@@ -71,7 +70,7 @@ const FONT_FAMILIES = [
 ];
 
 const FONT_SIZES = [
-  "10px", "11px", "12px", "14px", "16px", "18px", "20px",
+  "Default", "10px", "11px", "12px", "14px", "16px", "18px", "20px",
   "22px", "24px", "28px", "32px", "36px", "48px", "64px",
 ];
 
@@ -104,8 +103,10 @@ export default function RichTextEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: false }),
-      Underline,
+      StarterKit.configure({
+        heading: false,
+        link: { openOnClick: false },
+      }),
       TextStyle,
       FontFamily,
       FontSize,
@@ -113,7 +114,6 @@ export default function RichTextEditor({
       Heading.configure({ levels: [1, 2, 3, 4, 5, 6] }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Image.configure({ inline: false, allowBase64: true }),
-      Link.configure({ openOnClick: false }),
     ],
     content: value,
     onUpdate({ editor }) {
@@ -142,7 +142,11 @@ export default function RichTextEditor({
   };
 
   const setFontSize = (size: string) => {
-    editor.chain().focus().setMark("textStyle", { fontSize: size }).run();
+    if (size === "Default" || !size) {
+      editor.chain().focus().setMark("textStyle", { fontSize: null }).run();
+    } else {
+      editor.chain().focus().setMark("textStyle", { fontSize: size }).run();
+    }
   };
 
   const setHeading = (val: string) => {
@@ -209,16 +213,62 @@ export default function RichTextEditor({
     onAttachmentsChange(attachments.filter((_, i) => i !== index));
   };
 
+  // Toggle formatting for bold, italic, underline, strike
+  // If text is selected: toggles selection.
+  // If cursor is inside/adjacent to a word without selection: selects and toggles word so user can undo it.
+  // If cursor is at empty space: toggles stored marks so subsequent typing is normal.
+  const toggleFormat = (format: "bold" | "italic" | "underline" | "strike") => {
+    if (!editor) return;
+    const { state } = editor;
+    const { empty, from } = state.selection;
+
+    if (empty) {
+      const $from = state.selection.$from;
+      const textBefore = $from.nodeBefore?.isText ? $from.nodeBefore.text || "" : "";
+      const textAfter = $from.nodeAfter?.isText ? $from.nodeAfter.text || "" : "";
+      const matchBefore = textBefore.match(/[^\s]+$/);
+      const matchAfter = textAfter.match(/^[^\s]+/);
+
+      if (matchBefore || matchAfter) {
+        const start = from - (matchBefore ? matchBefore[0].length : 0);
+        const end = from + (matchAfter ? matchAfter[0].length : 0);
+        if (start < end) {
+          editor.chain().focus().setTextSelection({ from: start, to: end }).run();
+        }
+      }
+    }
+
+    if (format === "bold") editor.chain().focus().toggleBold().run();
+    else if (format === "italic") editor.chain().focus().toggleItalic().run();
+    else if (format === "underline") editor.chain().focus().toggleUnderline().run();
+    else if (format === "strike") editor.chain().focus().toggleStrike().run();
+  };
+
+  const toggleAlign = (alignment: "left" | "center" | "right" | "justify") => {
+    if (editor.isActive({ textAlign: alignment })) {
+      editor.chain().focus().unsetTextAlign().run();
+    } else {
+      editor.chain().focus().setTextAlign(alignment).run();
+    }
+  };
+
+  const clearFormatting = () => {
+    editor.chain().focus().clearNodes().unsetAllMarks().unsetTextAlign().run();
+  };
+
   const toolbarBtn = (
     active: boolean,
-    onMouseDown: (e: React.MouseEvent) => void,
+    action: () => void,
     icon: React.ReactNode,
     title: string
   ) => (
     <button
       type="button"
       title={title}
-      onMouseDown={onMouseDown}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        action();
+      }}
       className={`p-1.5 rounded transition-colors ${
         active
           ? "bg-primary text-primary-foreground"
@@ -235,8 +285,9 @@ export default function RichTextEditor({
       <div className="flex flex-wrap items-center gap-0.5 p-2 border-b bg-muted/40 select-none">
 
         {/* Undo / Redo */}
-        {toolbarBtn(false, (e) => { e.preventDefault(); editor.chain().focus().undo().run(); }, <Undo className="w-3.5 h-3.5" />, "Undo")}
-        {toolbarBtn(false, (e) => { e.preventDefault(); editor.chain().focus().redo().run(); }, <Redo className="w-3.5 h-3.5" />, "Redo")}
+        {toolbarBtn(false, () => editor.chain().focus().undo().run(), <Undo className="w-3.5 h-3.5" />, "Undo")}
+        {toolbarBtn(false, () => editor.chain().focus().redo().run(), <Redo className="w-3.5 h-3.5" />, "Redo")}
+        {toolbarBtn(false, clearFormatting, <RemoveFormatting className="w-3.5 h-3.5" />, "Clear formatting (Return to normal)")}
 
         <div className="w-px h-5 bg-border mx-1" />
 
@@ -246,7 +297,7 @@ export default function RichTextEditor({
             <SelectValue placeholder="Style" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="paragraph">Paragraph</SelectItem>
+            <SelectItem value="paragraph">Paragraph (Normal)</SelectItem>
             <SelectItem value="1">Heading 1</SelectItem>
             <SelectItem value="2">Heading 2</SelectItem>
             <SelectItem value="3">Heading 3</SelectItem>
@@ -277,10 +328,10 @@ export default function RichTextEditor({
 
         {/* Font size */}
         <Select
-          value={editor.getAttributes("textStyle").fontSize ?? ""}
+          value={editor.getAttributes("textStyle").fontSize ?? "Default"}
           onValueChange={setFontSize}
         >
-          <SelectTrigger className="h-7 w-[80px] text-xs px-2 border-input">
+          <SelectTrigger className="h-7 w-[85px] text-xs px-2 border-input">
             <SelectValue placeholder="Size" />
           </SelectTrigger>
           <SelectContent>
@@ -293,10 +344,13 @@ export default function RichTextEditor({
         <div className="w-px h-5 bg-border mx-1" />
 
         {/* Text colour */}
-        <div className="relative" title="Text colour">
+        <div className="relative flex items-center" title="Text colour">
           <button
             type="button"
-            onClick={() => colorInputRef.current?.click()}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              colorInputRef.current?.click();
+            }}
             className="p-1.5 rounded hover:bg-muted flex flex-col items-center"
           >
             <span className="text-xs font-bold leading-none" style={{ color: editor.getAttributes("textStyle").color ?? "#000000" }}>A</span>
@@ -312,36 +366,49 @@ export default function RichTextEditor({
             value={editor.getAttributes("textStyle").color ?? "#000000"}
             onChange={(e) => editor.chain().focus().setColor(e.target.value).run()}
           />
+          {editor.getAttributes("textStyle").color && (
+            <button
+              type="button"
+              title="Reset colour to default"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                editor.chain().focus().unsetColor().run();
+              }}
+              className="text-[10px] text-muted-foreground hover:text-foreground px-1"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
         <div className="w-px h-5 bg-border mx-1" />
 
         {/* Bold / Italic / Underline / Strikethrough */}
-        {toolbarBtn(editor.isActive("bold"), (e) => { e.preventDefault(); editor.chain().focus().toggleBold().run(); }, <Bold className="w-3.5 h-3.5" />, "Bold (Ctrl+B)")}
-        {toolbarBtn(editor.isActive("italic"), (e) => { e.preventDefault(); editor.chain().focus().toggleItalic().run(); }, <Italic className="w-3.5 h-3.5" />, "Italic (Ctrl+I)")}
-        {toolbarBtn(editor.isActive("underline"), (e) => { e.preventDefault(); editor.chain().focus().toggleUnderline().run(); }, <UnderlineIcon className="w-3.5 h-3.5" />, "Underline (Ctrl+U)")}
-        {toolbarBtn(editor.isActive("strike"), (e) => { e.preventDefault(); editor.chain().focus().toggleStrike().run(); }, <Strikethrough className="w-3.5 h-3.5" />, "Strikethrough")}
+        {toolbarBtn(editor.isActive("bold"), () => toggleFormat("bold"), <Bold className="w-3.5 h-3.5" />, "Bold (Ctrl+B)")}
+        {toolbarBtn(editor.isActive("italic"), () => toggleFormat("italic"), <Italic className="w-3.5 h-3.5" />, "Italic (Ctrl+I)")}
+        {toolbarBtn(editor.isActive("underline"), () => toggleFormat("underline"), <UnderlineIcon className="w-3.5 h-3.5" />, "Underline (Ctrl+U)")}
+        {toolbarBtn(editor.isActive("strike"), () => toggleFormat("strike"), <Strikethrough className="w-3.5 h-3.5" />, "Strikethrough")}
 
         <div className="w-px h-5 bg-border mx-1" />
 
         {/* Alignment */}
-        {toolbarBtn(editor.isActive({ textAlign: "left" }), (e) => { e.preventDefault(); editor.chain().focus().setTextAlign("left").run(); }, <AlignLeft className="w-3.5 h-3.5" />, "Align left")}
-        {toolbarBtn(editor.isActive({ textAlign: "center" }), (e) => { e.preventDefault(); editor.chain().focus().setTextAlign("center").run(); }, <AlignCenter className="w-3.5 h-3.5" />, "Align center")}
-        {toolbarBtn(editor.isActive({ textAlign: "right" }), (e) => { e.preventDefault(); editor.chain().focus().setTextAlign("right").run(); }, <AlignRight className="w-3.5 h-3.5" />, "Align right")}
-        {toolbarBtn(editor.isActive({ textAlign: "justify" }), (e) => { e.preventDefault(); editor.chain().focus().setTextAlign("justify").run(); }, <AlignJustify className="w-3.5 h-3.5" />, "Justify")}
+        {toolbarBtn(editor.isActive({ textAlign: "left" }), () => toggleAlign("left"), <AlignLeft className="w-3.5 h-3.5" />, "Align left")}
+        {toolbarBtn(editor.isActive({ textAlign: "center" }), () => toggleAlign("center"), <AlignCenter className="w-3.5 h-3.5" />, "Align center")}
+        {toolbarBtn(editor.isActive({ textAlign: "right" }), () => toggleAlign("right"), <AlignRight className="w-3.5 h-3.5" />, "Align right")}
+        {toolbarBtn(editor.isActive({ textAlign: "justify" }), () => toggleAlign("justify"), <AlignJustify className="w-3.5 h-3.5" />, "Justify")}
 
         <div className="w-px h-5 bg-border mx-1" />
 
         {/* Lists */}
-        {toolbarBtn(editor.isActive("bulletList"), (e) => { e.preventDefault(); editor.chain().focus().toggleBulletList().run(); }, <List className="w-3.5 h-3.5" />, "Bullet list")}
-        {toolbarBtn(editor.isActive("orderedList"), (e) => { e.preventDefault(); editor.chain().focus().toggleOrderedList().run(); }, <ListOrdered className="w-3.5 h-3.5" />, "Numbered list")}
-        {toolbarBtn(editor.isActive("blockquote"), (e) => { e.preventDefault(); editor.chain().focus().toggleBlockquote().run(); }, <Quote className="w-3.5 h-3.5" />, "Blockquote")}
-        {toolbarBtn(editor.isActive("code"), (e) => { e.preventDefault(); editor.chain().focus().toggleCode().run(); }, <Code className="w-3.5 h-3.5" />, "Inline code")}
+        {toolbarBtn(editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run(), <List className="w-3.5 h-3.5" />, "Bullet list")}
+        {toolbarBtn(editor.isActive("orderedList"), () => editor.chain().focus().toggleOrderedList().run(), <ListOrdered className="w-3.5 h-3.5" />, "Numbered list")}
+        {toolbarBtn(editor.isActive("blockquote"), () => editor.chain().focus().toggleBlockquote().run(), <Quote className="w-3.5 h-3.5" />, "Blockquote")}
+        {toolbarBtn(editor.isActive("code"), () => editor.chain().focus().toggleCode().run(), <Code className="w-3.5 h-3.5" />, "Inline code")}
 
         <div className="w-px h-5 bg-border mx-1" />
 
         {/* Link */}
-        {toolbarBtn(editor.isActive("link"), (e) => { e.preventDefault(); insertLink(); }, <LinkIcon className="w-3.5 h-3.5" />, "Insert link")}
+        {toolbarBtn(editor.isActive("link"), insertLink, <LinkIcon className="w-3.5 h-3.5" />, "Insert link")}
 
         {/* Inline image */}
         <button

@@ -2237,6 +2237,20 @@ export const getCampaignRecipientsCount: RequestHandler = asyncHandler(async (_r
   });
 });
 
+// ── Multer instances — declared before any handler that uses them ────────────
+
+// Shared multer for campaign saves (handles optional file attachments)
+const campaignMulter = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 },
+}).array("attachments", 20);
+
+// Multer for contact-submission reply emails
+const replyMulter = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 },
+}).array("attachments", 10);
+
 export const getEmailCampaigns: RequestHandler = asyncHandler(async (_req, res) => {
   await connectMongo();
   const result = await EmailCampaignModel.find().sort({ createdAt: -1 }).exec();
@@ -3091,18 +3105,7 @@ export const deleteContactSubmission: RequestHandler = asyncHandler(async (req, 
   res.status(204).send();
 });
 
-// Shared multer for campaign saves (handles optional file attachments)
-const campaignMulter = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 25 * 1024 * 1024 },
-}).array("attachments", 20);
-
 // Reply to a contact submission via email
-const replyMulter = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB per attachment
-}).array("attachments", 10);
-
 export const replyToContactSubmission: RequestHandler = (req, res, next) => {
   replyMulter(req, res, async (err) => {
     if (err) {

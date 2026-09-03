@@ -260,8 +260,20 @@ export const EmailCampaignModel: any =
         body: { type: String, required: true },
         recipients: strArr,
         sentDate: { type: Date },
-        status: { type: String, required: true }, // draft|scheduled|sent
+        status: { type: String, required: true }, // draft|scheduled|sent|sending
         scheduledDate: { type: Date },
+        attachments: {
+          type: [
+            {
+              url: { type: String, required: true },
+              filename: { type: String, required: true },
+              size: { type: Number, required: true },
+              mimeType: { type: String, required: true },
+              resourceType: { type: String, default: "raw" }, // image|video|raw
+            },
+          ],
+          default: [],
+        },
       },
       { timestamps: true, collection: "email_campaigns" }
     )

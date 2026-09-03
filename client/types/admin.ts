@@ -121,6 +121,14 @@ export interface EmailSubscriber {
   tags?: string[];
 }
 
+export interface CampaignAttachment {
+  url: string;
+  filename: string;
+  size: number;
+  mimeType: string;
+  resourceType: string;
+}
+
 export interface EmailCampaign {
   id: string;
   subject: string;
@@ -131,6 +139,7 @@ export interface EmailCampaign {
   scheduledDate?: string;
   openRate?: number;
   clickRate?: number;
+  attachments?: CampaignAttachment[];
 }
 
 export interface Book {

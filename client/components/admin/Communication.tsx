@@ -31,7 +31,7 @@ import { Label } from "@/components/ui/label";
 import { Mail, Plus, Search, Edit, Trash2, Download, Users, UserCheck, UserX, MessageSquare, Send, Reply } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { EmailCampaign, EmailSubscriber } from "@/types/admin";
+import { EmailCampaign, EmailSubscriber, CampaignAttachment } from "@/types/admin";
 import { Textarea } from "@/components/ui/textarea";
 import RichTextEditor, { RichTextAttachment } from "./RichTextEditor";
 
@@ -64,6 +64,9 @@ export default function Communication() {
   const [editingCampaign, setEditingCampaign] = useState<EmailCampaign | null>(null);
   const [sendingCampaignId, setSendingCampaignId] = useState<string | null>(null);
   const [campaignAttachments, setCampaignAttachments] = useState<RichTextAttachment[]>([]);
+  // Existing Cloudinary attachments already saved on the campaign being edited
+  const [savedAttachments, setSavedAttachments] = useState<CampaignAttachment[]>([]);
+  const [removedAttachmentUrls, setRemovedAttachmentUrls] = useState<string[]>([]);
   // Contact reply state
   const [replyBody, setReplyBody] = useState("");
   const [replyAttachments, setReplyAttachments] = useState<RichTextAttachment[]>([]);
@@ -304,11 +307,16 @@ export default function Communication() {
     setEditingCampaign(null);
     setCampaignForm({ subject: "", body: "" });
     setCampaignAttachments([]);
+    setSavedAttachments([]);
+    setRemovedAttachmentUrls([]);
   };
 
   const handleCampaignEdit = (c: EmailCampaign) => {
     setEditingCampaign(c);
     setCampaignForm({ subject: c.subject || "", body: c.body || "" });
+    setSavedAttachments(c.attachments || []);
+    setCampaignAttachments([]);
+    setRemovedAttachmentUrls([]);
     setCampaignDialogOpen(true);
   };
 
@@ -336,20 +344,15 @@ export default function Communication() {
       const method = editingCampaign ? "PUT" : "POST";
 
       let response: Response;
-      if (campaignAttachments.length > 0) {
-        const fd = new FormData();
-        fd.append("subject", campaignForm.subject);
-        fd.append("body", campaignForm.body);
-        fd.append("status", "draft");
-        campaignAttachments.forEach((a) => fd.append("attachments", a.file));
-        response = await fetch(url, { method, body: fd });
-      } else {
-        response = await fetch(url, {
-          method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ subject: campaignForm.subject, body: campaignForm.body, status: "draft" }),
-        });
-      }
+      // Always use FormData so new file uploads and removeAttachments are handled uniformly
+      const fd = new FormData();
+      fd.append("subject", campaignForm.subject);
+      fd.append("body", campaignForm.body);
+      fd.append("status", "draft");
+      campaignAttachments.forEach((a) => fd.append("attachments", a.file));
+      // Tell server which saved attachments to remove
+      removedAttachmentUrls.forEach((u) => fd.append("removeAttachments", u));
+      response = await fetch(url, { method, body: fd });
 
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data?.error || "Failed to save campaign");
@@ -1053,6 +1056,37 @@ export default function Communication() {
                       minHeight={300}
                     />
                   </div>
+
+                  {/* Saved attachments (already on Cloudinary) */}
+                  {savedAttachments.length > 0 && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Saved attachments</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {savedAttachments
+                          .filter((a) => !removedAttachmentUrls.includes(a.url))
+                          .map((a, i) => (
+                            <div key={i} className="flex items-center gap-1.5 bg-muted border rounded px-2 py-1 text-xs">
+                              <span>{a.mimeType?.startsWith("image/") ? "🖼️" : a.mimeType?.startsWith("video/") || a.mimeType?.startsWith("audio/") ? "🎬" : "📎"}</span>
+                              <a href={a.url} target="_blank" rel="noreferrer" className="max-w-[160px] truncate text-primary underline">
+                                {a.filename}
+                              </a>
+                              <span className="text-muted-foreground">({(a.size / 1024).toFixed(0)} KB)</span>
+                              <button
+                                type="button"
+                                title="Remove attachment"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  setRemovedAttachmentUrls((prev) => [...prev, a.url]);
+                                }}
+                                className="ml-1 text-destructive hover:text-destructive/70 font-bold"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => setCampaignDialogOpen(false)}>
                       Cancel

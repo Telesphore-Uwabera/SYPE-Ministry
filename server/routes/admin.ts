@@ -21,6 +21,7 @@ import {
   MetadataModel,
 } from "../models/core";
 import { sendMail, MailAttachment } from "../lib/mailer";
+import { uploadToStorage } from "../lib/storageAdapter";
 import { sendMonthlyContributionReminder } from "../lib/reminders";
 
 // All data is persisted in MongoDB via Mongoose models.
@@ -2250,6 +2251,7 @@ export const getEmailCampaigns: RequestHandler = asyncHandler(async (_req, res) 
       scheduledDate: c.scheduledDate ? new Date(c.scheduledDate).toISOString() : undefined,
       openRate: c.openRate ?? undefined,
       clickRate: c.clickRate ?? undefined,
+      attachments: serializeCampaignAttachments(c),
     }))
   );
 });
@@ -2270,8 +2272,49 @@ export const getEmailCampaign: RequestHandler = asyncHandler(async (req, res) =>
     scheduledDate: c.scheduledDate ? new Date(c.scheduledDate).toISOString() : undefined,
     openRate: c.openRate ?? undefined,
     clickRate: c.clickRate ?? undefined,
+    attachments: serializeCampaignAttachments(c),
   });
 });
+
+// ── Attachment helpers ─────────────────────────────────────────────────────────
+
+function serializeCampaignAttachments(doc: any) {
+  return Array.isArray(doc.attachments)
+    ? doc.attachments.map((a: any) => ({
+        url: a.url,
+        filename: a.filename,
+        size: a.size,
+        mimeType: a.mimeType,
+        resourceType: a.resourceType || "raw",
+      }))
+    : [];
+}
+
+/** Upload all multer files to Cloudinary and return attachment metadata. */
+async function uploadCampaignFiles(files: Express.Multer.File[]) {
+  if (!files.length) return [];
+  const results = await Promise.allSettled(
+    files.map(async (file) => {
+      const mime = file.mimetype || "";
+      const type: "image" | "video" | "document" = mime.startsWith("image/")
+        ? "image"
+        : mime.startsWith("video/") || mime.startsWith("audio/")
+        ? "video"
+        : "document";
+      const result = await uploadToStorage(file, "campaigns", type);
+      return {
+        url: result.url,
+        filename: file.originalname,
+        size: file.size,
+        mimeType: mime,
+        resourceType: type === "image" ? "image" : type === "video" ? "video" : "raw",
+      };
+    })
+  );
+  return results
+    .filter((r): r is PromiseFulfilledResult<any> => r.status === "fulfilled")
+    .map((r) => r.value);
+}
 
 export const createEmailCampaign: RequestHandler = (req, res, next) => {
   campaignMulter(req, res, async (err) => {
@@ -2284,6 +2327,8 @@ export const createEmailCampaign: RequestHandler = (req, res, next) => {
         throw new ApiError(400, "Invalid status");
       }
       const recips = Array.isArray(recipients) ? recipients.map(String).map((x) => x.trim()).filter(Boolean) : [];
+      const files = (req.files as Express.Multer.File[]) || [];
+      const attachments = await uploadCampaignFiles(files);
       await connectMongo();
       const created = await EmailCampaignModel.create({
         subject: String(subject),
@@ -2292,6 +2337,7 @@ export const createEmailCampaign: RequestHandler = (req, res, next) => {
         status: nextStatus,
         scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
         sentDate: nextStatus === "sent" ? new Date() : undefined,
+        attachments,
       });
       res.status(201).json({
         id: idOf(created),
@@ -2301,6 +2347,7 @@ export const createEmailCampaign: RequestHandler = (req, res, next) => {
         sentDate: created.sentDate ? new Date(created.sentDate).toISOString() : undefined,
         status: created.status || "draft",
         scheduledDate: created.scheduledDate ? new Date(created.scheduledDate).toISOString() : undefined,
+        attachments: serializeCampaignAttachments(created),
       });
     } catch (e: any) { next(e); }
   });
@@ -2312,7 +2359,7 @@ export const updateEmailCampaign: RequestHandler = (req, res, next) => {
     try {
       const { id } = req.params;
       if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
-      const { subject, body, status, scheduledDate, recipients } = req.body ?? {};
+      const { subject, body, status, scheduledDate, recipients, removeAttachments } = req.body ?? {};
       const updateData: any = {};
       if (subject !== undefined) updateData.subject = String(subject);
       if (body !== undefined) updateData.body = String(body);
@@ -2326,7 +2373,23 @@ export const updateEmailCampaign: RequestHandler = (req, res, next) => {
       }
       if (scheduledDate !== undefined) updateData.scheduledDate = scheduledDate ? new Date(scheduledDate) : undefined;
       if (recipients !== undefined) updateData.recipients = Array.isArray(recipients) ? recipients.map(String).map((x) => x.trim()).filter(Boolean) : [];
+
+      // Handle attachments: keep existing, remove flagged ones, append new uploads
       await connectMongo();
+      const existing = await EmailCampaignModel.findById(id).exec();
+      if (!existing) throw new ApiError(404, "Campaign not found");
+
+      let currentAttachments: any[] = Array.isArray(existing.attachments) ? existing.attachments : [];
+      // Remove attachments by URL if client sent a list to remove
+      const toRemove: string[] = Array.isArray(removeAttachments) ? removeAttachments : [];
+      if (toRemove.length) {
+        currentAttachments = currentAttachments.filter((a: any) => !toRemove.includes(a.url));
+      }
+      // Upload new files
+      const files = (req.files as Express.Multer.File[]) || [];
+      const newAttachments = await uploadCampaignFiles(files);
+      updateData.attachments = [...currentAttachments, ...newAttachments];
+
       const updated = await EmailCampaignModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
       if (!updated) throw new ApiError(404, "Campaign not found");
       res.json({
@@ -2337,6 +2400,7 @@ export const updateEmailCampaign: RequestHandler = (req, res, next) => {
         sentDate: updated.sentDate ? new Date(updated.sentDate).toISOString() : undefined,
         status: updated.status || "draft",
         scheduledDate: updated.scheduledDate ? new Date(updated.scheduledDate).toISOString() : undefined,
+        attachments: serializeCampaignAttachments(updated),
       });
     } catch (e: any) { next(e); }
   });
@@ -2397,6 +2461,27 @@ export const sendEmailCampaign: RequestHandler = asyncHandler(async (req, res) =
     : `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827; white-space: pre-wrap;">${escapeHtml(body)}</div>`;
   const text = isHtml ? stripHtmlToText(body) : String(body || "");
 
+  // ── Pre-fetch attachment bytes so we don't re-download per recipient ────────
+  const storedAttachments: any[] = Array.isArray(campaign.attachments) ? campaign.attachments : [];
+  let mailAttachments: MailAttachment[] = [];
+  if (storedAttachments.length > 0) {
+    const fetched = await Promise.allSettled(
+      storedAttachments.map(async (a: any) => {
+        const resp = await fetch(String(a.url));
+        if (!resp.ok) throw new Error(`Failed to fetch attachment ${a.filename}: HTTP ${resp.status}`);
+        const buf = Buffer.from(await resp.arrayBuffer());
+        return { filename: String(a.filename), content: buf, contentType: String(a.mimeType || "application/octet-stream") } as MailAttachment;
+      })
+    );
+    mailAttachments = fetched
+      .filter((r): r is PromiseFulfilledResult<MailAttachment> => r.status === "fulfilled")
+      .map((r) => r.value);
+    const fetchFailed = fetched.filter((r) => r.status === "rejected").length;
+    if (fetchFailed > 0) {
+      console.warn(`[Campaign ${campaign._id}] ${fetchFailed} attachment(s) could not be fetched — they will be skipped.`);
+    }
+  }
+
   // ── Respond immediately — don't make the browser wait ──────────────────────
   res.json({
     ok: true,
@@ -2418,7 +2503,14 @@ export const sendEmailCampaign: RequestHandler = asyncHandler(async (req, res) =
         const batch = recipients.slice(i, i + batchSize);
         const results = await Promise.allSettled(
           batch.map((to) =>
-            sendMail({ to, subject, html, text, replyTo: contactEmail || undefined })
+            sendMail({
+              to,
+              subject,
+              html,
+              text,
+              replyTo: contactEmail || undefined,
+              attachments: mailAttachments.length > 0 ? mailAttachments : undefined,
+            })
           )
         );
         results.forEach((r, idx) => {
@@ -2438,7 +2530,7 @@ export const sendEmailCampaign: RequestHandler = asyncHandler(async (req, res) =
           sentDate: new Date(),
           recipients,
         });
-        console.log(`[Campaign ${campaignId}] Done — sent: ${sent}, failed: ${failed}`);
+        console.log(`[Campaign ${campaignId}] Done — sent: ${sent}, failed: ${failed}, attachments: ${mailAttachments.length}`);
       } else {
         // All failed — revert to draft so admin can retry
         await EmailCampaignModel.findByIdAndUpdate(campaignId, { status: "draft" });

@@ -15,35 +15,17 @@ jobs:
       - name: Trigger Render deploy of teletech-api
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
           set -euo pipefail
-
-          # Option 1: Deploy Hook URL (preferred — no auth header needed)
-          if [ -n "${RENDER_DEPLOY_HOOK_URL:-}" ]; then
-            echo "Triggering via deploy hook URL..."
-            curl -sS -X GET "${RENDER_DEPLOY_HOOK_URL}"
-            echo
-            echo "Triggered teletech-api via deploy hook"
-            exit 0
+          if [ -z "${RENDER_API_KEY:-}" ]; then
+            echo "Add GitHub secret RENDER_API_KEY (same Render account as teletech-api)."
+            exit 1
           fi
-
-          # Option 2: Render REST API key
-          if [ -n "${RENDER_API_KEY:-}" ]; then
-            echo "Triggering via Render API key..."
-            curl -sS -X POST \
-              "https://api.render.com/v1/services/srv-da6tffbbc2fs73elpgk0/deploys" \
-              -H "Authorization: Bearer ${RENDER_API_KEY}" \
-              -H "Accept: application/json" \
-              -H "Content-Type: application/json" \
-              -d '{"clearCache":"do_not_clear"}'
-            echo
-            echo "Triggered teletech-api via Render API"
-            exit 0
-          fi
-
-          echo "ERROR: Neither RENDER_DEPLOY_HOOK_URL nor RENDER_API_KEY secret is set."
-          echo "To fix: go to GitHub repo → Settings → Secrets → Actions and add one of:"
-          echo "  RENDER_DEPLOY_HOOK_URL  (from Render dashboard → service → Settings → Deploy Hook)"
-          echo "  RENDER_API_KEY          (from Render dashboard → Account → API Keys)"
-          exit 1
+          curl -sS -X POST \
+            "https://api.render.com/v1/services/srv-da6tffbbc2fs73elpgk0/deploys" \
+            -H "Authorization: Bearer ${RENDER_API_KEY}" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -d '{"clearCache":"do_not_clear"}'
+          echo
+          echo "Triggered teletech-api Render deploy"

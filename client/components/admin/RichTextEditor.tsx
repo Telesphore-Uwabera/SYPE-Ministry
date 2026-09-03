@@ -7,7 +7,8 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import Heading from "@tiptap/extension-heading";
 import Image from "@tiptap/extension-image";
-import Link from "@tiptap/extension-link";import { useEffect, useRef } from "react";
+import Link from "@tiptap/extension-link";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -103,11 +104,7 @@ export default function RichTextEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        heading: false,      // we use our own Heading with all 6 levels
-        underline: false,    // we use @tiptap/extension-underline
-        link: false,         // we use @tiptap/extension-link
-      }),
+      StarterKit.configure({ heading: false }),
       Underline,
       TextStyle,
       FontFamily,
@@ -163,31 +160,6 @@ export default function RichTextEditor({
     }
     return "paragraph";
   };
-
-  // Convert any CSS color (rgba, hsl, etc.) to a 6-digit hex string safe for <input type="color">
-  const toHexColor = (color: string | undefined): string => {
-    if (!color) return "#000000";
-    // Already a plain hex
-    if (/^#[0-9a-fA-F]{6}$/.test(color)) return color;
-    if (/^#[0-9a-fA-F]{3}$/.test(color)) {
-      const [, r, g, b] = color.match(/^#(.)(.)(.)$/)!;
-      return `#${r}${r}${g}${g}${b}${b}`;
-    }
-    // Use a canvas to resolve any CSS color string
-    try {
-      const canvas = document.createElement("canvas");
-      canvas.width = canvas.height = 1;
-      const ctx = canvas.getContext("2d")!;
-      ctx.fillStyle = color;
-      ctx.fillRect(0, 0, 1, 1);
-      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-      return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-    } catch {
-      return "#000000";
-    }
-  };
-
-  const currentColor = toHexColor(editor.getAttributes("textStyle").color);
 
   const insertLink = () => {
     const prev = editor.getAttributes("link").href as string | undefined;
@@ -327,17 +299,17 @@ export default function RichTextEditor({
             onClick={() => colorInputRef.current?.click()}
             className="p-1.5 rounded hover:bg-muted flex flex-col items-center"
           >
-            <span className="text-xs font-bold leading-none" style={{ color: currentColor }}>A</span>
+            <span className="text-xs font-bold leading-none" style={{ color: editor.getAttributes("textStyle").color ?? "#000000" }}>A</span>
             <span
               className="block w-3.5 h-1 rounded-sm mt-0.5"
-              style={{ backgroundColor: currentColor }}
+              style={{ backgroundColor: editor.getAttributes("textStyle").color ?? "#000000" }}
             />
           </button>
           <input
             ref={colorInputRef}
             type="color"
             className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-            value={currentColor}
+            value={editor.getAttributes("textStyle").color ?? "#000000"}
             onChange={(e) => editor.chain().focus().setColor(e.target.value).run()}
           />
         </div>

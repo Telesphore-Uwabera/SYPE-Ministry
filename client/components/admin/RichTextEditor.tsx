@@ -137,7 +137,13 @@ export default function RichTextEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: false }),
+      StarterKit.configure({
+        heading: false,   // we supply Heading separately (all 6 levels)
+        // Tiptap v3 StarterKit bundles Link and Underline — disable them
+        // so our separately-configured versions take over without duplicates
+        link: false,
+        underline: false,
+      }),
       Underline,
       TextStyle,
       FontFamily,

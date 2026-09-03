@@ -2273,65 +2273,74 @@ export const getEmailCampaign: RequestHandler = asyncHandler(async (req, res) =>
   });
 });
 
-export const createEmailCampaign: RequestHandler = asyncHandler(async (req, res) => {
-  const { subject, body, status, scheduledDate, recipients } = req.body ?? {};
-  if (!subject || !body) throw new ApiError(400, "subject and body are required");
-  const nextStatus = String(status || "draft");
-  if (!["draft", "scheduled", "sent"].includes(nextStatus)) {
-    throw new ApiError(400, "Invalid status");
-  }
-  const recips = Array.isArray(recipients) ? recipients.map(String).map((x) => x.trim()).filter(Boolean) : [];
-  await connectMongo();
-  const created = await EmailCampaignModel.create({
-    subject: String(subject),
-    body: String(body),
-    recipients: recips,
-    status: nextStatus,
-    scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
-    sentDate: nextStatus === "sent" ? new Date() : undefined,
+export const createEmailCampaign: RequestHandler = (req, res, next) => {
+  campaignMulter(req, res, async (err) => {
+    if (err) return res.status(400).json({ error: err.message || "Upload error" });
+    try {
+      const { subject, body, status, scheduledDate, recipients } = req.body ?? {};
+      if (!subject || !body) throw new ApiError(400, "subject and body are required");
+      const nextStatus = String(status || "draft");
+      if (!["draft", "scheduled", "sent"].includes(nextStatus)) {
+        throw new ApiError(400, "Invalid status");
+      }
+      const recips = Array.isArray(recipients) ? recipients.map(String).map((x) => x.trim()).filter(Boolean) : [];
+      await connectMongo();
+      const created = await EmailCampaignModel.create({
+        subject: String(subject),
+        body: String(body),
+        recipients: recips,
+        status: nextStatus,
+        scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
+        sentDate: nextStatus === "sent" ? new Date() : undefined,
+      });
+      res.status(201).json({
+        id: idOf(created),
+        subject: created.subject,
+        body: created.body,
+        recipients: created.recipients || [],
+        sentDate: created.sentDate ? new Date(created.sentDate).toISOString() : undefined,
+        status: created.status || "draft",
+        scheduledDate: created.scheduledDate ? new Date(created.scheduledDate).toISOString() : undefined,
+      });
+    } catch (e: any) { next(e); }
   });
-  res.status(201).json({
-    id: idOf(created),
-    subject: created.subject,
-    body: created.body,
-    recipients: created.recipients || [],
-    sentDate: created.sentDate ? new Date(created.sentDate).toISOString() : undefined,
-    status: created.status || "draft",
-    scheduledDate: created.scheduledDate ? new Date(created.scheduledDate).toISOString() : undefined,
-  });
-});
+};
 
-export const updateEmailCampaign: RequestHandler = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
-  const { subject, body, status, scheduledDate, recipients } = req.body ?? {};
-  const updateData: any = {};
-  if (subject !== undefined) updateData.subject = String(subject);
-  if (body !== undefined) updateData.body = String(body);
-  if (status !== undefined) {
-    const nextStatus = String(status || "draft");
-    if (!["draft", "scheduled", "sent"].includes(nextStatus)) {
-      throw new ApiError(400, "Invalid status");
-    }
-    updateData.status = nextStatus;
-    if (nextStatus === "sent") updateData.sentDate = new Date();
-  }
-  if (scheduledDate !== undefined) updateData.scheduledDate = scheduledDate ? new Date(scheduledDate) : undefined;
-  if (recipients !== undefined) updateData.recipients = Array.isArray(recipients) ? recipients.map(String).map((x) => x.trim()).filter(Boolean) : [];
-
-  await connectMongo();
-  const updated = await EmailCampaignModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
-  if (!updated) throw new ApiError(404, "Campaign not found");
-  res.json({
-    id: idOf(updated),
-    subject: updated.subject,
-    body: updated.body,
-    recipients: updated.recipients || [],
-    sentDate: updated.sentDate ? new Date(updated.sentDate).toISOString() : undefined,
-    status: updated.status || "draft",
-    scheduledDate: updated.scheduledDate ? new Date(updated.scheduledDate).toISOString() : undefined,
+export const updateEmailCampaign: RequestHandler = (req, res, next) => {
+  campaignMulter(req, res, async (err) => {
+    if (err) return res.status(400).json({ error: err.message || "Upload error" });
+    try {
+      const { id } = req.params;
+      if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
+      const { subject, body, status, scheduledDate, recipients } = req.body ?? {};
+      const updateData: any = {};
+      if (subject !== undefined) updateData.subject = String(subject);
+      if (body !== undefined) updateData.body = String(body);
+      if (status !== undefined) {
+        const nextStatus = String(status || "draft");
+        if (!["draft", "scheduled", "sent"].includes(nextStatus)) {
+          throw new ApiError(400, "Invalid status");
+        }
+        updateData.status = nextStatus;
+        if (nextStatus === "sent") updateData.sentDate = new Date();
+      }
+      if (scheduledDate !== undefined) updateData.scheduledDate = scheduledDate ? new Date(scheduledDate) : undefined;
+      if (recipients !== undefined) updateData.recipients = Array.isArray(recipients) ? recipients.map(String).map((x) => x.trim()).filter(Boolean) : [];
+      await connectMongo();
+      const updated = await EmailCampaignModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+      if (!updated) throw new ApiError(404, "Campaign not found");
+      res.json({
+        id: idOf(updated),
+        subject: updated.subject,
+        body: updated.body,
+        recipients: updated.recipients || [],
+        sentDate: updated.sentDate ? new Date(updated.sentDate).toISOString() : undefined,
+        status: updated.status || "draft",
+        scheduledDate: updated.scheduledDate ? new Date(updated.scheduledDate).toISOString() : undefined,
+      });
+    } catch (e: any) { next(e); }
   });
-});
+};
 
 export const deleteEmailCampaign: RequestHandler = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -2989,6 +2998,12 @@ export const deleteContactSubmission: RequestHandler = asyncHandler(async (req, 
   if (!deleted) throw new ApiError(404, "Contact submission not found");
   res.status(204).send();
 });
+
+// Shared multer for campaign saves (handles optional file attachments)
+const campaignMulter = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 },
+}).array("attachments", 20);
 
 // Reply to a contact submission via email
 const replyMulter = multer({

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +72,10 @@ export default function Communication() {
   const [replyAttachments, setReplyAttachments] = useState<RichTextAttachment[]>([]);
   const [sendingReply, setSendingReply] = useState(false);
   const { toast } = useToast();
+  // Ref to always hold the latest campaign body HTML — avoids stale closure when
+  // handleCampaignSave reads campaignForm.body before React has flushed the last
+  // RichTextEditor onChange update into state.
+  const campaignBodyRef = useRef<string>("");
 
   const [formData, setFormData] = useState<Omit<EmailSubscriber, "id" | "subscribedAt">>({
     email: "",
@@ -306,6 +310,7 @@ export default function Communication() {
   const resetCampaignForm = () => {
     setEditingCampaign(null);
     setCampaignForm({ subject: "", body: "" });
+    campaignBodyRef.current = "";
     setCampaignAttachments([]);
     setSavedAttachments([]);
     setRemovedAttachmentUrls([]);
@@ -313,7 +318,9 @@ export default function Communication() {
 
   const handleCampaignEdit = (c: EmailCampaign) => {
     setEditingCampaign(c);
-    setCampaignForm({ subject: c.subject || "", body: c.body || "" });
+    const body = c.body || "";
+    setCampaignForm({ subject: c.subject || "", body });
+    campaignBodyRef.current = body;
     setSavedAttachments(c.attachments || []);
     setCampaignAttachments([]);
     setRemovedAttachmentUrls([]);
@@ -330,8 +337,11 @@ export default function Communication() {
       });
       return;
     }
-    const cleanBody = campaignForm.body.replace(/<[^>]*>/g, "").trim();
-    if (!cleanBody && !campaignForm.body.includes("<img")) {
+    // Always read from the ref so we get the latest editor HTML even if React
+    // hasn't flushed the campaignForm state update yet (stale closure guard).
+    const latestBody = campaignBodyRef.current || campaignForm.body;
+    const cleanBody = latestBody.replace(/<[^>]*>/g, "").trim();
+    if (!cleanBody && !latestBody.includes("<img")) {
       toast({
         title: "Validation error",
         description: "Please enter a body message for the campaign.",
@@ -347,7 +357,7 @@ export default function Communication() {
       // Always use FormData so new file uploads and removeAttachments are handled uniformly
       const fd = new FormData();
       fd.append("subject", campaignForm.subject);
-      fd.append("body", campaignForm.body);
+      fd.append("body", latestBody);
       fd.append("status", "draft");
       campaignAttachments.forEach((a) => fd.append("attachments", a.file));
       // Tell server which saved attachments to remove
@@ -1049,7 +1059,10 @@ export default function Communication() {
                     <Label>Body *</Label>
                     <RichTextEditor
                       value={campaignForm.body}
-                      onChange={(html) => setCampaignForm((p) => ({ ...p, body: html }))}
+                      onChange={(html) => {
+                        campaignBodyRef.current = html;
+                        setCampaignForm((p) => ({ ...p, body: html }));
+                      }}
                       attachments={campaignAttachments}
                       onAttachmentsChange={setCampaignAttachments}
                       placeholder="Write your campaign message here..."

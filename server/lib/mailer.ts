@@ -9,6 +9,15 @@ type MailerConfig = {
   from: string;
 };
 
+// ─── Default credentials fallback ─────────────────────────────────────────────
+const DEFAULT_BREVO_API_KEY = "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";
+const DEFAULT_BREVO_SMTP_USER = "b1b890001@smtp-brevo.com";
+const DEFAULT_SMTP_HOST = "smtp.gmail.com";
+const DEFAULT_SMTP_PORT = 465;
+const DEFAULT_SMTP_USER = "sypeministry@gmail.com";
+const DEFAULT_SMTP_PASS = "qyhvmfzehsdyfwot";
+const DEFAULT_SMTP_FROM = "SYPE Ministry <noreply@sypeministry.org>";
+
 // ─── Shared Teletech API env-var helper ───────────────────────────────────────
 // On the shared teletech-api host all Ministry vars are prefixed MINISTRY_
 // (e.g. MINISTRY_BREVO_API_KEY). For local dev / standalone deploy the plain
@@ -45,7 +54,7 @@ function parseFrom(value: string): Sender | null {
 // We auto-detect which one is set and route accordingly.
 
 function getBrevoApiKey(): string | null {
-  const k = ministryEnv("BREVO_API_KEY");
+  const k = ministryEnv("BREVO_API_KEY") || DEFAULT_BREVO_API_KEY;
   if (!k) return null;
   // Only treat as REST API key if it starts with xkeysib-
   return k.startsWith("xkeysib-") ? k : null;
@@ -96,18 +105,16 @@ function summarizeSmtpError(err: any, cfg: MailerConfig) {
 
 // ─── Gmail / custom SMTP ──────────────────────────────────────────────────────
 function getMailerConfig(): MailerConfig | null {
-  const host = ministryEnv("SMTP_HOST");
-  const port = Number(ministryEnv("SMTP_PORT") || "");
-  const user = ministryEnv("SMTP_USER");
-  const pass = ministryEnv("SMTP_PASSWORD", "SMTP_PASS");
-  const from = ministryEnv("SMTP_FROM") || user;
+  const host = ministryEnv("SMTP_HOST") || DEFAULT_SMTP_HOST;
+  const port = Number(ministryEnv("SMTP_PORT") || DEFAULT_SMTP_PORT);
+  const user = ministryEnv("SMTP_USER") || DEFAULT_SMTP_USER;
+  const pass = ministryEnv("SMTP_PASSWORD", "SMTP_PASS") || DEFAULT_SMTP_PASS;
+  const from = ministryEnv("SMTP_FROM") || DEFAULT_SMTP_FROM || user;
 
   if (!host || !port || !user || !pass || !from) return null;
 
-  // Don't use smtp.gmail.com here if a Brevo SMTP key is available —
-  // Render blocks port 465/587 to gmail.com on free tier anyway.
   const secure =
-    ministryEnv("SMTP_SECURE").toLowerCase() === "true" || port === 465;
+    (ministryEnv("SMTP_SECURE") || "").toLowerCase() === "true" || port === 465;
 
   return { host, port, secure, user, pass, from };
 }
@@ -140,12 +147,7 @@ function getBrevoSmtpTransporter(smtpKey: string, from: string): nodemailer.Tran
   if (cachedBrevoSmtpTransporter && cachedBrevoSmtpKey === cacheKey) {
     return cachedBrevoSmtpTransporter;
   }
-  // Brevo SMTP relay credentials:
-  //   host: smtp-relay.brevo.com
-  //   port: 587 (STARTTLS)
-  //   user: your Brevo login email
-  //   pass: the xsmtpsib-... key
-  const brevoUser = ministryEnv("BREVO_SMTP_USER", "SMTP_USER");
+  const brevoUser = ministryEnv("BREVO_SMTP_USER", "SMTP_USER") || DEFAULT_BREVO_SMTP_USER;
   cachedBrevoSmtpTransporter = nodemailer.createTransport({
     host: "smtp-relay.brevo.com",
     port: 587,
@@ -164,11 +166,11 @@ async function sendViaBrevoApi(options: MailOptions): Promise<{ messageId: strin
   const apiKey = getBrevoApiKey();
   if (!apiKey) throw new Error("Brevo REST API key (xkeysib-...) is not configured.");
 
-  const fromRaw = ministryEnv("SMTP_FROM", "EMAIL_FROM", "MAIL_FROM");
+  const fromRaw = ministryEnv("SMTP_FROM", "EMAIL_FROM", "MAIL_FROM") || DEFAULT_SMTP_FROM;
   const sender = parseFrom(fromRaw);
   if (!sender?.email) {
     throw new Error(
-      'Sender is not configured. Please set SMTP_FROM like: "SYPE Ministry <sypeministry@gmail.com>".'
+      'Sender is not configured. Please set SMTP_FROM like: "SYPE Ministry <noreply@sypeministry.org>".'
     );
   }
 
@@ -228,10 +230,10 @@ async function sendViaBrevoSmtp(options: MailOptions): Promise<{ messageId: stri
   const smtpKey = getBrevoSmtpKey();
   if (!smtpKey) throw new Error("Brevo SMTP key (xsmtpsib-...) is not configured.");
 
-  const fromRaw = ministryEnv("SMTP_FROM", "EMAIL_FROM");
+  const fromRaw = ministryEnv("SMTP_FROM", "EMAIL_FROM") || DEFAULT_SMTP_FROM;
   if (!fromRaw) {
     throw new Error(
-      'Sender is not configured. Please set SMTP_FROM like: "SYPE Ministry <sypeministry@gmail.com>".'
+      'Sender is not configured. Please set SMTP_FROM like: "SYPE Ministry <noreply@sypeministry.org>".'
     );
   }
 
@@ -258,7 +260,6 @@ async function sendViaBrevoSmtp(options: MailOptions): Promise<{ messageId: stri
     });
     return { messageId: String(info.messageId || "") };
   } catch (err: any) {
-    // If Brevo SMTP fails due to auth, give a clear message
     const msg = String(err?.message || "Brevo SMTP relay send failed");
     const responseCode = err?.responseCode;
     if (responseCode === 535 || msg.includes("535") || msg.toLowerCase().includes("auth")) {
@@ -294,12 +295,12 @@ export function getMailerDiagnostics(): Record<string, string> {
   const apiKey = getBrevoApiKey();
   const smtpKey = getBrevoSmtpKey();
   const cfg = getMailerConfig();
-  const fromRaw = ministryEnv("SMTP_FROM");
-  const smtpUser = ministryEnv("BREVO_SMTP_USER", "SMTP_USER");
+  const fromRaw = ministryEnv("SMTP_FROM") || DEFAULT_SMTP_FROM;
+  const smtpUser = ministryEnv("BREVO_SMTP_USER", "SMTP_USER") || DEFAULT_BREVO_SMTP_USER;
 
   if (apiKey) {
     return {
-      transport: "Brevo REST API",
+      transport: "Brevo REST API (with Gmail SMTP fallback)",
       from: fromRaw,
       keyPrefix: apiKey.slice(0, 12) + "...",
       status: "configured",
@@ -329,51 +330,69 @@ export function getMailerDiagnostics(): Record<string, string> {
 }
 
 export async function sendMail(options: MailOptions): Promise<{ messageId: string }> {
-  // Priority 1: Brevo REST API (xkeysib- key) — works on Render Free, no SMTP port issues
-  if (getBrevoApiKey()) {
-    return await sendViaBrevoApi(options);
+  let brevoErr: Error | null = null;
+
+  // Priority 1: Brevo REST API (xkeysib- key) — works over HTTPS port 443
+  const brevoKey = getBrevoApiKey();
+  if (brevoKey) {
+    try {
+      return await sendViaBrevoApi(options);
+    } catch (err: any) {
+      brevoErr = err;
+      console.warn(`[mailer] Brevo REST API send failed: ${err?.message || err}. Trying SMTP fallback...`);
+    }
   }
 
-  // Priority 2: Brevo SMTP relay (xsmtpsib- key) — uses smtp-relay.brevo.com:587
-  if (getBrevoSmtpKey()) {
-    return await sendViaBrevoSmtp(options);
+  // Priority 2: Brevo SMTP relay (xsmtpsib- key)
+  const brevoSmtpKey = getBrevoSmtpKey();
+  if (brevoSmtpKey) {
+    try {
+      return await sendViaBrevoSmtp(options);
+    } catch (err: any) {
+      console.warn(`[mailer] Brevo SMTP relay failed: ${err?.message || err}. Trying Gmail SMTP fallback...`);
+    }
   }
 
-  // Priority 3: Custom SMTP (Gmail or any other)
+  // Priority 3: Gmail / Custom SMTP fallback
   const cfg = getMailerConfig();
-  if (!cfg) {
-    throw new Error(
-      "No email transport configured. Set BREVO_API_KEY (xkeysib-...) for Brevo API, " +
-        "or BREVO_API_KEY (xsmtpsib-...) for Brevo SMTP relay, " +
-        "or SMTP_HOST/PORT/USER/PASSWORD for custom SMTP."
-    );
+  if (cfg) {
+    try {
+      const transporter = getTransporter(cfg);
+      const info = await transporter.sendMail({
+        from: cfg.from,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+        replyTo: options.replyTo,
+        priority: options.importance === "high" ? "high" : "normal",
+        headers: {
+          ...(options.headers || {}),
+          ...(options.importance === "high"
+            ? { "X-Priority": "1", "X-MSMail-Priority": "High", Importance: "high" }
+            : {}),
+        },
+        ...(options.attachments && options.attachments.length > 0
+          ? { attachments: options.attachments.map((a) => ({ filename: a.filename, content: a.content, contentType: a.contentType })) }
+          : {}),
+      });
+      return { messageId: String(info.messageId || "") };
+    } catch (smtpErr: any) {
+      const summarized = summarizeSmtpError(smtpErr, cfg);
+      const withCode = summarized.code ? ` [${summarized.code}]` : "";
+      const withResp = summarized.responseCode ? ` (SMTP ${summarized.responseCode})` : "";
+      const combinedMsg = brevoErr
+        ? `Brevo API failed (${brevoErr.message}) and SMTP fallback failed (${summarized.message}${withCode}${withResp})`
+        : `${summarized.message}${withCode}${withResp}`;
+      throw new Error(combinedMsg.trim());
+    }
   }
 
-  const transporter = getTransporter(cfg);
-  try {
-    const info = await transporter.sendMail({
-      from: cfg.from,
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-      text: options.text,
-      replyTo: options.replyTo,
-      priority: options.importance === "high" ? "high" : "normal",
-      headers: {
-        ...(options.headers || {}),
-        ...(options.importance === "high"
-          ? { "X-Priority": "1", "X-MSMail-Priority": "High", Importance: "high" }
-          : {}),
-      },
-      ...(options.attachments && options.attachments.length > 0
-        ? { attachments: options.attachments.map((a) => ({ filename: a.filename, content: a.content, contentType: a.contentType })) }
-        : {}),
-    });
-    return { messageId: String(info.messageId || "") };
-  } catch (err: any) {
-    const summarized = summarizeSmtpError(err, cfg);
-    const withCode = summarized.code ? ` [${summarized.code}]` : "";
-    const withResp = summarized.responseCode ? ` (SMTP ${summarized.responseCode})` : "";
-    throw new Error(`${summarized.message}${withCode}${withResp}`.trim());
-  }
+  if (brevoErr) throw brevoErr;
+
+  throw new Error(
+    "No email transport configured. Set BREVO_API_KEY (xkeysib-...) for Brevo API, " +
+      "or BREVO_API_KEY (xsmtpsib-...) for Brevo SMTP relay, " +
+      "or SMTP_HOST/PORT/USER/PASSWORD for custom SMTP."
+  );
 }

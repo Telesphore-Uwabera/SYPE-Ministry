@@ -185,7 +185,7 @@ export default function RichTextEditor({
       })(),
       fontFamily: ctx.editor?.getAttributes("textStyle").fontFamily ?? "inherit",
       fontSize: ctx.editor?.getAttributes("textStyle").fontSize ?? "",
-      color: ctx.editor?.getAttributes("textStyle").color ?? "#000000",
+      color: ctx.editor?.getAttributes("textStyle").color || "#000000",
     }),
   });
 
@@ -351,7 +351,7 @@ export default function RichTextEditor({
             ref={colorInputRef}
             type="color"
             className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-            value={editorState?.color ?? "#000000"}
+            value={editorState?.color || "#000000"}
             onChange={(e) => editor.chain().focus().setColor(e.target.value).run()}
           />
         </div>

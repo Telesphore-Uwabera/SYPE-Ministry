@@ -2331,8 +2331,11 @@ async function uploadCampaignFiles(files: Express.Multer.File[]) {
 }
 
 export const createEmailCampaign: RequestHandler = (req, res, next) => {
-  campaignMulter(req, res, async (err) => {
-    if (err) return res.status(400).json({ error: err.message || "Upload error" });
+  // If the client sent JSON (no file attachments), skip multer entirely.
+  // Multer v2 + Express v5 can fail to populate req.body for multipart
+  // requests that contain only text fields (no actual file parts).
+  const isJson = (req.headers["content-type"] ?? "").includes("application/json");
+  const runHandler = async () => {
     try {
       const { subject, body, status, scheduledDate, recipients } = req.body ?? {};
       if (!subject || !body) throw new ApiError(400, "subject and body are required");
@@ -2340,7 +2343,7 @@ export const createEmailCampaign: RequestHandler = (req, res, next) => {
       if (!["draft", "scheduled", "sent"].includes(nextStatus)) {
         throw new ApiError(400, "Invalid status");
       }
-      const recips = Array.isArray(recipients) ? recipients.map(String).map((x) => x.trim()).filter(Boolean) : [];
+      const recips = Array.isArray(recipients) ? recipients.map(String).map((x: string) => x.trim()).filter(Boolean) : [];
       const files = (req.files as Express.Multer.File[]) || [];
       const attachments = await uploadCampaignFiles(files);
       await connectMongo();
@@ -2364,12 +2367,20 @@ export const createEmailCampaign: RequestHandler = (req, res, next) => {
         attachments: serializeCampaignAttachments(created),
       });
     } catch (e: any) { next(e); }
-  });
+  };
+  if (isJson) {
+    runHandler();
+  } else {
+    campaignMulter(req, res, (err) => {
+      if (err) return res.status(400).json({ error: (err as any).message || "Upload error" });
+      runHandler();
+    });
+  }
 };
 
 export const updateEmailCampaign: RequestHandler = (req, res, next) => {
-  campaignMulter(req, res, async (err) => {
-    if (err) return res.status(400).json({ error: err.message || "Upload error" });
+  const isJson = (req.headers["content-type"] ?? "").includes("application/json");
+  const runHandler = async () => {
     try {
       const { id } = req.params;
       if (!isValidObjectId(id)) throw new ApiError(400, "Invalid id");
@@ -2386,7 +2397,7 @@ export const updateEmailCampaign: RequestHandler = (req, res, next) => {
         if (nextStatus === "sent") updateData.sentDate = new Date();
       }
       if (scheduledDate !== undefined) updateData.scheduledDate = scheduledDate ? new Date(scheduledDate) : undefined;
-      if (recipients !== undefined) updateData.recipients = Array.isArray(recipients) ? recipients.map(String).map((x) => x.trim()).filter(Boolean) : [];
+      if (recipients !== undefined) updateData.recipients = Array.isArray(recipients) ? recipients.map(String).map((x: string) => x.trim()).filter(Boolean) : [];
 
       // Handle attachments: keep existing, remove flagged ones, append new uploads
       await connectMongo();
@@ -2417,7 +2428,15 @@ export const updateEmailCampaign: RequestHandler = (req, res, next) => {
         attachments: serializeCampaignAttachments(updated),
       });
     } catch (e: any) { next(e); }
-  });
+  };
+  if (isJson) {
+    runHandler();
+  } else {
+    campaignMulter(req, res, (err) => {
+      if (err) return res.status(400).json({ error: (err as any).message || "Upload error" });
+      runHandler();
+    });
+  }
 };
 
 export const deleteEmailCampaign: RequestHandler = asyncHandler(async (req, res) => {

@@ -354,15 +354,26 @@ export default function Communication() {
       const method = editingCampaign ? "PUT" : "POST";
 
       let response: Response;
-      // Always use FormData so new file uploads and removeAttachments are handled uniformly
-      const fd = new FormData();
-      fd.append("subject", campaignForm.subject);
-      fd.append("body", latestBody);
-      fd.append("status", "draft");
-      campaignAttachments.forEach((a) => fd.append("attachments", a.file));
-      // Tell server which saved attachments to remove
-      removedAttachmentUrls.forEach((u) => fd.append("removeAttachments", u));
-      response = await fetch(url, { method, body: fd });
+      const hasNewFiles = campaignAttachments.length > 0;
+      const hasRemovedFiles = removedAttachmentUrls.length > 0;
+
+      if (hasNewFiles || hasRemovedFiles) {
+        // Only use FormData when there are actual file uploads or removals
+        const fd = new FormData();
+        fd.append("subject", campaignForm.subject);
+        fd.append("body", latestBody);
+        fd.append("status", "draft");
+        campaignAttachments.forEach((a) => fd.append("attachments", a.file));
+        removedAttachmentUrls.forEach((u) => fd.append("removeAttachments", u));
+        response = await fetch(url, { method, body: fd });
+      } else {
+        // No files — send JSON so the server bypasses multer entirely
+        response = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subject: campaignForm.subject, body: latestBody, status: "draft" }),
+        });
+      }
 
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data?.error || "Failed to save campaign");

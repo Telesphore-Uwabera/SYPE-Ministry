@@ -9,6 +9,20 @@ type MailerConfig = {
   from: string;
 };
 
+// ─── Shared Teletech API env-var helper ───────────────────────────────────────
+// On the shared teletech-api host all Ministry vars are prefixed MINISTRY_
+// (e.g. MINISTRY_BREVO_API_KEY). For local dev / standalone deploy the plain
+// name still works. This helper tries the prefixed name first.
+function ministryEnv(...keys: string[]): string {
+  for (const key of keys) {
+    const prefixed = (process.env[`MINISTRY_${key}`] || "").trim();
+    if (prefixed) return prefixed;
+    const plain = (process.env[key] || "").trim();
+    if (plain) return plain;
+  }
+  return "";
+}
+
 type Sender = { name?: string; email: string };
 
 function parseFrom(value: string): Sender | null {
@@ -31,7 +45,7 @@ function parseFrom(value: string): Sender | null {
 // We auto-detect which one is set and route accordingly.
 
 function getBrevoApiKey(): string | null {
-  const k = (process.env.BREVO_API_KEY || "").trim();
+  const k = ministryEnv("BREVO_API_KEY");
   if (!k) return null;
   // Only treat as REST API key if it starts with xkeysib-
   return k.startsWith("xkeysib-") ? k : null;
@@ -39,10 +53,10 @@ function getBrevoApiKey(): string | null {
 
 function getBrevoSmtpKey(): string | null {
   // Explicit BREVO_SMTP_KEY takes precedence
-  const explicit = (process.env.BREVO_SMTP_KEY || "").trim();
+  const explicit = ministryEnv("BREVO_SMTP_KEY");
   if (explicit) return explicit;
   // Fall back to BREVO_API_KEY if it's an SMTP relay key
-  const k = (process.env.BREVO_API_KEY || "").trim();
+  const k = ministryEnv("BREVO_API_KEY");
   if (k && k.startsWith("xsmtpsib-")) return k;
   return null;
 }
@@ -82,18 +96,18 @@ function summarizeSmtpError(err: any, cfg: MailerConfig) {
 
 // ─── Gmail / custom SMTP ──────────────────────────────────────────────────────
 function getMailerConfig(): MailerConfig | null {
-  const host = (process.env.SMTP_HOST || "").trim();
-  const port = Number(process.env.SMTP_PORT || "");
-  const user = (process.env.SMTP_USER || "").trim();
-  const pass = (process.env.SMTP_PASSWORD || process.env.SMTP_PASS || "").trim();
-  const from = (process.env.SMTP_FROM || user || "").trim();
+  const host = ministryEnv("SMTP_HOST");
+  const port = Number(ministryEnv("SMTP_PORT") || "");
+  const user = ministryEnv("SMTP_USER");
+  const pass = ministryEnv("SMTP_PASSWORD", "SMTP_PASS");
+  const from = ministryEnv("SMTP_FROM") || user;
 
   if (!host || !port || !user || !pass || !from) return null;
 
   // Don't use smtp.gmail.com here if a Brevo SMTP key is available —
   // Render blocks port 465/587 to gmail.com on free tier anyway.
   const secure =
-    String(process.env.SMTP_SECURE || "").trim().toLowerCase() === "true" || port === 465;
+    ministryEnv("SMTP_SECURE").toLowerCase() === "true" || port === 465;
 
   return { host, port, secure, user, pass, from };
 }
@@ -131,7 +145,7 @@ function getBrevoSmtpTransporter(smtpKey: string, from: string): nodemailer.Tran
   //   port: 587 (STARTTLS)
   //   user: your Brevo login email
   //   pass: the xsmtpsib-... key
-  const brevoUser = (process.env.BREVO_SMTP_USER || process.env.SMTP_USER || "").trim();
+  const brevoUser = ministryEnv("BREVO_SMTP_USER", "SMTP_USER");
   cachedBrevoSmtpTransporter = nodemailer.createTransport({
     host: "smtp-relay.brevo.com",
     port: 587,
@@ -150,7 +164,7 @@ async function sendViaBrevoApi(options: MailOptions): Promise<{ messageId: strin
   const apiKey = getBrevoApiKey();
   if (!apiKey) throw new Error("Brevo REST API key (xkeysib-...) is not configured.");
 
-  const fromRaw = (process.env.SMTP_FROM || process.env.EMAIL_FROM || process.env.MAIL_FROM || "").trim();
+  const fromRaw = ministryEnv("SMTP_FROM", "EMAIL_FROM", "MAIL_FROM");
   const sender = parseFrom(fromRaw);
   if (!sender?.email) {
     throw new Error(
@@ -214,7 +228,7 @@ async function sendViaBrevoSmtp(options: MailOptions): Promise<{ messageId: stri
   const smtpKey = getBrevoSmtpKey();
   if (!smtpKey) throw new Error("Brevo SMTP key (xsmtpsib-...) is not configured.");
 
-  const fromRaw = (process.env.SMTP_FROM || process.env.EMAIL_FROM || "").trim();
+  const fromRaw = ministryEnv("SMTP_FROM", "EMAIL_FROM");
   if (!fromRaw) {
     throw new Error(
       'Sender is not configured. Please set SMTP_FROM like: "SYPE Ministry <sypeministry@gmail.com>".'
@@ -280,8 +294,8 @@ export function getMailerDiagnostics(): Record<string, string> {
   const apiKey = getBrevoApiKey();
   const smtpKey = getBrevoSmtpKey();
   const cfg = getMailerConfig();
-  const fromRaw = (process.env.SMTP_FROM || "").trim();
-  const smtpUser = (process.env.BREVO_SMTP_USER || process.env.SMTP_USER || "").trim();
+  const fromRaw = ministryEnv("SMTP_FROM");
+  const smtpUser = ministryEnv("BREVO_SMTP_USER", "SMTP_USER");
 
   if (apiKey) {
     return {

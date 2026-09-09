@@ -5,8 +5,8 @@
   [build.environment]
     NETLIFY_USE_PNPM = "true"
     NODE_VERSION = "20"
-    VITE_API_BASE_URL = "https://teletech-api.onrender.com"
-    VITE_API_URL = "https://teletech-api.onrender.com"
+    VITE_API_BASE_URL = "https://sype-ministry.onrender.com"
+    VITE_API_URL = "https://sype-ministry.onrender.com"
 
 [functions]
   external_node_modules = ["express"]

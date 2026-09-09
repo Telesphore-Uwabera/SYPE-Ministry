@@ -96,6 +96,11 @@ export function createServer() {
         if (isNetlify) {
           return callback(null, true);
         }
+        // Always allow SYPE Ministry domains (both apex and www)
+        const isSypeMinistry = /^https?:\/\/(www\.)?sypeministry\.org$/.test(origin);
+        if (isSypeMinistry) {
+          return callback(null, true);
+        }
         // Also allow the configured SITE_URL if present
         if (normalizedSiteUrl && origin === normalizedSiteUrl) {
           return callback(null, true);
